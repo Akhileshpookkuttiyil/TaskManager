@@ -1,9 +1,10 @@
-import { BarChart2, CheckSquare, LayoutGrid, X } from "lucide-react";
+import { BarChart2, CalendarDays, CheckSquare, LayoutGrid, X } from "lucide-react";
 import { NavLink } from "react-router-dom";
 
 const navLinks = [
   { to: "/", label: "Dashboard", icon: LayoutGrid },
   { to: "/tasks", label: "Tasks", icon: CheckSquare },
+  { to: "/calendar", label: "Calendar", icon: CalendarDays },
   { to: "/profile", label: "Profile", icon: BarChart2 },
 ];
 
@@ -42,30 +43,40 @@ const SidebarContent = ({ onNavigate }) => (
 
 export const Sidebar = ({ open, onClose }) => (
   <>
-    <aside className="hidden w-56 shrink-0 border-r border-neutral-200 bg-white px-4 py-6 dark:border-neutral-800 dark:bg-neutral-950 md:block">
-      <div className="sticky top-6">
+    <aside className="hidden w-64 shrink-0 border-r border-neutral-200 bg-white px-4 py-6 dark:border-neutral-800 dark:bg-neutral-950 lg:block">
+      <div className="sticky top-6 flex h-[calc(100vh-3rem)] flex-col">
         <SidebarContent />
       </div>
     </aside>
 
     {open ? (
-      <div className="fixed inset-0 z-40 md:hidden">
+      <div className="fixed inset-0 z-40 lg:hidden">
         <button
           type="button"
           aria-label="Close navigation"
           className="absolute inset-0 bg-neutral-900/40 backdrop-blur-[2px]"
           onClick={onClose}
         />
-        <aside className="relative h-full w-64 max-w-[80vw] border-r border-neutral-200 bg-white px-4 py-6 shadow-xl dark:border-neutral-800 dark:bg-neutral-950">
-          <button
-            type="button"
-            onClick={onClose}
-            className="btn-ghost mb-6 h-8 w-8 px-0 text-neutral-400"
-            aria-label="Close navigation"
-          >
-            <X size={16} />
-          </button>
-          <SidebarContent onNavigate={onClose} />
+        <aside className="relative flex h-full w-72 max-w-[82vw] flex-col border-r border-neutral-200 bg-white px-4 py-6 shadow-xl dark:border-neutral-800 dark:bg-neutral-950">
+          <div className="mb-6 flex items-center justify-between">
+            <div className="flex items-center gap-2.5">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-neutral-900 text-white dark:bg-white dark:text-neutral-900">
+                <CheckSquare size={15} strokeWidth={2.4} />
+              </div>
+              <span className="text-sm font-semibold text-neutral-900 dark:text-white">TaskFlow</span>
+            </div>
+            <button
+              type="button"
+              onClick={onClose}
+              className="btn-ghost h-8 w-8 px-0 text-neutral-400"
+              aria-label="Close navigation"
+            >
+              <X size={16} />
+            </button>
+          </div>
+          <div className="flex-1">
+            <SidebarContent onNavigate={onClose} />
+          </div>
         </aside>
       </div>
     ) : null}

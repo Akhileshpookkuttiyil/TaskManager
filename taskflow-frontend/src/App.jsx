@@ -7,6 +7,7 @@ import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 import { LoginPage } from "./pages/LoginPage";
 import { RegisterPage } from "./pages/RegisterPage";
 import { DashboardPage } from "./pages/DashboardPage";
+import { CalendarPage } from "./pages/CalendarPage";
 import { TasksPage } from "./pages/TasksPage";
 import { ProfilePage } from "./pages/ProfilePage";
 import { Spinner } from "./components/ui/Spinner";
@@ -43,6 +44,7 @@ const App = () => {
         >
           <Route path="/" element={<DashboardPage />} />
           <Route path="/tasks" element={<TasksPage />} />
+          <Route path="/calendar" element={<CalendarPage />} />
           <Route path="/profile" element={<ProfilePage />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />

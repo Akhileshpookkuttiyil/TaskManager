@@ -1,4 +1,4 @@
-import { ChevronDown, LogOut, Menu, UserRound } from "lucide-react";
+import { ChevronDown, LogOut, Menu, Plus, UserRound } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -8,10 +8,11 @@ import { ThemeToggle } from "../theme/ThemeToggle";
 const pageMeta = {
   "/": { title: "Dashboard" },
   "/tasks": { title: "Tasks" },
+  "/calendar": { title: "Calendar" },
   "/profile": { title: "Profile" },
 };
 
-export const Topbar = ({ onOpenNav }) => {
+export const Topbar = ({ onOpenNav, onQuickAdd }) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
@@ -45,7 +46,7 @@ export const Topbar = ({ onOpenNav }) => {
           <button
             type="button"
             onClick={onOpenNav}
-            className="btn-ghost h-9 w-9 px-0 text-neutral-500 md:hidden"
+            className="btn-ghost h-9 w-9 px-0 text-neutral-500 lg:hidden"
             aria-label="Open navigation"
           >
             <Menu size={18} />
@@ -54,6 +55,10 @@ export const Topbar = ({ onOpenNav }) => {
         </div>
 
         <div className="flex items-center gap-2">
+          <button type="button" onClick={onQuickAdd} className="btn-secondary hidden sm:inline-flex">
+            <Plus size={15} />
+            Quick add
+          </button>
           <ThemeToggle />
 
           <div className="relative" ref={menuRef}>
