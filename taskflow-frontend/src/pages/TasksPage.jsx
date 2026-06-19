@@ -2,6 +2,7 @@ import { ArrowDownUp, Plus } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import { useDispatch, useSelector } from "react-redux";
+import { useLocation } from "react-router-dom";
 import { TaskCard } from "../components/tasks/TaskCard";
 import { TaskFilters } from "../components/tasks/TaskFilters";
 import { TaskModal } from "../components/tasks/TaskModal";
@@ -21,13 +22,24 @@ const viewLabels = {
 
 export const TasksPage = () => {
   const dispatch = useDispatch();
+  const location = useLocation();
   const { items, loading, pagination, filters } = useSelector((state) => state.tasks);
   const [modalOpen, setModalOpen] = useState(false);
   const [editingTask, setEditingTask] = useState(null);
+  const focusedTaskId = useMemo(() => new URLSearchParams(location.search).get("focus"), [location.search]);
 
   useEffect(() => {
     dispatch(fetchTasks(filters));
   }, [dispatch, filters]);
+
+  useEffect(() => {
+    if (!focusedTaskId) return undefined;
+
+    const element = document.getElementById(`task-${focusedTaskId}`);
+    if (!element) return undefined;
+
+    element.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [focusedTaskId, items]);
 
   const handleEdit = (task) => {
     setEditingTask(task);
@@ -136,7 +148,7 @@ export const TasksPage = () => {
       ) : (
         <div className="space-y-2.5">
           {items.map((task) => (
-            <TaskCard key={task._id} task={task} onEdit={handleEdit} onDelete={handleDelete} />
+            <TaskCard key={task._id} task={task} highlighted={focusedTaskId === task._id} onEdit={handleEdit} onDelete={handleDelete} />
           ))}
         </div>
       )}

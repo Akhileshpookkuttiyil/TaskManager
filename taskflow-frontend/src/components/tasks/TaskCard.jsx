@@ -2,7 +2,7 @@ import { format } from "date-fns";
 import { CalendarDays, PencilLine, Tag, Trash2 } from "lucide-react";
 import { Badge } from "../ui/Badge";
 
-export const TaskCard = ({ task, onEdit, onDelete }) => {
+export const TaskCard = ({ task, onEdit, onDelete, highlighted = false }) => {
   const status = task.status || "pending";
   const isCompleted = status === "completed";
   const isArchived = status === "archived";
@@ -12,7 +12,12 @@ export const TaskCard = ({ task, onEdit, onDelete }) => {
   const dueDateLabel = dueDate ? format(dueDate, showTime ? "MMM d, yyyy h:mm a" : "MMM d, yyyy") : null;
 
   return (
-    <div className="card p-4 transition-colors hover:border-neutral-300 dark:hover:border-neutral-700 sm:p-4.5">
+    <div
+      id={`task-${task._id}`}
+      className={`card scroll-mt-28 p-4 transition-colors hover:border-neutral-300 dark:hover:border-neutral-700 sm:p-4.5 ${
+        highlighted ? "border-brand-400 ring-2 ring-brand-100 dark:ring-brand-500/20" : ""
+      }`}
+    >
       <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">

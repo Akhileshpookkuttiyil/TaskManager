@@ -2,28 +2,11 @@ import { Bell, CheckCheck, Loader2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
 import { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
 import { Badge } from "../ui/Badge";
-import { fetchNotifications, markAllNotificationsRead, markNotificationRead } from "../../store/slices/notificationsSlice";
+import { markAllNotificationsRead, markNotificationRead } from "../../store/slices/notificationsSlice";
 
 const BROWSER_NOTIFICATION_TYPES = new Set(["due_soon", "due_today", "overdue"]);
-const SHOWN_STORAGE_KEY = "taskflow-browser-notification-ids";
-
-const readShownNotificationIds = () => {
-  try {
-    const parsed = JSON.parse(localStorage.getItem(SHOWN_STORAGE_KEY) || "[]");
-    return new Set(Array.isArray(parsed) ? parsed : []);
-  } catch {
-    return new Set();
-  }
-};
-
-const writeShownNotificationIds = (ids) => {
-  try {
-    localStorage.setItem(SHOWN_STORAGE_KEY, JSON.stringify([...ids]));
-  } catch {
-    // Ignore storage failures and fall back to in-memory behavior.
-  }
-};
 
 const NotificationItem = ({ notification, onRead }) => {
   const createdAt = notification.createdAt ? new Date(notification.createdAt) : null;
@@ -59,18 +42,12 @@ const NotificationItem = ({ notification, onRead }) => {
 export const NotificationBell = () => {
   const dispatch = useDispatch();
   const { items, unreadCount, loading } = useSelector((state) => state.notifications);
-  const { token } = useSelector((state) => state.auth);
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [permission, setPermission] = useState(() => (typeof window !== "undefined" && "Notification" in window ? window.Notification.permission : "unsupported"));
   const panelRef = useRef(null);
   const menuId = "notification-panel";
-  const shownIdsRef = useRef(readShownNotificationIds());
-
-  useEffect(() => {
-    if (token) {
-      dispatch(fetchNotifications({ limit: 10 }));
-    }
-  }, [dispatch, token]);
+  const shownIdsRef = useRef(new Set());
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -104,6 +81,7 @@ export const NotificationBell = () => {
     items
       .filter((notification) => !notification.isRead && BROWSER_NOTIFICATION_TYPES.has(notification.type) && !nextShownIds.has(notification._id))
       .forEach((notification) => {
+        const targetPath = notification.taskId ? `/tasks?focus=${notification.taskId}` : "/tasks";
         const browserNotification = new window.Notification(notification.title, {
           body: notification.message,
           tag: notification._id,
@@ -111,6 +89,8 @@ export const NotificationBell = () => {
 
         browserNotification.onclick = () => {
           window.focus();
+          navigate(targetPath);
+          setOpen(false);
           browserNotification.close();
         };
 
@@ -118,23 +98,21 @@ export const NotificationBell = () => {
       });
 
     shownIdsRef.current = nextShownIds;
-    writeShownNotificationIds(nextShownIds);
-  }, [items, permission]);
+  }, [items, navigate, permission]);
 
   const handleToggle = () => {
-    setOpen((value) => {
-      const next = !value;
-      if (next) {
-        dispatch(fetchNotifications({ limit: 10 }));
-      }
-      return next;
-    });
+    setOpen((value) => !value);
   };
 
   const handleRead = async (notification) => {
+    const targetPath = notification.taskId ? `/tasks?focus=${notification.taskId}` : "/tasks";
+
     if (!notification.isRead) {
       await dispatch(markNotificationRead(notification._id));
     }
+
+    navigate(targetPath);
+    setOpen(false);
   };
 
   const handleMarkAll = async () => {
@@ -180,7 +158,7 @@ export const NotificationBell = () => {
             <div>
               <h3 className="text-sm font-semibold text-neutral-900 dark:text-white">Notifications</h3>
               <p className="mt-0.5 text-xs text-neutral-500 dark:text-neutral-400">{unreadCount} unread</p>
-            </div>
+              </div>
 
             <button
               type="button"
