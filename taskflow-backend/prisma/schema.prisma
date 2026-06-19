@@ -19,6 +19,15 @@ enum TaskPriority {
   high
 }
 
+enum NotificationType {
+  due_soon
+  due_today
+  overdue
+  task_completed
+  recurring_task_generated
+  streak_milestone
+}
+
 model User {
   id        String   @id @default(uuid()) @db.Uuid
   name      String
@@ -26,6 +35,7 @@ model User {
   password  String
   avatar    String?
   tasks     Task[]
+  notifications Notification[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -43,10 +53,30 @@ model Task {
   tags         String[]     @default([])
   userId       String       @db.Uuid
   user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  notifications Notification[]
   createdAt    DateTime     @default(now())
   updatedAt    DateTime     @updatedAt
 
   @@index([userId, createdAt])
   @@index([userId, status])
   @@index([userId, dueDate])
+}
+
+model Notification {
+  id         String            @id @default(uuid()) @db.Uuid
+  type       NotificationType
+  title      String
+  message    String
+  dedupeKey  String            @unique
+  isRead     Boolean           @default(false)
+  readAt     DateTime?
+  taskId     String?           @db.Uuid
+  task       Task?             @relation(fields: [taskId], references: [id], onDelete: SetNull)
+  userId     String            @db.Uuid
+  user       User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt  DateTime          @default(now())
+  updatedAt  DateTime          @updatedAt
+
+  @@index([userId, isRead])
+  @@index([userId, createdAt])
 }

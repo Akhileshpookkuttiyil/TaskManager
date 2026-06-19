@@ -49,4 +49,21 @@ const serializeTask = (task) => {
   return serialized;
 };
 
-module.exports = { serializeUser, serializeTask };
+const serializeNotification = (notification) => {
+  if (!notification) return null;
+
+  const serialized = toMongoId({
+    ...notification,
+    isRead: Boolean(notification.isRead),
+    readAt: notification.readAt || null,
+    taskId: notification.taskId || null,
+  });
+
+  if (notification.userId) {
+    serialized.user = notification.userId;
+  }
+
+  return serialized;
+};
+
+module.exports = { serializeUser, serializeTask, serializeNotification };

@@ -16,6 +16,15 @@ const LEGACY_TASK_STATUS = {
   DONE: TASK_STATUS.COMPLETED,
 };
 
+const NOTIFICATION_TYPE = {
+  DUE_SOON: "due_soon",
+  DUE_TODAY: "due_today",
+  OVERDUE: "overdue",
+  TASK_COMPLETED: "task_completed",
+  RECURRING_TASK_GENERATED: "recurring_task_generated",
+  STREAK_MILESTONE: "streak_milestone",
+};
+
 const JWT_EXPIRY = "7d";
 
-module.exports = { TASK_STATUS, TASK_PRIORITY, LEGACY_TASK_STATUS, JWT_EXPIRY };
+module.exports = { TASK_STATUS, TASK_PRIORITY, LEGACY_TASK_STATUS, NOTIFICATION_TYPE, JWT_EXPIRY };

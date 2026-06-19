@@ -1,6 +1,11 @@
 const prisma = require("../config/prisma");
 const { TASK_PRIORITY, TASK_STATUS, LEGACY_TASK_STATUS } = require("../constants");
 const { serializeTask } = require("../utils/serializers");
+const {
+  syncTaskNotifications,
+  recordTaskCompletion,
+  deleteTaskNotifications,
+} = require("./notification.service");
 
 const SORTABLE_FIELDS = [
   "createdAt",
@@ -171,6 +176,7 @@ const ensureTaskId = (taskId) => {
 };
 
 const getTasks = async (userId, queryParams) => {
+  await syncTaskNotifications(userId);
   const where = buildTaskWhere(userId, queryParams);
   const { page, limit, skip } = getPagination(queryParams);
   const orderBy = getOrderBy(queryParams);
@@ -223,6 +229,8 @@ const createTask = async (userId, data) => {
     },
   });
 
+  await syncTaskNotifications(userId);
+  await recordTaskCompletion(userId, task);
   return serializeTask(task);
 };
 
@@ -249,6 +257,8 @@ const updateTask = async (taskId, userId, data) => {
     },
   });
 
+  await syncTaskNotifications(userId);
+  await recordTaskCompletion(userId, task);
   return serializeTask(task);
 };
 
@@ -266,11 +276,13 @@ const deleteTask = async (taskId, userId) => {
     throw notFound();
   }
 
+  await deleteTaskNotifications(userId, taskId);
   await prisma.task.delete({ where: { id: taskId } });
   return serializeTask(task);
 };
 
 const getTaskStats = async (userId) => {
+  await syncTaskNotifications(userId);
   const tasks = await prisma.task.findMany({
     where: { userId },
     select: {

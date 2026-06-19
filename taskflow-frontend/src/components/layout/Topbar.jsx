@@ -2,6 +2,7 @@ import { ChevronDown, LogOut, Menu, Plus, UserRound } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useLocation, useNavigate } from "react-router-dom";
+import { NotificationBell } from "../notifications/NotificationBell";
 import { logout } from "../../store/slices/authSlice";
 import { ThemeToggle } from "../theme/ThemeToggle";
 
@@ -59,6 +60,7 @@ export const Topbar = ({ onOpenNav, onQuickAdd }) => {
             <Plus size={15} />
             Quick add
           </button>
+          <NotificationBell />
           <ThemeToggle />
 
           <div className="relative" ref={menuRef}>
