@@ -1,5 +1,6 @@
 import { X } from "lucide-react";
 import { useEffect } from "react";
+import { createPortal } from "react-dom";
 
 export const Modal = ({ isOpen, onClose, title, children, description }) => {
   useEffect(() => {
@@ -20,11 +21,11 @@ export const Modal = ({ isOpen, onClose, title, children, description }) => {
 
   if (!isOpen) return null;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-end justify-center p-4 sm:items-center">
+  return createPortal(
+    <div className="fixed inset-0 z-[80] flex items-end justify-center p-4 sm:items-center">
       <button
         type="button"
-        className="absolute inset-0 bg-neutral-950/40 backdrop-blur-[2px]"
+        className="absolute inset-0 bg-neutral-950/55"
         aria-label="Close dialog"
         onClick={onClose}
       />
@@ -33,7 +34,7 @@ export const Modal = ({ isOpen, onClose, title, children, description }) => {
         role="dialog"
         aria-modal="true"
         aria-labelledby="modal-title"
-        className="card relative z-10 w-full max-w-lg overflow-hidden shadow-xl"
+        className="card relative z-10 w-full max-w-lg overflow-hidden shadow-2xl"
       >
         <div className="flex items-start justify-between gap-4 border-b border-neutral-200 px-5 py-4 dark:border-neutral-800">
           <div>
@@ -57,6 +58,7 @@ export const Modal = ({ isOpen, onClose, title, children, description }) => {
 
         <div className="max-h-[calc(90vh-80px)] overflow-y-auto px-5 py-5">{children}</div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 };
