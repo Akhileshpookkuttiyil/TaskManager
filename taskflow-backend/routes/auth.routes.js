@@ -1,9 +1,9 @@
 const express = require("express");
 const rateLimit = require("express-rate-limit");
 const router = express.Router();
-const { register, login, getMe } = require("../controllers/auth.controller");
+const { register, login, getMe, updateMe } = require("../controllers/auth.controller");
 const { protect } = require("../middleware/auth");
-const { registerValidator, loginValidator } = require("../validators/auth.validator");
+const { registerValidator, loginValidator, updateProfileValidator } = require("../validators/auth.validator");
 const { validate } = require("../middleware/validate");
 
 // Tighter than the global API limiter — slows down credential stuffing / brute force
@@ -16,5 +16,6 @@ const authLimiter = rateLimit({
 router.post("/register", authLimiter, ...registerValidator, validate, register);
 router.post("/login", authLimiter, ...loginValidator, validate, login);
 router.get("/me", protect, getMe);
+router.put("/me", protect, ...updateProfileValidator, validate, updateMe);
 
 module.exports = router;

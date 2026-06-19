@@ -11,4 +11,14 @@ const loginValidator = [
   body("password").notEmpty().withMessage("Password is required"),
 ];
 
-module.exports = { registerValidator, loginValidator };
+const updateProfileValidator = [
+  body("name").optional({ checkFalsy: true }).trim().isLength({ max: 50 }).withMessage("Name too long"),
+  body("email").optional({ checkFalsy: true }).trim().isEmail().withMessage("Valid email is required").normalizeEmail(),
+  body("currentPassword")
+    .optional({ checkFalsy: true })
+    .isLength({ min: 6 })
+    .withMessage("Current password must be at least 6 characters"),
+  body("newPassword").optional({ checkFalsy: true }).isLength({ min: 6 }).withMessage("New password must be at least 6 characters"),
+];
+
+module.exports = { registerValidator, loginValidator, updateProfileValidator };

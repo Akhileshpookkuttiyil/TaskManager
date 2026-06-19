@@ -61,4 +61,73 @@ const loginUser = async ({ email, password }) => {
   };
 };
 
-module.exports = { registerUser, loginUser };
+const updateProfile = async (userId, { name, email, currentPassword, newPassword }) => {
+  const user = await prisma.user.findUnique({ where: { id: userId } });
+
+  if (!user) {
+    const error = new Error("User not found");
+    error.statusCode = 404;
+    throw error;
+  }
+
+  const updates = {};
+
+  if (name !== undefined) {
+    updates.name = name.trim();
+  }
+
+  if (email !== undefined) {
+    const nextEmail = email.trim().toLowerCase();
+    if (nextEmail !== user.email) {
+      const duplicate = await prisma.user.findUnique({ where: { email: nextEmail } });
+      if (duplicate && duplicate.id !== userId) {
+        const error = new Error("Email already in use");
+        error.statusCode = 409;
+        throw error;
+      }
+    }
+    updates.email = nextEmail;
+  }
+
+  if (newPassword) {
+    if (!currentPassword) {
+      const error = new Error("Current password is required to change your password");
+      error.statusCode = 400;
+      throw error;
+    }
+
+    const isValidPassword = await bcrypt.compare(currentPassword, user.password);
+    if (!isValidPassword) {
+      const error = new Error("Current password is incorrect");
+      error.statusCode = 401;
+      throw error;
+    }
+
+    updates.password = await bcrypt.hash(newPassword, 12);
+  }
+
+  if (Object.keys(updates).length === 0) {
+    return { user: serializeUser(user) };
+  }
+
+  const updatedUser = await prisma.user
+    .update({
+      where: { id: userId },
+      data: updates,
+    })
+    .catch((error) => {
+      if (error.code === "P2002") {
+        const duplicateError = new Error("Email already in use");
+        duplicateError.statusCode = 409;
+        throw duplicateError;
+      }
+
+      throw error;
+    });
+
+  return {
+    user: serializeUser(updatedUser),
+  };
+};
+
+module.exports = { registerUser, loginUser, updateProfile };
