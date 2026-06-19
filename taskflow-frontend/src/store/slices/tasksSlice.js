@@ -54,7 +54,7 @@ const tasksSlice = createSlice({
     stats: null,
     loading: false,
     error: null,
-    filters: { status: "", priority: "", search: "", sortBy: "createdAt", order: "desc", page: 1 },
+    filters: { view: "all", status: "", priority: "", dueDate: "", search: "", sortBy: "createdAt", order: "desc", page: 1 },
   },
   reducers: {
     setFilters(state, action) {

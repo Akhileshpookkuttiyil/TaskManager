@@ -1,5 +1,5 @@
 import { ArrowDownUp, Plus } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import { useDispatch, useSelector } from "react-redux";
 import { TaskCard } from "../components/tasks/TaskCard";
@@ -9,6 +9,15 @@ import { EmptyState } from "../components/ui/EmptyState";
 import { Pagination } from "../components/ui/Pagination";
 import { TaskSkeletonList } from "../components/ui/shared";
 import { deleteTask, fetchTasks, setFilters } from "../store/slices/tasksSlice";
+import { TASK_VIEWS } from "../utils/constants";
+
+const viewLabels = {
+  my_day: "My Day",
+  upcoming: "Upcoming",
+  all: "All Tasks",
+  completed: "Completed",
+  archived: "Archived",
+};
 
 export const TasksPage = () => {
   const dispatch = useDispatch();
@@ -46,27 +55,62 @@ export const TasksPage = () => {
     dispatch(setFilters({ order: filters.order === "desc" ? "asc" : "desc" }));
   };
 
-  const hasFilters = Boolean(filters.search || filters.status || filters.priority);
+  const handleViewChange = (view) => {
+    if (view === "completed" || view === "archived") {
+      dispatch(setFilters({ view: "all", status: view, dueDate: "" }));
+      return;
+    }
+
+    dispatch(setFilters({ view, status: "", dueDate: "" }));
+  };
+
+  const activeView = useMemo(() => {
+    if (filters.status === "completed") return "completed";
+    if (filters.status === "archived") return "archived";
+    return filters.view || "all";
+  }, [filters.status, filters.view]);
+
+  const hasFilters = Boolean(filters.search || filters.status || filters.priority || filters.dueDate || filters.view !== "all");
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h2 className="text-2xl font-semibold text-neutral-900 dark:text-white">All tasks</h2>
-          <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
-            {pagination?.total ?? 0} {pagination?.total === 1 ? "task" : "tasks"} total
-          </p>
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+          <div>
+            <p className="text-sm font-medium text-neutral-500 dark:text-neutral-400">{viewLabels[activeView] || "Tasks"}</p>
+            <h2 className="mt-1 text-2xl font-semibold text-neutral-900 dark:text-white">Task workspace</h2>
+            <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
+              {pagination?.total ?? 0} {pagination?.total === 1 ? "task" : "tasks"} visible
+            </p>
+          </div>
+
+          <div className="flex gap-2.5">
+            <button type="button" onClick={toggleSort} className="btn-secondary">
+              <ArrowDownUp size={15} />
+              {filters.order === "desc" ? "Newest" : "Oldest"}
+            </button>
+            <button type="button" onClick={() => setModalOpen(true)} className="btn-primary">
+              <Plus size={16} />
+              New task
+            </button>
+          </div>
         </div>
 
-        <div className="flex gap-2.5">
-          <button type="button" onClick={toggleSort} className="btn-secondary">
-            <ArrowDownUp size={15} />
-            {filters.order === "desc" ? "Newest" : "Oldest"}
-          </button>
-          <button type="button" onClick={() => setModalOpen(true)} className="btn-primary">
-            <Plus size={16} />
-            New task
-          </button>
+        <div className="flex gap-2 overflow-x-auto pb-1">
+          {TASK_VIEWS.map((view) => (
+            <button
+              key={view.value}
+              type="button"
+              onClick={() => handleViewChange(view.value)}
+              className={`shrink-0 rounded-full px-4 py-2 text-sm font-medium transition-colors ${
+                activeView === view.value
+                  ? "bg-neutral-900 text-white dark:bg-white dark:text-neutral-900"
+                  : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700"
+              }`}
+            >
+              {view.label}
+            </button>
+          ))}
         </div>
       </div>
 
@@ -98,7 +142,7 @@ export const TasksPage = () => {
       )}
 
       <Pagination pagination={pagination} />
-      <TaskModal isOpen={modalOpen} onClose={handleCloseModal} task={editingTask} />
+      <TaskModal isOpen={modalOpen} onClose={handleCloseModal} onSaved={() => dispatch(fetchTasks(filters))} task={editingTask} />
     </div>
   );
 };

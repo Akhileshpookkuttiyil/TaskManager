@@ -1,3 +1,5 @@
+const { LEGACY_TASK_STATUS } = require("../constants");
+
 const toMongoId = (record) => ({
   ...record,
   _id: record.id,
@@ -16,11 +18,28 @@ const serializeUser = (user) => {
 const serializeTask = (task) => {
   if (!task) return null;
 
+  const dueDate = task.dueDate || null;
+  const completedAt = task.completedAt || null;
+  const archivedAt = task.archivedAt || null;
+  const isOverdue = Boolean(
+    dueDate &&
+      !completedAt &&
+      !archivedAt &&
+      new Date(dueDate).getTime() < Date.now() &&
+      task.status !== "completed" &&
+      task.status !== "archived"
+  );
+
   const serialized = toMongoId({
     ...task,
     description: task.description || "",
-    dueDate: task.dueDate || null,
+    status: LEGACY_TASK_STATUS[task.status] || task.status,
+    dueDate,
+    reminderDate: task.reminderDate || null,
+    completedAt,
+    archivedAt,
     tags: task.tags || [],
+    isOverdue,
   });
 
   if (task.userId) {

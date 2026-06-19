@@ -1,27 +1,115 @@
 const prisma = require("../config/prisma");
-const { TASK_PRIORITY, TASK_STATUS } = require("../constants");
+const { TASK_PRIORITY, TASK_STATUS, LEGACY_TASK_STATUS } = require("../constants");
 const { serializeTask } = require("../utils/serializers");
 
-const SORTABLE_FIELDS = ["createdAt", "updatedAt", "dueDate", "title", "status", "priority"];
+const SORTABLE_FIELDS = [
+  "createdAt",
+  "updatedAt",
+  "dueDate",
+  "reminderDate",
+  "completedAt",
+  "archivedAt",
+  "title",
+  "status",
+  "priority",
+];
 const MAX_PAGE_SIZE = 50;
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const VALID_STATUSES = Object.values(TASK_STATUS);
+const ACTIVE_STATUSES = [TASK_STATUS.PENDING, TASK_STATUS.IN_PROGRESS];
+const COMPLETION_STATUSES = [TASK_STATUS.COMPLETED, TASK_STATUS.ARCHIVED];
+const VIEW_NAMES = new Set(["all", "my_day", "upcoming", "completed", "archived"]);
+const DATE_FILTERS = new Set(["all", "today", "tomorrow", "this_week", "overdue", "no_date"]);
 
-const buildTaskWhere = (userId, { status, priority, search }) => {
+const getDayBounds = (date = new Date()) => {
+  const start = new Date(date);
+  start.setHours(0, 0, 0, 0);
+
+  const end = new Date(date);
+  end.setHours(23, 59, 59, 999);
+
+  return { start, end };
+};
+
+const addDays = (date, amount) => {
+  const next = new Date(date);
+  next.setDate(next.getDate() + amount);
+  return next;
+};
+
+const normalizeStatus = (status) => LEGACY_TASK_STATUS[status] || status;
+
+const normalizeStatusFilter = (status) => {
+  const normalized = normalizeStatus(status);
+  return VALID_STATUSES.includes(normalized) ? normalized : null;
+};
+
+const buildTaskWhere = (userId, { status, priority, search, view, dueDate }) => {
   const where = { userId };
+  const filters = [];
+  const now = new Date();
+  const { start: todayStart, end: todayEnd } = getDayBounds(now);
+  const tomorrowStart = addDays(todayStart, 1);
+  const tomorrowEnd = addDays(todayEnd, 1);
+  const thisWeekEnd = getDayBounds(addDays(todayStart, 6)).end;
+  const normalizedView = VIEW_NAMES.has((view || "all").toLowerCase()) ? (view || "all").toLowerCase() : "all";
+  const normalizedDueDateFilter = DATE_FILTERS.has((dueDate || "all").toLowerCase()) ? (dueDate || "all").toLowerCase() : "all";
 
-  if (Object.values(TASK_STATUS).includes(status)) {
-    where.status = status;
+  if (normalizedView === "my_day") {
+    filters.push({
+      OR: [
+        { dueDate: { gte: todayStart, lte: todayEnd } },
+        { reminderDate: { gte: todayStart, lte: todayEnd } },
+      ],
+    });
+  }
+
+  if (normalizedView === "upcoming") {
+    filters.push({ dueDate: { gt: todayEnd } });
+    filters.push({ status: { in: ACTIVE_STATUSES } });
+  }
+
+  if (normalizedView === "completed") {
+    filters.push({ status: TASK_STATUS.COMPLETED });
+  }
+
+  if (normalizedView === "archived") {
+    filters.push({ status: TASK_STATUS.ARCHIVED });
+  }
+
+  const normalizedStatus = normalizeStatusFilter(status);
+  if (normalizedStatus) {
+    filters.push({ status: normalizedStatus });
   }
 
   if (Object.values(TASK_PRIORITY).includes(priority)) {
-    where.priority = priority;
+    filters.push({ priority });
   }
 
   if (search) {
-    where.OR = [
-      { title: { contains: search, mode: "insensitive" } },
-      { description: { contains: search, mode: "insensitive" } },
-    ];
+    filters.push({
+      OR: [
+        { title: { contains: search, mode: "insensitive" } },
+        { description: { contains: search, mode: "insensitive" } },
+      ],
+    });
+  }
+
+  if (normalizedDueDateFilter === "today") {
+    filters.push({ dueDate: { gte: todayStart, lte: todayEnd } });
+  } else if (normalizedDueDateFilter === "tomorrow") {
+    filters.push({ dueDate: { gte: tomorrowStart, lte: tomorrowEnd } });
+  } else if (normalizedDueDateFilter === "this_week") {
+    filters.push({ dueDate: { gte: todayStart, lte: thisWeekEnd } });
+  } else if (normalizedDueDateFilter === "overdue") {
+    filters.push({ dueDate: { lt: now } });
+    filters.push({ status: { notIn: COMPLETION_STATUSES } });
+  } else if (normalizedDueDateFilter === "no_date") {
+    filters.push({ dueDate: null });
+  }
+
+  if (filters.length > 0) {
+    where.AND = filters;
   }
 
   return where;
@@ -50,12 +138,24 @@ const getTaskData = (data) => {
 
   if (data.title !== undefined) taskData.title = data.title;
   if (data.description !== undefined) taskData.description = data.description;
-  if (data.status !== undefined) taskData.status = data.status;
+  if (data.status !== undefined) taskData.status = normalizeStatus(data.status);
   if (data.priority !== undefined) taskData.priority = data.priority;
   if (data.dueDate !== undefined) taskData.dueDate = data.dueDate ? new Date(data.dueDate) : null;
+  if (data.reminderDate !== undefined) taskData.reminderDate = data.reminderDate ? new Date(data.reminderDate) : null;
   if (data.tags !== undefined) taskData.tags = data.tags;
 
   return taskData;
+};
+
+const getLifecycleData = (existingTask, taskData, now = new Date()) => {
+  const nextStatus = taskData.status || existingTask?.status || TASK_STATUS.PENDING;
+  const normalizedStatus = normalizeStatus(nextStatus);
+
+  return {
+    status: normalizedStatus,
+    completedAt: normalizedStatus === TASK_STATUS.COMPLETED ? existingTask?.completedAt || now : null,
+    archivedAt: normalizedStatus === TASK_STATUS.ARCHIVED ? existingTask?.archivedAt || now : null,
+  };
 };
 
 const notFound = () => {
@@ -114,9 +214,11 @@ const getTaskById = async (taskId, userId) => {
 };
 
 const createTask = async (userId, data) => {
+  const taskData = getTaskData(data);
   const task = await prisma.task.create({
     data: {
-      ...getTaskData(data),
+      ...taskData,
+      ...getLifecycleData(null, taskData),
       userId,
     },
   });
@@ -138,9 +240,13 @@ const updateTask = async (taskId, userId, data) => {
     throw notFound();
   }
 
+  const taskData = getTaskData(data);
   const task = await prisma.task.update({
     where: { id: taskId },
-    data: getTaskData(data),
+    data: {
+      ...taskData,
+      ...getLifecycleData(existingTask, taskData),
+    },
   });
 
   return serializeTask(task);
@@ -165,19 +271,53 @@ const deleteTask = async (taskId, userId) => {
 };
 
 const getTaskStats = async (userId) => {
-  const stats = await prisma.task.groupBy({
-    by: ["status"],
+  const tasks = await prisma.task.findMany({
     where: { userId },
-    _count: {
+    select: {
       status: true,
+      dueDate: true,
     },
   });
 
-  const result = { todo: 0, in_progress: 0, done: 0, total: 0 };
+  const result = {
+    pending: 0,
+    in_progress: 0,
+    completed: 0,
+    archived: 0,
+    overdue: 0,
+    dueToday: 0,
+    total: 0,
+    todo: 0,
+    done: 0,
+  };
+  const now = new Date();
+  const { start: todayStart, end: todayEnd } = getDayBounds(now);
 
-  stats.forEach(({ status, _count }) => {
-    result[status] = _count.status;
-    result.total += _count.status;
+  tasks.forEach((task) => {
+    const status = normalizeStatus(task.status);
+    const dueDate = task.dueDate ? new Date(task.dueDate) : null;
+
+    if (result[status] !== undefined) {
+      result[status] += 1;
+    }
+
+    if (status === TASK_STATUS.PENDING) {
+      result.todo += 1;
+    }
+
+    if (status === TASK_STATUS.COMPLETED) {
+      result.done += 1;
+    }
+
+    if (dueDate && dueDate >= todayStart && dueDate <= todayEnd) {
+      result.dueToday += 1;
+    }
+
+    if (dueDate && dueDate < now && !COMPLETION_STATUSES.includes(status)) {
+      result.overdue += 1;
+    }
+
+    result.total += 1;
   });
 
   return result;

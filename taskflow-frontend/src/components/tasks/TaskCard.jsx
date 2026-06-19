@@ -3,7 +3,13 @@ import { CalendarDays, PencilLine, Tag, Trash2 } from "lucide-react";
 import { Badge } from "../ui/Badge";
 
 export const TaskCard = ({ task, onEdit, onDelete }) => {
-  const isOverdue = task.dueDate && new Date(task.dueDate) < new Date() && task.status !== "done";
+  const status = task.status || "pending";
+  const isCompleted = status === "completed";
+  const isArchived = status === "archived";
+  const isOverdue = Boolean(task.isOverdue) || Boolean(task.dueDate && new Date(task.dueDate) < new Date() && !isCompleted && !isArchived);
+  const dueDate = task.dueDate ? new Date(task.dueDate) : null;
+  const showTime = Boolean(dueDate && (dueDate.getHours() || dueDate.getMinutes()));
+  const dueDateLabel = dueDate ? format(dueDate, showTime ? "MMM d, yyyy h:mm a" : "MMM d, yyyy") : null;
 
   return (
     <div className="card p-4 transition-colors hover:border-neutral-300 dark:hover:border-neutral-700 sm:p-4.5">
@@ -12,7 +18,7 @@ export const TaskCard = ({ task, onEdit, onDelete }) => {
           <div className="flex flex-wrap items-center gap-2">
             <h3
               className={`text-sm font-medium text-neutral-900 dark:text-white ${
-                task.status === "done" ? "text-neutral-400 line-through dark:text-neutral-500" : ""
+                isCompleted ? "text-neutral-400 line-through dark:text-neutral-500" : ""
               }`}
             >
               {task.title}
@@ -29,8 +35,9 @@ export const TaskCard = ({ task, onEdit, onDelete }) => {
           ) : null}
 
           <div className="mt-3 flex flex-wrap items-center gap-1.5">
-            <Badge value={task.status} />
+            <Badge value={status} />
             <Badge value={task.priority} />
+            {isOverdue ? <Badge value="overdue" /> : null}
             {task.dueDate ? (
               <span
                 className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium ${
@@ -40,7 +47,13 @@ export const TaskCard = ({ task, onEdit, onDelete }) => {
                 }`}
               >
                 <CalendarDays size={12} />
-                {format(new Date(task.dueDate), "MMM d, yyyy")}
+                {dueDateLabel}
+              </span>
+            ) : null}
+            {task.reminderDate ? (
+              <span className="inline-flex items-center gap-1 rounded-md bg-neutral-100 px-2 py-0.5 text-xs font-medium text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400">
+                <CalendarDays size={12} />
+                Reminder {format(new Date(task.reminderDate), "MMM d, yyyy h:mm a")}
               </span>
             ) : null}
             {task.tags?.map((tag) => (

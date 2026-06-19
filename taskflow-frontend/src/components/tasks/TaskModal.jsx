@@ -1,30 +1,42 @@
+import { format } from "date-fns";
 import { useState } from "react";
-import { useDispatch } from "react-redux";
 import toast from "react-hot-toast";
+import { useDispatch } from "react-redux";
 import { createTask, updateTask } from "../../store/slices/tasksSlice";
 import { TASK_PRIORITY, TASK_STATUS } from "../../utils/constants";
-import { FieldError } from "../ui/shared";
 import { Modal } from "../ui/Modal";
 import { Spinner } from "../ui/Spinner";
+import { FieldError } from "../ui/shared";
 
 const defaultForm = {
   title: "",
   description: "",
-  status: "todo",
+  status: "pending",
   priority: "medium",
   dueDate: "",
+  reminderDate: "",
   tags: "",
 };
 
-export const TaskModal = ({ isOpen, onClose, task }) => {
+const toDateTimeLocal = (value) => {
+  if (!value) return "";
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+
+  return format(date, "yyyy-MM-dd'T'HH:mm");
+};
+
+export const TaskModal = ({ isOpen, onClose, task, onSaved }) => {
   const isEditing = Boolean(task);
   const initialForm = task
     ? {
         title: task.title || "",
         description: task.description || "",
-        status: task.status || "todo",
+        status: task.status || "pending",
         priority: task.priority || "medium",
-        dueDate: task.dueDate ? task.dueDate.split("T")[0] : "",
+        dueDate: toDateTimeLocal(task.dueDate),
+        reminderDate: toDateTimeLocal(task.reminderDate),
         tags: task.tags?.join(", ") || "",
       }
     : defaultForm;
@@ -38,12 +50,19 @@ export const TaskModal = ({ isOpen, onClose, task }) => {
       title={isEditing ? "Edit task" : "New task"}
       description={isEditing ? "Update the details below." : "Add a new task to your list."}
     >
-      <TaskForm key={formKey} initialForm={initialForm} isEditing={isEditing} onClose={onClose} taskId={task?._id} />
+      <TaskForm
+        key={formKey}
+        initialForm={initialForm}
+        isEditing={isEditing}
+        onClose={onClose}
+        onSaved={onSaved}
+        taskId={task?._id}
+      />
     </Modal>
   );
 };
 
-const TaskForm = ({ initialForm, isEditing, onClose, taskId }) => {
+const TaskForm = ({ initialForm, isEditing, onClose, onSaved, taskId }) => {
   const dispatch = useDispatch();
   const [form, setForm] = useState(initialForm);
   const [errors, setErrors] = useState({});
@@ -62,6 +81,9 @@ const TaskForm = ({ initialForm, isEditing, onClose, taskId }) => {
     if (form.title.trim().length > 120) nextErrors.title = "Use 120 characters or fewer.";
     if (form.description.trim().length > 500) nextErrors.description = "Use 500 characters or fewer.";
     if (form.tags.length > 120) nextErrors.tags = "Keep tags shorter.";
+    if (form.dueDate && form.reminderDate && new Date(form.reminderDate) > new Date(form.dueDate)) {
+      nextErrors.reminderDate = "Reminder should be before the due date.";
+    }
 
     setErrors(nextErrors);
     return Object.keys(nextErrors).length === 0;
@@ -82,6 +104,7 @@ const TaskForm = ({ initialForm, isEditing, onClose, taskId }) => {
       title: form.title.trim(),
       description: form.description.trim(),
       dueDate: form.dueDate || null,
+      reminderDate: form.reminderDate || null,
       tags: form.tags
         ? form.tags
             .split(",")
@@ -90,15 +113,15 @@ const TaskForm = ({ initialForm, isEditing, onClose, taskId }) => {
         : [],
     };
 
-    const action = isEditing
-      ? dispatch(updateTask({ id: taskId, data: payload }))
-      : dispatch(createTask(payload));
-
+    const action = isEditing ? dispatch(updateTask({ id: taskId, data: payload })) : dispatch(createTask(payload));
     const result = await action;
     setLoading(false);
 
     if ((isEditing ? updateTask : createTask).fulfilled.match(result)) {
       toast.success(isEditing ? "Task updated." : "Task created.");
+      if (onSaved) {
+        onSaved();
+      }
       onClose();
     } else {
       toast.error(result.payload || "Something went wrong.");
@@ -175,23 +198,38 @@ const TaskForm = ({ initialForm, isEditing, onClose, taskId }) => {
           <label htmlFor="task-due-date" className="label">
             Due date
           </label>
-          <input id="task-due-date" type="date" name="dueDate" value={form.dueDate} onChange={handleChange} className="input" />
+          <input id="task-due-date" type="datetime-local" name="dueDate" value={form.dueDate} onChange={handleChange} className="input" />
         </div>
 
         <div>
-          <label htmlFor="task-tags" className="label">
-            Tags
+          <label htmlFor="task-reminder-date" className="label">
+            Reminder
           </label>
           <input
-            id="task-tags"
-            name="tags"
-            value={form.tags}
+            id="task-reminder-date"
+            type="datetime-local"
+            name="reminderDate"
+            value={form.reminderDate}
             onChange={handleChange}
-            placeholder="design, review"
-            className={`input ${errors.tags ? "input-error" : ""}`}
+            className={`input ${errors.reminderDate ? "input-error" : ""}`}
           />
-          <FieldError message={errors.tags} />
+          <FieldError message={errors.reminderDate} />
         </div>
+      </div>
+
+      <div>
+        <label htmlFor="task-tags" className="label">
+          Tags
+        </label>
+        <input
+          id="task-tags"
+          name="tags"
+          value={form.tags}
+          onChange={handleChange}
+          placeholder="design, review"
+          className={`input ${errors.tags ? "input-error" : ""}`}
+        />
+        <FieldError message={errors.tags} />
       </div>
 
       <div className="flex flex-col-reverse gap-2.5 border-t border-neutral-200 pt-4 sm:flex-row sm:justify-end dark:border-neutral-800">
