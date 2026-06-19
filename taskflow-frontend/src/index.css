@@ -95,4 +95,70 @@
   .section-eyebrow {
     @apply text-xs font-medium uppercase tracking-widest text-neutral-400 dark:text-neutral-500;
   }
+
+  .calendar-shell .rbc-calendar {
+    @apply rounded-xl border border-neutral-200 bg-white p-3 dark:border-neutral-800 dark:bg-neutral-900;
+  }
+
+  .calendar-shell .rbc-toolbar {
+    @apply mb-4 flex flex-wrap items-center justify-between gap-3;
+  }
+
+  .calendar-shell .rbc-toolbar-label {
+    @apply text-sm font-semibold text-neutral-900 dark:text-white;
+  }
+
+  .calendar-shell .rbc-btn-group {
+    @apply inline-flex overflow-hidden rounded-lg border border-neutral-200 dark:border-neutral-700;
+  }
+
+  .calendar-shell .rbc-btn-group button {
+    @apply bg-white px-3 py-1.5 text-sm text-neutral-600 transition-colors hover:bg-neutral-50 dark:bg-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-800;
+  }
+
+  .calendar-shell .rbc-btn-group button + button {
+    @apply border-l border-neutral-200 dark:border-neutral-700;
+  }
+
+  .calendar-shell .rbc-btn-group button.rbc-active {
+    @apply bg-neutral-900 text-white dark:bg-white dark:text-neutral-900;
+  }
+
+  .calendar-shell .rbc-month-view,
+  .calendar-shell .rbc-time-view,
+  .calendar-shell .rbc-agenda-view {
+    @apply border-neutral-200 dark:border-neutral-800;
+  }
+
+  .calendar-shell .rbc-header {
+    @apply border-neutral-200 py-2 text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:border-neutral-800 dark:text-neutral-400;
+  }
+
+  .calendar-shell .rbc-off-range-bg {
+    @apply bg-neutral-50 dark:bg-neutral-950;
+  }
+
+  .calendar-shell .rbc-today {
+    @apply bg-brand-50/60 dark:bg-brand-500/10;
+  }
+
+  .calendar-shell .rbc-date-cell {
+    @apply px-2 py-1;
+  }
+
+  .calendar-shell .rbc-day-bg + .rbc-day-bg {
+    @apply border-l border-neutral-200 dark:border-neutral-800;
+  }
+
+  .calendar-shell .rbc-month-row + .rbc-month-row {
+    @apply border-t border-neutral-200 dark:border-neutral-800;
+  }
+
+  .calendar-shell .rbc-event {
+    @apply rounded-md border-0 px-2 py-1 text-xs font-medium shadow-none;
+  }
+
+  .calendar-shell .rbc-current-time-indicator {
+    @apply bg-rose-500;
+  }
 }

@@ -1,58 +1,196 @@
-import { format, isSameDay, isSameMonth, isToday, parseISO, startOfMonth, endOfMonth, startOfWeek, endOfWeek, addDays } from "date-fns";
-import { CalendarDays, ChevronLeft, ChevronRight, Clock3, Plus } from "lucide-react";
+import "react-big-calendar/lib/css/react-big-calendar.css";
+import {
+  addDays,
+  addMinutes,
+  addMonths,
+  addWeeks,
+  endOfDay,
+  format,
+  formatDistanceToNow,
+  getDay,
+  isSameDay,
+  parse,
+  startOfWeek,
+} from "date-fns";
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Clock3, Plus } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
+import { Calendar as BigCalendar, dateFnsLocalizer } from "react-big-calendar";
 import { useDispatch, useSelector } from "react-redux";
 import { TaskModal } from "../components/tasks/TaskModal";
+import { Badge } from "../components/ui/Badge";
 import { EmptyState } from "../components/ui/EmptyState";
 import { Spinner } from "../components/ui/Spinner";
 import { fetchTasks } from "../store/slices/tasksSlice";
 
 const weekStartsOn = 1;
+const localizer = dateFnsLocalizer({
+  format,
+  parse,
+  startOfWeek: (date) => startOfWeek(date, { weekStartsOn }),
+  getDay,
+  locales: {},
+});
 
-const dayKey = (date) => format(date, "yyyy-MM-dd");
+const viewLabels = {
+  month: "Month view",
+  week: "Week view",
+};
+
+const statusColors = {
+  pending: "#d97706",
+  in_progress: "#2563eb",
+  completed: "#059669",
+  archived: "#737373",
+};
+
+const normalizeDate = (value) => {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+};
+
+const getEventStyle = (event) => {
+  const status = event.resource?.status || "pending";
+  const overdue = event.resource?.isOverdue;
+  const backgroundColor = overdue ? "#e11d48" : statusColors[status] || "#6b7280";
+
+  return {
+    style: {
+      backgroundColor,
+      borderRadius: "8px",
+      border: "0",
+      color: "#ffffff",
+      opacity: status === "archived" ? 0.72 : 1,
+      display: "block",
+    },
+  };
+};
+
+const TaskListItem = ({ task, onEdit }) => {
+  const dueDate = normalizeDate(task.dueDate);
+
+  return (
+    <button
+      type="button"
+      onClick={() => onEdit(task)}
+      className="w-full rounded-xl border border-neutral-200 p-3 text-left transition-colors hover:border-neutral-300 dark:border-neutral-800 dark:hover:border-neutral-700"
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="truncate text-sm font-medium text-neutral-900 dark:text-white">{task.title}</p>
+          <div className="mt-2 flex flex-wrap items-center gap-1.5">
+            <Badge value={task.status} />
+            <Badge value={task.priority} />
+          </div>
+        </div>
+        {dueDate ? (
+          <div className="flex items-center gap-1 rounded-full bg-neutral-100 px-2.5 py-1 text-[11px] font-medium text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300">
+            <Clock3 size={11} />
+            {format(dueDate, "p")}
+          </div>
+        ) : null}
+      </div>
+      <p className="mt-2 text-xs text-neutral-500 dark:text-neutral-400">
+        {dueDate ? `Due ${formatDistanceToNow(dueDate, { addSuffix: true })}` : "No due date"}
+      </p>
+    </button>
+  );
+};
 
 export const CalendarPage = () => {
   const dispatch = useDispatch();
   const { items, loading } = useSelector((state) => state.tasks);
-  const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [calendarDate, setCalendarDate] = useState(new Date());
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [view, setView] = useState("month");
   const [modalOpen, setModalOpen] = useState(false);
+  const [editingTask, setEditingTask] = useState(null);
 
   useEffect(() => {
     dispatch(fetchTasks({ limit: 50, sortBy: "dueDate", order: "asc" }));
   }, [dispatch]);
 
-  const monthStart = startOfMonth(currentMonth);
-  const monthEnd = endOfMonth(currentMonth);
-  const gridStart = startOfWeek(monthStart, { weekStartsOn });
-  const gridEnd = endOfWeek(monthEnd, { weekStartsOn });
+  const refreshCalendar = () => {
+    dispatch(fetchTasks({ limit: 50, sortBy: "dueDate", order: "asc" }));
+  };
 
-  const calendarDays = useMemo(() => {
-    const days = [];
-    let cursor = gridStart;
+  const events = useMemo(
+    () =>
+      items
+        .filter((task) => task.dueDate)
+        .map((task) => {
+          const dueDate = normalizeDate(task.dueDate);
+          if (!dueDate) return null;
 
-    while (cursor <= gridEnd) {
-      days.push(cursor);
-      cursor = addDays(cursor, 1);
-    }
+          const hasTime = dueDate.getHours() !== 0 || dueDate.getMinutes() !== 0;
 
-    return days;
-  }, [gridEnd, gridStart]);
+          return {
+            id: task._id,
+            title: task.title,
+            start: dueDate,
+            end: hasTime ? addMinutes(dueDate, 30) : endOfDay(dueDate),
+            allDay: !hasTime,
+            resource: task,
+          };
+        })
+        .filter(Boolean),
+    [items]
+  );
 
-  const taskGroups = useMemo(() => {
-    const map = new Map();
+  const selectedDayTasks = useMemo(
+    () =>
+      items
+        .filter((task) => task.dueDate && isSameDay(normalizeDate(task.dueDate), selectedDate))
+        .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate)),
+    [items, selectedDate]
+  );
 
-    items.forEach((task) => {
-      if (!task.dueDate) return;
-      const key = dayKey(parseISO(task.dueDate));
-      if (!map.has(key)) map.set(key, []);
-      map.get(key).push(task);
-    });
+  const upcomingTasks = useMemo(() => {
+    const today = new Date();
+    const nextWeek = addDays(today, 7);
 
-    return map;
+    return items
+      .filter((task) => {
+        const dueDate = normalizeDate(task.dueDate);
+        return dueDate && dueDate >= today && dueDate <= nextWeek && task.status !== "archived";
+      })
+      .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate))
+      .slice(0, 6);
   }, [items]);
 
-  const selectedTasks = taskGroups.get(dayKey(selectedDate)) || [];
+  const rangeLabel =
+    view === "week"
+      ? `${format(startOfWeek(calendarDate, { weekStartsOn }), "MMM d")} - ${format(addDays(startOfWeek(calendarDate, { weekStartsOn }), 6), "MMM d, yyyy")}`
+      : format(calendarDate, "MMMM yyyy");
+
+  const goToPrevious = () => {
+    const nextDate = view === "week" ? addWeeks(calendarDate, -1) : addMonths(calendarDate, -1);
+    setCalendarDate(nextDate);
+  };
+
+  const goToNext = () => {
+    const nextDate = view === "week" ? addWeeks(calendarDate, 1) : addMonths(calendarDate, 1);
+    setCalendarDate(nextDate);
+  };
+
+  const goToToday = () => {
+    const today = new Date();
+    setCalendarDate(today);
+    setSelectedDate(today);
+  };
+
+  const handleSelectTask = (task) => {
+    setEditingTask(task);
+    setModalOpen(true);
+  };
+
+  const handleSlotSelect = ({ start }) => {
+    setSelectedDate(start);
+  };
+
+  const handleEventSelect = (event) => {
+    setSelectedDate(event.start);
+    handleSelectTask(event.resource);
+  };
 
   return (
     <div className="space-y-6">
@@ -61,7 +199,7 @@ export const CalendarPage = () => {
           <p className="section-eyebrow">Calendar</p>
           <h2 className="mt-1 text-2xl font-semibold text-neutral-900 dark:text-white">Schedule at a glance</h2>
           <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
-            Track due dates without leaving the app shell.
+            Track due dates and plan upcoming work in one place.
           </p>
         </div>
 
@@ -71,102 +209,68 @@ export const CalendarPage = () => {
         </button>
       </div>
 
-      <section className="grid gap-6 xl:grid-cols-[minmax(0,1.3fr)_minmax(320px,0.7fr)]">
-        <div className="card p-4 sm:p-5">
-          <div className="flex items-center justify-between gap-4 border-b border-neutral-200 pb-4 dark:border-neutral-800">
-            <div>
-              <h3 className="text-base font-semibold text-neutral-900 dark:text-white">
-                {format(currentMonth, "MMMM yyyy")}
-              </h3>
-              <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">Month view</p>
-            </div>
+      <section className="grid gap-6 xl:grid-cols-[minmax(0,1.25fr)_minmax(320px,0.75fr)]">
+        <div className="space-y-4">
+          <div className="card p-4 sm:p-5">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-neutral-200 pb-4 dark:border-neutral-800">
+              <div>
+                <h3 className="text-base font-semibold text-neutral-900 dark:text-white">{rangeLabel}</h3>
+                <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">{viewLabels[view]}</p>
+              </div>
 
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setCurrentMonth((value) => addDays(startOfMonth(value), -1))}
-                className="btn-secondary h-9 w-9 px-0"
-                aria-label="Previous month"
-              >
-                <ChevronLeft size={16} />
-              </button>
-              <button
-                type="button"
-                onClick={() => setCurrentMonth(new Date())}
-                className="btn-secondary h-9 px-3 text-sm"
-              >
-                Today
-              </button>
-              <button
-                type="button"
-                onClick={() => setCurrentMonth((value) => addDays(endOfMonth(value), 1))}
-                className="btn-secondary h-9 w-9 px-0"
-                aria-label="Next month"
-              >
-                <ChevronRight size={16} />
-              </button>
-            </div>
-          </div>
-
-          <div className="mt-4 grid grid-cols-7 gap-1 text-center text-[11px] font-medium uppercase tracking-[0.18em] text-neutral-400 dark:text-neutral-500">
-            {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((label) => (
-              <span key={label} className="py-2">
-                {label}
-              </span>
-            ))}
-          </div>
-
-          <div className="grid grid-cols-7 gap-1">
-            {calendarDays.map((day) => {
-              const key = dayKey(day);
-              const tasksForDay = taskGroups.get(key) || [];
-              const selected = isSameDay(day, selectedDate);
-              const current = isSameMonth(day, currentMonth);
-
-              return (
-                <button
-                  key={key}
-                  type="button"
-                  onClick={() => setSelectedDate(day)}
-                  className={`min-h-24 rounded-xl border p-2 text-left transition-colors ${
-                    selected
-                      ? "border-neutral-900 bg-neutral-900 text-white dark:border-white dark:bg-white dark:text-neutral-900"
-                      : "border-neutral-200 bg-white hover:border-neutral-300 dark:border-neutral-800 dark:bg-neutral-950 dark:hover:border-neutral-700"
-                  } ${current ? "" : "opacity-40"}`}
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <span className={`text-sm font-medium ${selected ? "text-inherit" : "text-neutral-900 dark:text-white"}`}>
-                      {format(day, "d")}
-                    </span>
-                    {isToday(day) ? (
-                      <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold ${selected ? "bg-white/15 text-white" : "bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300"}`}>
-                        Today
-                      </span>
-                    ) : null}
-                  </div>
-
-                  <div className="mt-3 space-y-1.5">
-                    {tasksForDay.slice(0, 3).map((task) => (
-                      <div
-                        key={task._id}
-                        className={`truncate rounded-md px-2 py-1 text-[11px] font-medium ${
-                          selected
-                            ? "bg-white/12 text-white"
-                            : "bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300"
-                        }`}
-                      >
-                        {task.title}
-                      </div>
-                    ))}
-                    {tasksForDay.length > 3 ? (
-                      <div className={`text-[11px] ${selected ? "text-white/80" : "text-neutral-400 dark:text-neutral-500"}`}>
-                        +{tasksForDay.length - 3} more
-                      </div>
-                    ) : null}
-                  </div>
+              <div className="flex items-center gap-2">
+                <button type="button" onClick={goToPrevious} className="btn-secondary h-9 w-9 px-0" aria-label="Previous range">
+                  <ChevronLeft size={16} />
                 </button>
-              );
-            })}
+                <button type="button" onClick={goToToday} className="btn-secondary h-9 px-3 text-sm">
+                  Today
+                </button>
+                <button type="button" onClick={goToNext} className="btn-secondary h-9 w-9 px-0" aria-label="Next range">
+                  <ChevronRight size={16} />
+                </button>
+              </div>
+            </div>
+
+            <div className="mt-4 flex flex-wrap gap-2">
+              {[
+                { value: "month", label: "Month" },
+                { value: "week", label: "Week" },
+              ].map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => setView(option.value)}
+                  className={`rounded-full px-3.5 py-1.5 text-sm font-medium transition-colors ${
+                    view === option.value
+                      ? "bg-neutral-900 text-white dark:bg-white dark:text-neutral-900"
+                      : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700"
+                  }`}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+
+            <div className="calendar-shell mt-4">
+              <BigCalendar
+                localizer={localizer}
+                events={events}
+                date={calendarDate}
+                view={view}
+                views={["month", "week"]}
+                onNavigate={(nextDate) => setCalendarDate(nextDate)}
+                onView={(nextView) => setView(nextView)}
+                selectable
+                popup
+                toolbar={false}
+                eventPropGetter={getEventStyle}
+                onSelectSlot={handleSlotSelect}
+                onSelectEvent={handleEventSelect}
+                startAccessor="start"
+                endAccessor="end"
+                titleAccessor="title"
+              />
+            </div>
           </div>
         </div>
 
@@ -179,7 +283,7 @@ export const CalendarPage = () => {
                   {format(selectedDate, "EEEE, MMMM d")}
                 </h3>
               </div>
-              <CalendarDays size={18} className="text-neutral-400" />
+              <CalendarIcon size={18} className="text-neutral-400" />
             </div>
 
             <div className="mt-4 space-y-2.5">
@@ -188,10 +292,10 @@ export const CalendarPage = () => {
                   <Spinner size="sm" />
                   Loading tasks
                 </div>
-              ) : selectedTasks.length === 0 ? (
+              ) : selectedDayTasks.length === 0 ? (
                 <EmptyState
                   title="No tasks on this date"
-                  description="Tasks with due dates will appear here."
+                  description="Click a day with tasks or create a new one."
                   action={
                     <button type="button" onClick={() => setModalOpen(true)} className="btn-secondary">
                       Add task
@@ -199,29 +303,53 @@ export const CalendarPage = () => {
                   }
                 />
               ) : (
-                selectedTasks.map((task) => (
-                  <div key={task._id} className="rounded-xl border border-neutral-200 p-3 dark:border-neutral-800">
-                    <div className="flex items-start justify-between gap-3">
-                      <div>
-                        <p className="text-sm font-medium text-neutral-900 dark:text-white">{task.title}</p>
-                        <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
-                          {task.priority} priority
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-1 rounded-full bg-neutral-100 px-2.5 py-1 text-[11px] font-medium text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300">
-                        <Clock3 size={11} />
-                        {task.dueDate ? format(parseISO(task.dueDate), "p") : "Due"}
-                      </div>
-                    </div>
-                  </div>
-                ))
+                selectedDayTasks.map((task) => <TaskListItem key={task._id} task={task} onEdit={handleSelectTask} />)
+              )}
+            </div>
+          </div>
+
+          <div className="card p-4 sm:p-5">
+            <div className="flex items-center justify-between gap-3">
+              <div>
+                <p className="section-eyebrow">Upcoming tasks</p>
+                <h3 className="mt-1 text-base font-semibold text-neutral-900 dark:text-white">Next 7 days</h3>
+              </div>
+              <Clock3 size={18} className="text-neutral-400" />
+            </div>
+
+            <div className="mt-4 space-y-2.5">
+              {loading ? (
+                <div className="flex items-center gap-2 rounded-lg border border-neutral-200 px-3 py-3 text-sm text-neutral-500 dark:border-neutral-800 dark:text-neutral-400">
+                  <Spinner size="sm" />
+                  Loading upcoming tasks
+                </div>
+              ) : upcomingTasks.length === 0 ? (
+                <EmptyState
+                  title="Nothing upcoming"
+                  description="Tasks due soon will appear here."
+                  action={
+                    <button type="button" onClick={() => setModalOpen(true)} className="btn-secondary">
+                      Add task
+                    </button>
+                  }
+                />
+              ) : (
+                upcomingTasks.map((task) => <TaskListItem key={task._id} task={task} onEdit={handleSelectTask} />)
               )}
             </div>
           </div>
         </aside>
       </section>
 
-      <TaskModal isOpen={modalOpen} onClose={() => setModalOpen(false)} />
+      <TaskModal
+        isOpen={modalOpen}
+        onClose={() => {
+          setModalOpen(false);
+          setEditingTask(null);
+        }}
+        onSaved={refreshCalendar}
+        task={editingTask}
+      />
     </div>
   );
 };
