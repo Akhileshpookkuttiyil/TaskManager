@@ -1,16 +1,15 @@
 import { differenceInCalendarDays, format, formatDistanceToNow, startOfDay, subDays } from "date-fns";
 import { Plus } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import toast from "react-hot-toast";
 import { Link } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { TaskCard } from "../components/tasks/TaskCard";
 import { TaskModal } from "../components/tasks/TaskModal";
 import { Badge } from "../components/ui/Badge";
 import { EmptyState } from "../components/ui/EmptyState";
 import { StatCard } from "../components/ui/StatCard";
 import { TaskSkeletonList } from "../components/ui/shared";
-import { deleteTask, fetchStats, fetchTasks } from "../store/slices/tasksSlice";
+import { fetchRecentActivities } from "../store/slices/activitySlice";
+import { fetchStats, fetchTasks } from "../store/slices/tasksSlice";
 
 const metricTone = {
   total: "neutral",
@@ -54,17 +53,17 @@ const getStreakMetrics = (tasks) => {
 };
 
 const ActivityRow = ({ task }) => {
-  const activityTime = task.updatedAt || task.completedAt || task.archivedAt || task.createdAt;
+  const activityTime = task.createdAt;
 
   return (
     <div className="flex items-start justify-between gap-4 rounded-lg border border-neutral-200 p-3 dark:border-neutral-800">
       <div className="min-w-0">
-        <p className="truncate text-sm font-medium text-neutral-900 dark:text-white">{task.title}</p>
+        <p className="truncate text-sm font-medium text-neutral-900 dark:text-white">{task.message}</p>
         <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
-          {activityTime ? `Updated ${formatDistanceToNow(new Date(activityTime), { addSuffix: true })}` : "Recently updated"}
+          {activityTime ? formatDistanceToNow(new Date(activityTime), { addSuffix: true }) : "Recently"}
         </p>
       </div>
-      <Badge value={task.status} />
+      <Badge value={task.type} />
     </div>
   );
 };
@@ -72,40 +71,24 @@ const ActivityRow = ({ task }) => {
 export const DashboardPage = () => {
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
-  const { items, stats, loading } = useSelector((state) => state.tasks);
+  const { items, stats } = useSelector((state) => state.tasks);
+  const { items: activities, loading: activityLoading } = useSelector((state) => state.activity);
   const [modalOpen, setModalOpen] = useState(false);
-  const [editingTask, setEditingTask] = useState(null);
 
   useEffect(() => {
     dispatch(fetchStats());
     dispatch(fetchTasks({ limit: 6, sortBy: "updatedAt", order: "desc" }));
+    dispatch(fetchRecentActivities({ limit: 5 }));
   }, [dispatch]);
 
   const refreshDashboard = () => {
     dispatch(fetchStats());
     dispatch(fetchTasks({ limit: 6, sortBy: "updatedAt", order: "desc" }));
-  };
-
-  const handleEdit = (task) => {
-    setEditingTask(task);
-    setModalOpen(true);
+    dispatch(fetchRecentActivities({ limit: 5 }));
   };
 
   const handleCloseModal = () => {
     setModalOpen(false);
-    setEditingTask(null);
-  };
-
-  const handleDelete = async (id) => {
-    if (!window.confirm("Delete this task?")) return;
-
-    const result = await dispatch(deleteTask(id));
-    if (deleteTask.fulfilled.match(result)) {
-      toast.success("Task deleted.");
-      refreshDashboard();
-    } else {
-      toast.error("Failed to delete task.");
-    }
   };
 
   const hour = new Date().getHours();
@@ -136,7 +119,7 @@ export const DashboardPage = () => {
     };
   }, [items, stats]);
 
-  const recentActivity = items.slice(0, 5);
+  const recentActivity = activities.slice(0, 5);
 
   return (
     <div className="space-y-6">
@@ -221,8 +204,8 @@ export const DashboardPage = () => {
         <div className="card p-5">
           <div className="flex items-center justify-between gap-4">
             <div>
-              <h3 className="text-base font-semibold text-neutral-900 dark:text-white">Recent activity</h3>
-              <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">Latest task updates and status changes.</p>
+              <h3 className="text-base font-semibold text-neutral-900 dark:text-white">Activity timeline</h3>
+              <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">Latest task events from your workspace.</p>
             </div>
             <Link
               to="/tasks"
@@ -233,12 +216,12 @@ export const DashboardPage = () => {
           </div>
 
           <div className="mt-4 space-y-3">
-            {loading ? (
+            {activityLoading ? (
               <TaskSkeletonList count={3} />
             ) : recentActivity.length === 0 ? (
               <EmptyState
                 title="No activity yet"
-                description="Create a task to start building your productivity history."
+                description="Task activity will appear here after you start creating and updating work."
                 action={
                   <button type="button" onClick={() => setModalOpen(true)} className="btn-primary">
                     <Plus size={16} />
@@ -253,38 +236,7 @@ export const DashboardPage = () => {
         </div>
       </section>
 
-      <section className="space-y-3.5">
-        <div className="flex items-center justify-between">
-          <h3 className="text-base font-semibold text-neutral-900 dark:text-white">Recent tasks</h3>
-          <Link
-            to="/tasks"
-            className="text-sm font-medium text-brand-600 hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300"
-          >
-            See all
-          </Link>
-        </div>
-
-        {loading ? (
-          <TaskSkeletonList />
-        ) : recentActivity.length === 0 ? (
-          <EmptyState
-            action={
-              <button type="button" onClick={() => setModalOpen(true)} className="btn-primary">
-                <Plus size={16} />
-                New task
-              </button>
-            }
-          />
-        ) : (
-          <div className="space-y-2.5">
-            {recentActivity.map((task) => (
-              <TaskCard key={task._id} task={task} onEdit={handleEdit} onDelete={handleDelete} />
-            ))}
-          </div>
-        )}
-      </section>
-
-      <TaskModal isOpen={modalOpen} onClose={handleCloseModal} onSaved={refreshDashboard} task={editingTask} />
+      <TaskModal isOpen={modalOpen} onClose={handleCloseModal} onSaved={refreshDashboard} />
     </div>
   );
 };

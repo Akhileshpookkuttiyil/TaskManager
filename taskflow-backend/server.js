@@ -36,6 +36,7 @@ app.use("/api", limiter);
 app.use("/api/auth", require("./routes/auth.routes"));
 app.use("/api/tasks", require("./routes/task.routes"));
 app.use("/api/notifications", require("./routes/notification.routes"));
+app.use("/api/activities", require("./routes/activity.routes"));
 
 // Health check
 app.get("/", (req, res) => res.json({ status: "TaskFlow API is running" }));

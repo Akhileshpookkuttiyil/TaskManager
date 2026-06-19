@@ -1,11 +1,12 @@
 const prisma = require("../config/prisma");
-const { TASK_PRIORITY, TASK_STATUS, TASK_RECURRENCE, LEGACY_TASK_STATUS } = require("../constants");
+const { TASK_PRIORITY, TASK_STATUS, TASK_RECURRENCE, LEGACY_TASK_STATUS, ACTIVITY_TYPE } = require("../constants");
 const { serializeTask } = require("../utils/serializers");
 const {
   syncTaskNotifications,
   recordTaskCompletion,
   deleteTaskNotifications,
 } = require("./notification.service");
+const { recordActivity } = require("./activity.service");
 
 const SORTABLE_FIELDS = [
   "createdAt",
@@ -249,6 +250,27 @@ const getTaskData = (data) => {
   return taskData;
 };
 
+const hasMeaningfulTaskUpdate = (existingTask, taskData) => {
+  const trackedFields = ["title", "description", "status", "priority", "dueDate", "reminderDate", "tags", "recurrence"];
+
+  return trackedFields.some((field) => {
+    if (!(field in taskData)) return false;
+
+    const nextValue = taskData[field];
+    const currentValue = existingTask[field];
+
+    if (Array.isArray(nextValue) || Array.isArray(currentValue)) {
+      return JSON.stringify(nextValue || []) !== JSON.stringify(currentValue || []);
+    }
+
+    if (nextValue instanceof Date || currentValue instanceof Date) {
+      return new Date(nextValue || null).getTime() !== new Date(currentValue || null).getTime();
+    }
+
+    return nextValue !== currentValue;
+  });
+};
+
 const getLifecycleData = (existingTask, taskData, now = new Date()) => {
   const nextStatus = taskData.status || existingTask?.status || TASK_STATUS.PENDING;
   const normalizedStatus = normalizeStatus(nextStatus);
@@ -329,6 +351,12 @@ const createTask = async (userId, data) => {
 
   await syncTaskNotifications(userId);
   await syncRecurringTasks(userId);
+  await recordActivity({
+    userId,
+    taskId: task.id,
+    type: ACTIVITY_TYPE.TASK_CREATED,
+    taskTitle: task.title,
+  });
   await recordTaskCompletion(userId, task);
   return serializeTask(task);
 };
@@ -358,6 +386,40 @@ const updateTask = async (taskId, userId, data) => {
 
   await syncTaskNotifications(userId);
   await syncRecurringTasks(userId);
+  if (hasMeaningfulTaskUpdate(existingTask, taskData)) {
+    await recordActivity({
+      userId,
+      taskId: task.id,
+      type: ACTIVITY_TYPE.TASK_UPDATED,
+      taskTitle: task.title,
+    });
+  }
+  if (taskData.priority && taskData.priority !== existingTask.priority) {
+    await recordActivity({
+      userId,
+      taskId: task.id,
+      type: ACTIVITY_TYPE.PRIORITY_CHANGED,
+      taskTitle: task.title,
+      from: existingTask.priority,
+      to: task.priority,
+    });
+  }
+  if (taskData.status === TASK_STATUS.COMPLETED && existingTask.status !== TASK_STATUS.COMPLETED) {
+    await recordActivity({
+      userId,
+      taskId: task.id,
+      type: ACTIVITY_TYPE.TASK_COMPLETED,
+      taskTitle: task.title,
+    });
+  }
+  if (taskData.status === TASK_STATUS.ARCHIVED && existingTask.status !== TASK_STATUS.ARCHIVED) {
+    await recordActivity({
+      userId,
+      taskId: task.id,
+      type: ACTIVITY_TYPE.TASK_ARCHIVED,
+      taskTitle: task.title,
+    });
+  }
   await recordTaskCompletion(userId, task);
   return serializeTask(task);
 };

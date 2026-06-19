@@ -32,6 +32,22 @@ const NOTIFICATION_TYPE = {
   STREAK_MILESTONE: "streak_milestone",
 };
 
+const ACTIVITY_TYPE = {
+  TASK_CREATED: "task_created",
+  TASK_UPDATED: "task_updated",
+  PRIORITY_CHANGED: "priority_changed",
+  TASK_COMPLETED: "task_completed",
+  TASK_ARCHIVED: "task_archived",
+};
+
 const JWT_EXPIRY = "7d";
 
-module.exports = { TASK_STATUS, TASK_PRIORITY, TASK_RECURRENCE, LEGACY_TASK_STATUS, NOTIFICATION_TYPE, JWT_EXPIRY };
+module.exports = {
+  TASK_STATUS,
+  TASK_PRIORITY,
+  TASK_RECURRENCE,
+  LEGACY_TASK_STATUS,
+  NOTIFICATION_TYPE,
+  ACTIVITY_TYPE,
+  JWT_EXPIRY,
+};

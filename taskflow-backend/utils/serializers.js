@@ -66,4 +66,19 @@ const serializeNotification = (notification) => {
   return serialized;
 };
 
-module.exports = { serializeUser, serializeTask, serializeNotification };
+const serializeActivity = (activity) => {
+  if (!activity) return null;
+
+  const serialized = toMongoId({
+    ...activity,
+    taskId: activity.taskId || null,
+  });
+
+  if (activity.userId) {
+    serialized.user = activity.userId;
+  }
+
+  return serialized;
+};
+
+module.exports = { serializeUser, serializeTask, serializeNotification, serializeActivity };
