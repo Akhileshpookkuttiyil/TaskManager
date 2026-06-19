@@ -1,6 +1,6 @@
 import { Outlet } from "react-router-dom";
 import { useState } from "react";
-import { NotificationSync } from "../notifications/NotificationSync";
+import { NotificationEngine } from "../notifications/NotificationEngine";
 import { TaskModal } from "../tasks/TaskModal";
 import { BottomNav } from "./BottomNav";
 import { Sidebar } from "./Sidebar";
@@ -12,7 +12,7 @@ export const AppLayout = () => {
 
   return (
     <div className="app-shell min-h-screen lg:flex">
-      <NotificationSync />
+      <NotificationEngine />
       <Sidebar open={navOpen} onClose={() => setNavOpen(false)} />
 
       <div className="min-w-0 flex-1">

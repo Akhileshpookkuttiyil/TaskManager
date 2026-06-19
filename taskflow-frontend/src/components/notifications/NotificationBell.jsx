@@ -6,8 +6,6 @@ import { useNavigate } from "react-router-dom";
 import { Badge } from "../ui/Badge";
 import { markAllNotificationsRead, markNotificationRead } from "../../store/slices/notificationsSlice";
 
-const BROWSER_NOTIFICATION_TYPES = new Set(["due_soon", "due_today", "overdue"]);
-
 const NotificationItem = ({ notification, onRead }) => {
   const createdAt = notification.createdAt ? new Date(notification.createdAt) : null;
 
@@ -47,7 +45,6 @@ export const NotificationBell = () => {
   const [permission, setPermission] = useState(() => (typeof window !== "undefined" && "Notification" in window ? window.Notification.permission : "unsupported"));
   const panelRef = useRef(null);
   const menuId = "notification-panel";
-  const shownIdsRef = useRef(new Set());
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -70,35 +67,6 @@ export const NotificationBell = () => {
     document.addEventListener("keydown", handleEscape);
     return () => document.removeEventListener("keydown", handleEscape);
   }, []);
-
-  useEffect(() => {
-    if (permission !== "granted" || typeof window === "undefined" || !("Notification" in window)) {
-      return;
-    }
-
-    const nextShownIds = new Set(shownIdsRef.current);
-
-    items
-      .filter((notification) => !notification.isRead && BROWSER_NOTIFICATION_TYPES.has(notification.type) && !nextShownIds.has(notification._id))
-      .forEach((notification) => {
-        const targetPath = notification.taskId ? `/tasks?focus=${notification.taskId}` : "/tasks";
-        const browserNotification = new window.Notification(notification.title, {
-          body: notification.message,
-          tag: notification._id,
-        });
-
-        browserNotification.onclick = () => {
-          window.focus();
-          navigate(targetPath);
-          setOpen(false);
-          browserNotification.close();
-        };
-
-        nextShownIds.add(notification._id);
-      });
-
-    shownIdsRef.current = nextShownIds;
-  }, [items, navigate, permission]);
 
   const handleToggle = () => {
     setOpen((value) => !value);
@@ -198,10 +166,10 @@ export const NotificationBell = () => {
               </p>
               <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
                 {permission === "granted"
-                  ? "Browser notifications are enabled for due-date reminders."
+                  ? "Browser notifications are enabled for reminders and due-date alerts."
                   : permission === "denied"
                     ? "Browser notifications are blocked in your browser settings."
-                    : "Enable browser notifications for due-date reminders and overdue alerts."}
+                    : "Enable browser notifications for reminders and due-date alerts."}
               </p>
 
               {permission === "default" ? (

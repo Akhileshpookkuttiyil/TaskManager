@@ -3,6 +3,7 @@ const { NOTIFICATION_TYPE, TASK_STATUS } = require("../constants");
 const { serializeNotification } = require("../utils/serializers");
 
 const TASK_DUE_NOTIFICATION_TYPES = [
+  NOTIFICATION_TYPE.TASK_REMINDER,
   NOTIFICATION_TYPE.DUE_SOON,
   NOTIFICATION_TYPE.DUE_TODAY,
   NOTIFICATION_TYPE.OVERDUE,
@@ -12,13 +13,15 @@ const MAX_LIMIT = 50;
 
 const getDayDiffMs = (hours) => hours * 60 * 60 * 1000;
 
+const isActiveTask = (task) => task.status !== TASK_STATUS.COMPLETED && task.status !== TASK_STATUS.ARCHIVED;
+
 const getDueNotificationType = (task, now = new Date()) => {
   if (!task.dueDate) return null;
 
   const dueDate = new Date(task.dueDate);
   if (Number.isNaN(dueDate.getTime())) return null;
 
-  if (task.status === TASK_STATUS.COMPLETED || task.status === TASK_STATUS.ARCHIVED) {
+  if (!isActiveTask(task)) {
     return null;
   }
 
@@ -38,10 +41,35 @@ const getDueNotificationType = (task, now = new Date()) => {
   return null;
 };
 
+const getReminderNotificationType = (task, now = new Date()) => {
+  if (!task.reminderDate) return null;
+
+  const reminderDate = new Date(task.reminderDate);
+  if (Number.isNaN(reminderDate.getTime())) return null;
+
+  if (!isActiveTask(task)) {
+    return null;
+  }
+
+  if (reminderDate.getTime() > now.getTime()) {
+    return null;
+  }
+
+  return NOTIFICATION_TYPE.TASK_REMINDER;
+};
+
 const buildNotificationContent = (task, type) => {
   const titleBase = task.title || "Task";
+  const dueDateLabel = task.dueDate ? new Intl.DateTimeFormat("en-US", { dateStyle: "medium", timeStyle: "short" }).format(new Date(task.dueDate)) : null;
 
   switch (type) {
+    case NOTIFICATION_TYPE.TASK_REMINDER:
+      return {
+        title: `${titleBase} reminder`,
+        message: dueDateLabel
+          ? `Your reminder time has arrived. Due ${dueDateLabel}.`
+          : "Your reminder time has arrived.",
+      };
     case NOTIFICATION_TYPE.DUE_SOON:
       return {
         title: `${titleBase} is due soon`,
@@ -106,6 +134,7 @@ const syncTaskNotifications = async (userId) => {
       id: true,
       title: true,
       dueDate: true,
+      reminderDate: true,
       status: true,
       completedAt: true,
       archivedAt: true,
@@ -113,11 +142,13 @@ const syncTaskNotifications = async (userId) => {
   });
 
   const operations = tasks.flatMap((task) => {
+    const reminderType = getReminderNotificationType(task);
     const dueType = getDueNotificationType(task);
+    const activeTypes = [reminderType, dueType].filter(Boolean);
     const dueDeleteFilter = {
       userId,
       taskId: task.id,
-      type: { in: TASK_DUE_NOTIFICATION_TYPES.filter((type) => type !== dueType) },
+      type: { in: TASK_DUE_NOTIFICATION_TYPES.filter((type) => !activeTypes.includes(type)) },
     };
 
     const taskOps = [
@@ -125,6 +156,20 @@ const syncTaskNotifications = async (userId) => {
         where: dueDeleteFilter,
       }),
     ];
+
+    if (reminderType) {
+      const { title, message } = buildNotificationContent(task, reminderType);
+      taskOps.push(
+        upsertNotification({
+          userId,
+          taskId: task.id,
+          type: reminderType,
+          dedupeKey: `task:${task.id}:reminder:${new Date(task.reminderDate).getTime()}`,
+          title,
+          message,
+        })
+      );
+    }
 
     if (dueType) {
       const { title, message } = buildNotificationContent(task, dueType);
@@ -239,5 +284,6 @@ module.exports = {
   recordTaskCompletion,
   deleteTaskNotifications,
   getDueNotificationType,
+  getReminderNotificationType,
   buildNotificationContent,
 };

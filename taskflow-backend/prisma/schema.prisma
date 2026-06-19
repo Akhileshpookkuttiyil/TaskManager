@@ -30,6 +30,7 @@ enum NotificationType {
   due_soon
   due_today
   overdue
+  task_reminder
   task_completed
   recurring_task_generated
   streak_milestone

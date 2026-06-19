@@ -27,6 +27,7 @@ const NOTIFICATION_TYPE = {
   DUE_SOON: "due_soon",
   DUE_TODAY: "due_today",
   OVERDUE: "overdue",
+  TASK_REMINDER: "task_reminder",
   TASK_COMPLETED: "task_completed",
   RECURRING_TASK_GENERATED: "recurring_task_generated",
   STREAK_MILESTONE: "streak_milestone",

@@ -547,7 +547,7 @@ const getTaskStats = async (userId) => {
       result.done += 1;
     }
 
-    if (dueDate && dueDate >= todayStart && dueDate <= todayEnd) {
+    if (ACTIVE_STATUSES.includes(status) && dueDate && dueDate >= todayStart && dueDate <= todayEnd) {
       result.dueToday += 1;
     }
 
