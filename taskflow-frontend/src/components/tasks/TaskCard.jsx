@@ -37,6 +37,7 @@ export const TaskCard = ({ task, onEdit, onDelete }) => {
           <div className="mt-3 flex flex-wrap items-center gap-1.5">
             <Badge value={status} />
             <Badge value={task.priority} />
+            {task.recurrence && task.recurrence !== "none" ? <Badge value={task.recurrence} /> : null}
             {isOverdue ? <Badge value="overdue" /> : null}
             {task.dueDate ? (
               <span

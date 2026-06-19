@@ -3,7 +3,7 @@ import { useState } from "react";
 import toast from "react-hot-toast";
 import { useDispatch } from "react-redux";
 import { createTask, updateTask } from "../../store/slices/tasksSlice";
-import { TASK_PRIORITY, TASK_STATUS } from "../../utils/constants";
+import { TASK_PRIORITY, TASK_RECURRENCE, TASK_STATUS } from "../../utils/constants";
 import { Modal } from "../ui/Modal";
 import { Spinner } from "../ui/Spinner";
 import { FieldError } from "../ui/shared";
@@ -13,6 +13,7 @@ const defaultForm = {
   description: "",
   status: "pending",
   priority: "medium",
+  recurrence: "none",
   dueDate: "",
   reminderDate: "",
   tags: "",
@@ -35,6 +36,7 @@ export const TaskModal = ({ isOpen, onClose, task, onSaved }) => {
         description: task.description || "",
         status: task.status || "pending",
         priority: task.priority || "medium",
+        recurrence: task.recurrence || "none",
         dueDate: toDateTimeLocal(task.dueDate),
         reminderDate: toDateTimeLocal(task.reminderDate),
         tags: task.tags?.join(", ") || "",
@@ -103,6 +105,7 @@ const TaskForm = ({ initialForm, isEditing, onClose, onSaved, taskId }) => {
       ...form,
       title: form.title.trim(),
       description: form.description.trim(),
+      recurrence: form.recurrence,
       dueDate: form.dueDate || null,
       reminderDate: form.reminderDate || null,
       tags: form.tags
@@ -191,6 +194,19 @@ const TaskForm = ({ initialForm, isEditing, onClose, onSaved, taskId }) => {
             ))}
           </select>
         </div>
+      </div>
+
+      <div>
+        <label htmlFor="task-recurrence" className="label">
+          Recurrence
+        </label>
+        <select id="task-recurrence" name="recurrence" value={form.recurrence} onChange={handleChange} className="input">
+          {TASK_RECURRENCE.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">

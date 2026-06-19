@@ -19,6 +19,13 @@ enum TaskPriority {
   high
 }
 
+enum TaskRecurrence {
+  none
+  daily
+  weekly
+  monthly
+}
+
 enum NotificationType {
   due_soon
   due_today
@@ -46,6 +53,11 @@ model Task {
   description  String?
   status       TaskStatus   @default(pending)
   priority     TaskPriority @default(medium)
+  recurrence   TaskRecurrence @default(none)
+  recurrenceKey String?      @unique
+  recurrenceParentId String? @db.Uuid
+  recurrenceParent   Task?    @relation("TaskRecurrence", fields: [recurrenceParentId], references: [id], onDelete: SetNull)
+  recurrenceChildren  Task[]   @relation("TaskRecurrence")
   dueDate      DateTime?
   reminderDate DateTime?
   completedAt  DateTime?

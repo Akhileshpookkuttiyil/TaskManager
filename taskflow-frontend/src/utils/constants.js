@@ -11,6 +11,13 @@ export const TASK_PRIORITY = [
   { value: "high", label: "High" },
 ];
 
+export const TASK_RECURRENCE = [
+  { value: "none", label: "Does not repeat" },
+  { value: "daily", label: "Daily" },
+  { value: "weekly", label: "Weekly" },
+  { value: "monthly", label: "Monthly" },
+];
+
 export const TASK_VIEWS = [
   { value: "my_day", label: "My Day" },
   { value: "upcoming", label: "Upcoming" },

@@ -1,5 +1,5 @@
 const prisma = require("../config/prisma");
-const { TASK_PRIORITY, TASK_STATUS, LEGACY_TASK_STATUS } = require("../constants");
+const { TASK_PRIORITY, TASK_STATUS, TASK_RECURRENCE, LEGACY_TASK_STATUS } = require("../constants");
 const { serializeTask } = require("../utils/serializers");
 const {
   syncTaskNotifications,
@@ -25,6 +25,7 @@ const ACTIVE_STATUSES = [TASK_STATUS.PENDING, TASK_STATUS.IN_PROGRESS];
 const COMPLETION_STATUSES = [TASK_STATUS.COMPLETED, TASK_STATUS.ARCHIVED];
 const VIEW_NAMES = new Set(["all", "my_day", "upcoming", "completed", "archived"]);
 const DATE_FILTERS = new Set(["all", "today", "tomorrow", "this_week", "overdue", "no_date"]);
+const RECURRING_GENERATION_LIMIT = 3;
 
 const getDayBounds = (date = new Date()) => {
   const start = new Date(date);
@@ -42,11 +43,106 @@ const addDays = (date, amount) => {
   return next;
 };
 
+const addMonths = (date, amount) => {
+  const next = new Date(date);
+  next.setMonth(next.getMonth() + amount);
+  return next;
+};
+
 const normalizeStatus = (status) => LEGACY_TASK_STATUS[status] || status;
 
 const normalizeStatusFilter = (status) => {
   const normalized = normalizeStatus(status);
   return VALID_STATUSES.includes(normalized) ? normalized : null;
+};
+
+const normalizeRecurrence = (recurrence) => {
+  const validRecurrences = Object.values(TASK_RECURRENCE);
+  return validRecurrences.includes(recurrence) ? recurrence : TASK_RECURRENCE.NONE;
+};
+
+const getNextRecurrenceDate = (date, recurrence, step = 1) => {
+  if (!date) return null;
+
+  if (recurrence === TASK_RECURRENCE.DAILY) {
+    return addDays(date, step);
+  }
+
+  if (recurrence === TASK_RECURRENCE.WEEKLY) {
+    return addDays(date, step * 7);
+  }
+
+  if (recurrence === TASK_RECURRENCE.MONTHLY) {
+    return addMonths(date, step);
+  }
+
+  return null;
+};
+
+const buildRecurringTaskPayload = (template, dueDate) => {
+  const templateDueDate = template.dueDate ? new Date(template.dueDate) : null;
+  const reminderOffset = template.reminderDate && templateDueDate ? new Date(template.reminderDate).getTime() - templateDueDate.getTime() : null;
+  const reminderDate = reminderOffset !== null ? new Date(dueDate.getTime() + reminderOffset) : null;
+
+  return {
+    title: template.title,
+    description: template.description,
+    status: TASK_STATUS.PENDING,
+    priority: template.priority,
+    recurrence: template.recurrence,
+    recurrenceParentId: template.id,
+    recurrenceKey: `${template.id}:${dueDate.toISOString()}`,
+    dueDate,
+    reminderDate,
+    completedAt: null,
+    archivedAt: null,
+    tags: template.tags || [],
+    userId: template.userId,
+  };
+};
+
+const syncRecurringTasks = async (userId) => {
+  const templates = await prisma.task.findMany({
+    where: {
+      userId,
+      recurrence: { not: TASK_RECURRENCE.NONE },
+      recurrenceParentId: null,
+      dueDate: { not: null },
+    },
+    select: {
+      id: true,
+      title: true,
+      description: true,
+      priority: true,
+      recurrence: true,
+      dueDate: true,
+      reminderDate: true,
+      tags: true,
+      userId: true,
+    },
+  });
+
+  const now = new Date();
+  const tasks = [];
+
+  templates.forEach((template) => {
+    const startDate = new Date(template.dueDate);
+
+    for (let step = 1; step <= RECURRING_GENERATION_LIMIT; step += 1) {
+      const dueDate = getNextRecurrenceDate(startDate, template.recurrence, step);
+      if (!dueDate || dueDate <= now) continue;
+
+      tasks.push(
+        prisma.task.upsert({
+          where: { recurrenceKey: `${template.id}:${dueDate.toISOString()}` },
+          create: buildRecurringTaskPayload(template, dueDate),
+          update: {},
+        })
+      );
+    }
+  });
+
+  await Promise.all(tasks);
 };
 
 const buildTaskWhere = (userId, { status, priority, search, view, dueDate }) => {
@@ -145,6 +241,7 @@ const getTaskData = (data) => {
   if (data.description !== undefined) taskData.description = data.description;
   if (data.status !== undefined) taskData.status = normalizeStatus(data.status);
   if (data.priority !== undefined) taskData.priority = data.priority;
+  if (data.recurrence !== undefined) taskData.recurrence = normalizeRecurrence(data.recurrence);
   if (data.dueDate !== undefined) taskData.dueDate = data.dueDate ? new Date(data.dueDate) : null;
   if (data.reminderDate !== undefined) taskData.reminderDate = data.reminderDate ? new Date(data.reminderDate) : null;
   if (data.tags !== undefined) taskData.tags = data.tags;
@@ -177,6 +274,7 @@ const ensureTaskId = (taskId) => {
 
 const getTasks = async (userId, queryParams) => {
   await syncTaskNotifications(userId);
+  await syncRecurringTasks(userId);
   const where = buildTaskWhere(userId, queryParams);
   const { page, limit, skip } = getPagination(queryParams);
   const orderBy = getOrderBy(queryParams);
@@ -230,6 +328,7 @@ const createTask = async (userId, data) => {
   });
 
   await syncTaskNotifications(userId);
+  await syncRecurringTasks(userId);
   await recordTaskCompletion(userId, task);
   return serializeTask(task);
 };
@@ -258,6 +357,7 @@ const updateTask = async (taskId, userId, data) => {
   });
 
   await syncTaskNotifications(userId);
+  await syncRecurringTasks(userId);
   await recordTaskCompletion(userId, task);
   return serializeTask(task);
 };
@@ -277,12 +377,19 @@ const deleteTask = async (taskId, userId) => {
   }
 
   await deleteTaskNotifications(userId, taskId);
+  await prisma.task.deleteMany({
+    where: {
+      userId,
+      recurrenceParentId: taskId,
+    },
+  });
   await prisma.task.delete({ where: { id: taskId } });
   return serializeTask(task);
 };
 
 const getTaskStats = async (userId) => {
   await syncTaskNotifications(userId);
+  await syncRecurringTasks(userId);
   const tasks = await prisma.task.findMany({
     where: { userId },
     select: {
