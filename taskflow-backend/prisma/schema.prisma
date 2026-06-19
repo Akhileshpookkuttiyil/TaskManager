@@ -39,8 +39,11 @@ enum ActivityType {
   task_created
   task_updated
   priority_changed
+  due_date_changed
   task_completed
   task_archived
+  task_restored
+  task_deleted
 }
 
 model User {

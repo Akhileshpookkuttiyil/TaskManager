@@ -36,8 +36,11 @@ const ACTIVITY_TYPE = {
   TASK_CREATED: "task_created",
   TASK_UPDATED: "task_updated",
   PRIORITY_CHANGED: "priority_changed",
+  DUE_DATE_CHANGED: "due_date_changed",
   TASK_COMPLETED: "task_completed",
   TASK_ARCHIVED: "task_archived",
+  TASK_RESTORED: "task_restored",
+  TASK_DELETED: "task_deleted",
 };
 
 const JWT_EXPIRY = "7d";

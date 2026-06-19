@@ -27,6 +27,7 @@ const COMPLETION_STATUSES = [TASK_STATUS.COMPLETED, TASK_STATUS.ARCHIVED];
 const VIEW_NAMES = new Set(["all", "my_day", "upcoming", "completed", "archived"]);
 const DATE_FILTERS = new Set(["all", "today", "tomorrow", "this_week", "overdue", "no_date"]);
 const RECURRING_GENERATION_LIMIT = 3;
+const GENERAL_UPDATE_FIELDS = ["title", "description", "reminderDate", "tags", "recurrence"];
 
 const getDayBounds = (date = new Date()) => {
   const start = new Date(date);
@@ -251,7 +252,7 @@ const getTaskData = (data) => {
 };
 
 const hasMeaningfulTaskUpdate = (existingTask, taskData) => {
-  const trackedFields = ["title", "description", "status", "priority", "dueDate", "reminderDate", "tags", "recurrence"];
+  const trackedFields = GENERAL_UPDATE_FIELDS;
 
   return trackedFields.some((field) => {
     if (!(field in taskData)) return false;
@@ -269,6 +270,35 @@ const hasMeaningfulTaskUpdate = (existingTask, taskData) => {
 
     return nextValue !== currentValue;
   });
+};
+
+const hasDateChanged = (existingValue, nextValue) =>
+  new Date(existingValue || null).getTime() !== new Date(nextValue || null).getTime();
+
+const hasPriorityChanged = (existingTask, taskData) => taskData.priority !== undefined && taskData.priority !== existingTask.priority;
+
+const hasDueDateChanged = (existingTask, taskData) =>
+  taskData.dueDate !== undefined && hasDateChanged(existingTask.dueDate, taskData.dueDate);
+
+const hasRestoredStatusChange = (existingTask, taskData) => {
+  if (taskData.status === undefined) return false;
+
+  const nextStatus = normalizeStatus(taskData.status);
+  return COMPLETION_STATUSES.includes(existingTask.status) && ACTIVE_STATUSES.includes(nextStatus);
+};
+
+const hasCompletedStatusChange = (existingTask, taskData) => {
+  if (taskData.status === undefined) return false;
+
+  const nextStatus = normalizeStatus(taskData.status);
+  return nextStatus === TASK_STATUS.COMPLETED && existingTask.status !== TASK_STATUS.COMPLETED;
+};
+
+const hasArchivedStatusChange = (existingTask, taskData) => {
+  if (taskData.status === undefined) return false;
+
+  const nextStatus = normalizeStatus(taskData.status);
+  return nextStatus === TASK_STATUS.ARCHIVED && existingTask.status !== TASK_STATUS.ARCHIVED;
 };
 
 const getLifecycleData = (existingTask, taskData, now = new Date()) => {
@@ -394,7 +424,7 @@ const updateTask = async (taskId, userId, data) => {
       taskTitle: task.title,
     });
   }
-  if (taskData.priority && taskData.priority !== existingTask.priority) {
+  if (hasPriorityChanged(existingTask, taskData)) {
     await recordActivity({
       userId,
       taskId: task.id,
@@ -404,7 +434,17 @@ const updateTask = async (taskId, userId, data) => {
       to: task.priority,
     });
   }
-  if (taskData.status === TASK_STATUS.COMPLETED && existingTask.status !== TASK_STATUS.COMPLETED) {
+  if (hasDueDateChanged(existingTask, taskData)) {
+    await recordActivity({
+      userId,
+      taskId: task.id,
+      type: ACTIVITY_TYPE.DUE_DATE_CHANGED,
+      taskTitle: task.title,
+      from: existingTask.dueDate,
+      to: task.dueDate,
+    });
+  }
+  if (hasCompletedStatusChange(existingTask, taskData)) {
     await recordActivity({
       userId,
       taskId: task.id,
@@ -412,11 +452,19 @@ const updateTask = async (taskId, userId, data) => {
       taskTitle: task.title,
     });
   }
-  if (taskData.status === TASK_STATUS.ARCHIVED && existingTask.status !== TASK_STATUS.ARCHIVED) {
+  if (hasArchivedStatusChange(existingTask, taskData)) {
     await recordActivity({
       userId,
       taskId: task.id,
       type: ACTIVITY_TYPE.TASK_ARCHIVED,
+      taskTitle: task.title,
+    });
+  }
+  if (hasRestoredStatusChange(existingTask, taskData)) {
+    await recordActivity({
+      userId,
+      taskId: task.id,
+      type: ACTIVITY_TYPE.TASK_RESTORED,
       taskTitle: task.title,
     });
   }
@@ -439,13 +487,22 @@ const deleteTask = async (taskId, userId) => {
   }
 
   await deleteTaskNotifications(userId, taskId);
-  await prisma.task.deleteMany({
-    where: {
+  await prisma.$transaction(async (tx) => {
+    await tx.task.deleteMany({
+      where: {
+        userId,
+        recurrenceParentId: taskId,
+      },
+    });
+    await recordActivity({
+      client: tx,
       userId,
-      recurrenceParentId: taskId,
-    },
+      taskId: task.id,
+      type: ACTIVITY_TYPE.TASK_DELETED,
+      taskTitle: task.title,
+    });
+    await tx.task.delete({ where: { id: taskId } });
   });
-  await prisma.task.delete({ where: { id: taskId } });
   return serializeTask(task);
 };
 

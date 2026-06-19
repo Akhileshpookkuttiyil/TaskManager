@@ -60,14 +60,26 @@ const loadDashboardData = (dispatch) => {
 
 const ActivityRow = ({ activity }) => {
   const activityTime = activity.createdAt;
+  const message = activity.message || "Task activity";
+  const messageNode = activity.taskId ? (
+    <Link
+      to={`/tasks?focus=${activity.taskId}`}
+      className="truncate text-sm font-medium text-neutral-900 transition-colors hover:text-brand-600 hover:underline dark:text-white dark:hover:text-brand-300"
+    >
+      {message}
+    </Link>
+  ) : (
+    <p className="truncate text-sm font-medium text-neutral-900 dark:text-white">{message}</p>
+  );
 
   return (
     <div className="flex items-start justify-between gap-4 rounded-lg border border-neutral-200 p-3 dark:border-neutral-800">
       <div className="min-w-0">
-        <p className="truncate text-sm font-medium text-neutral-900 dark:text-white">{activity.message}</p>
-        <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
-          {activityTime ? formatDistanceToNow(new Date(activityTime), { addSuffix: true }) : "Recently"}
-        </p>
+        {messageNode}
+        <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-neutral-500 dark:text-neutral-400">
+          <span>{activityTime ? formatDistanceToNow(new Date(activityTime), { addSuffix: true }) : "Recently"}</span>
+          {!activity.taskId ? <span className="rounded-full bg-neutral-100 px-2 py-0.5 dark:bg-neutral-800">Task removed</span> : null}
+        </div>
       </div>
       <Badge value={activity.type} />
     </div>
@@ -121,7 +133,13 @@ export const DashboardPage = () => {
     };
   }, [items, stats]);
 
-  const recentActivity = activities.slice(0, 5);
+  const recentActivity = useMemo(
+    () =>
+      [...activities]
+        .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
+        .slice(0, 5),
+    [activities]
+  );
 
   return (
     <div className="space-y-6">
@@ -207,7 +225,7 @@ export const DashboardPage = () => {
           <div className="flex items-center justify-between gap-4">
             <div>
               <h3 className="text-base font-semibold text-neutral-900 dark:text-white">Activity timeline</h3>
-              <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">Latest task events from your workspace.</p>
+              <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">A persistent audit trail of task changes in your workspace.</p>
             </div>
             <Link
               to="/tasks"
@@ -223,7 +241,7 @@ export const DashboardPage = () => {
             ) : recentActivity.length === 0 ? (
               <EmptyState
                 title="No activity yet"
-                description="Task activity will appear here after you start creating and updating work."
+                description="Task events will appear here after you start creating, editing, completing, archiving, restoring, or deleting work."
                 action={
                   <button type="button" onClick={() => setModalOpen(true)} className="btn-primary">
                     <Plus size={16} />
