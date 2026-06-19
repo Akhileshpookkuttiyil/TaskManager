@@ -5,6 +5,26 @@ import { useDispatch, useSelector } from "react-redux";
 import { Badge } from "../ui/Badge";
 import { fetchNotifications, markAllNotificationsRead, markNotificationRead } from "../../store/slices/notificationsSlice";
 
+const BROWSER_NOTIFICATION_TYPES = new Set(["due_soon", "due_today", "overdue"]);
+const SHOWN_STORAGE_KEY = "taskflow-browser-notification-ids";
+
+const readShownNotificationIds = () => {
+  try {
+    const parsed = JSON.parse(localStorage.getItem(SHOWN_STORAGE_KEY) || "[]");
+    return new Set(Array.isArray(parsed) ? parsed : []);
+  } catch {
+    return new Set();
+  }
+};
+
+const writeShownNotificationIds = (ids) => {
+  try {
+    localStorage.setItem(SHOWN_STORAGE_KEY, JSON.stringify([...ids]));
+  } catch {
+    // Ignore storage failures and fall back to in-memory behavior.
+  }
+};
+
 const NotificationItem = ({ notification, onRead }) => {
   const createdAt = notification.createdAt ? new Date(notification.createdAt) : null;
 
@@ -41,7 +61,9 @@ export const NotificationBell = () => {
   const { items, unreadCount, loading } = useSelector((state) => state.notifications);
   const { token } = useSelector((state) => state.auth);
   const [open, setOpen] = useState(false);
+  const [permission, setPermission] = useState(() => (typeof window !== "undefined" && "Notification" in window ? window.Notification.permission : "unsupported"));
   const panelRef = useRef(null);
+  const shownIdsRef = useRef(readShownNotificationIds());
 
   useEffect(() => {
     if (token) {
@@ -62,6 +84,33 @@ export const NotificationBell = () => {
 
   const sortedItems = useMemo(() => items, [items]);
 
+  useEffect(() => {
+    if (permission !== "granted" || typeof window === "undefined" || !("Notification" in window)) {
+      return;
+    }
+
+    const nextShownIds = new Set(shownIdsRef.current);
+
+    items
+      .filter((notification) => !notification.isRead && BROWSER_NOTIFICATION_TYPES.has(notification.type) && !nextShownIds.has(notification._id))
+      .forEach((notification) => {
+        const browserNotification = new window.Notification(notification.title, {
+          body: notification.message,
+          tag: notification._id,
+        });
+
+        browserNotification.onclick = () => {
+          window.focus();
+          browserNotification.close();
+        };
+
+        nextShownIds.add(notification._id);
+      });
+
+    shownIdsRef.current = nextShownIds;
+    writeShownNotificationIds(nextShownIds);
+  }, [items, permission]);
+
   const handleToggle = () => {
     setOpen((value) => {
       const next = !value;
@@ -80,6 +129,16 @@ export const NotificationBell = () => {
 
   const handleMarkAll = async () => {
     await dispatch(markAllNotificationsRead());
+  };
+
+  const handleRequestPermission = async () => {
+    if (typeof window === "undefined" || !("Notification" in window)) {
+      setPermission("unsupported");
+      return;
+    }
+
+    const result = await window.Notification.requestPermission();
+    setPermission(result);
   };
 
   return (
@@ -142,6 +201,25 @@ export const NotificationBell = () => {
                 ))}
               </div>
             )}
+
+            <div className="mt-3 rounded-xl border border-neutral-200 p-3 dark:border-neutral-800">
+              <p className="text-xs font-medium uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
+                Browser alerts
+              </p>
+              <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
+                {permission === "granted"
+                  ? "Browser notifications are enabled for due-date reminders."
+                  : permission === "denied"
+                    ? "Browser notifications are blocked in your browser settings."
+                    : "Enable browser notifications for due-date reminders and overdue alerts."}
+              </p>
+
+              {permission === "default" ? (
+                <button type="button" onClick={handleRequestPermission} className="btn-secondary mt-3 w-full">
+                  Enable browser alerts
+                </button>
+              ) : null}
+            </div>
           </div>
         </div>
       ) : null}
