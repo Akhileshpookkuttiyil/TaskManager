@@ -3,6 +3,8 @@ export const StatCard = ({ label, value, color = "neutral" }) => {
     neutral: "text-neutral-400 dark:text-neutral-500",
     blue: "text-brand-600 dark:text-brand-400",
     green: "text-emerald-600 dark:text-emerald-400",
+    amber: "text-amber-600 dark:text-amber-400",
+    rose: "text-rose-600 dark:text-rose-400",
   };
 
   return (
