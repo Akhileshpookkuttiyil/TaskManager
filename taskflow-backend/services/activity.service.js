@@ -48,4 +48,4 @@ const getRecentActivity = async (userId, limit = 8) => {
   return activities.map(serializeActivity);
 };
 
-module.exports = { recordActivity, getRecentActivity, buildActivityMessage };
+module.exports = { recordActivity, getRecentActivity };

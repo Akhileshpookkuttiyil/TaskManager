@@ -1,11 +1,11 @@
-import { BarChart2, CalendarDays, CheckSquare, LayoutGrid, X } from "lucide-react";
+import { CalendarDays, CheckSquare, LayoutGrid, UserRound, X } from "lucide-react";
 import { NavLink } from "react-router-dom";
 
 const navLinks = [
   { to: "/", label: "Dashboard", icon: LayoutGrid },
   { to: "/tasks", label: "Tasks", icon: CheckSquare },
   { to: "/calendar", label: "Calendar", icon: CalendarDays },
-  { to: "/profile", label: "Profile", icon: BarChart2 },
+  { to: "/profile", label: "Profile", icon: UserRound },
 ];
 
 const navLinkClass = ({ isActive }) =>

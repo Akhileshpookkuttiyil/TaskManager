@@ -20,6 +20,7 @@ export const Topbar = ({ onOpenNav, onQuickAdd }) => {
   const { user } = useSelector((state) => state.auth);
   const [menuOpen, setMenuOpen] = useState(false);
   const menuRef = useRef(null);
+  const menuId = "user-menu";
 
   const meta = useMemo(() => pageMeta[location.pathname] || { title: "TaskFlow" }, [location.pathname]);
 
@@ -32,6 +33,17 @@ export const Topbar = ({ onOpenNav, onQuickAdd }) => {
 
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  useEffect(() => {
+    const handleEscape = (event) => {
+      if (event.key === "Escape") {
+        setMenuOpen(false);
+      }
+    };
+
+    document.addEventListener("keydown", handleEscape);
+    return () => document.removeEventListener("keydown", handleEscape);
   }, []);
 
   const handleLogout = () => {
@@ -70,6 +82,7 @@ export const Topbar = ({ onOpenNav, onQuickAdd }) => {
               className="inline-flex h-9 items-center gap-2 rounded-lg px-2 text-left transition-colors hover:bg-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 dark:hover:bg-neutral-800"
               aria-expanded={menuOpen}
               aria-haspopup="menu"
+              aria-controls={menuId}
             >
               <div className="flex h-7 w-7 items-center justify-center rounded-full bg-neutral-900 text-xs font-semibold text-white dark:bg-white dark:text-neutral-900">
                 {user?.name?.[0]?.toUpperCase() || "U"}
@@ -82,6 +95,7 @@ export const Topbar = ({ onOpenNav, onQuickAdd }) => {
 
             {menuOpen ? (
               <div
+                id={menuId}
                 role="menu"
                 className="absolute right-0 mt-2 w-52 rounded-xl border border-neutral-200 bg-white p-1.5 shadow-lg dark:border-neutral-800 dark:bg-neutral-900"
               >

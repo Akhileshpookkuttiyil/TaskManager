@@ -52,18 +52,24 @@ const getStreakMetrics = (tasks) => {
   return { current, best };
 };
 
-const ActivityRow = ({ task }) => {
-  const activityTime = task.createdAt;
+const loadDashboardData = (dispatch) => {
+  dispatch(fetchStats());
+  dispatch(fetchTasks({ limit: 6, sortBy: "updatedAt", order: "desc" }));
+  dispatch(fetchRecentActivities({ limit: 5 }));
+};
+
+const ActivityRow = ({ activity }) => {
+  const activityTime = activity.createdAt;
 
   return (
     <div className="flex items-start justify-between gap-4 rounded-lg border border-neutral-200 p-3 dark:border-neutral-800">
       <div className="min-w-0">
-        <p className="truncate text-sm font-medium text-neutral-900 dark:text-white">{task.message}</p>
+        <p className="truncate text-sm font-medium text-neutral-900 dark:text-white">{activity.message}</p>
         <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
           {activityTime ? formatDistanceToNow(new Date(activityTime), { addSuffix: true }) : "Recently"}
         </p>
       </div>
-      <Badge value={task.type} />
+      <Badge value={activity.type} />
     </div>
   );
 };
@@ -76,15 +82,11 @@ export const DashboardPage = () => {
   const [modalOpen, setModalOpen] = useState(false);
 
   useEffect(() => {
-    dispatch(fetchStats());
-    dispatch(fetchTasks({ limit: 6, sortBy: "updatedAt", order: "desc" }));
-    dispatch(fetchRecentActivities({ limit: 5 }));
+    loadDashboardData(dispatch);
   }, [dispatch]);
 
   const refreshDashboard = () => {
-    dispatch(fetchStats());
-    dispatch(fetchTasks({ limit: 6, sortBy: "updatedAt", order: "desc" }));
-    dispatch(fetchRecentActivities({ limit: 5 }));
+    loadDashboardData(dispatch);
   };
 
   const handleCloseModal = () => {
@@ -230,7 +232,7 @@ export const DashboardPage = () => {
                 }
               />
             ) : (
-              recentActivity.map((task) => <ActivityRow key={task._id} task={task} />)
+              recentActivity.map((activity) => <ActivityRow key={activity._id} activity={activity} />)
             )}
           </div>
         </div>

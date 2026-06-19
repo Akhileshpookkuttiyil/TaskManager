@@ -1,6 +1,6 @@
 import { Bell, CheckCheck, Loader2 } from "lucide-react";
 import { formatDistanceToNow } from "date-fns";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { Badge } from "../ui/Badge";
 import { fetchNotifications, markAllNotificationsRead, markNotificationRead } from "../../store/slices/notificationsSlice";
@@ -63,6 +63,7 @@ export const NotificationBell = () => {
   const [open, setOpen] = useState(false);
   const [permission, setPermission] = useState(() => (typeof window !== "undefined" && "Notification" in window ? window.Notification.permission : "unsupported"));
   const panelRef = useRef(null);
+  const menuId = "notification-panel";
   const shownIdsRef = useRef(readShownNotificationIds());
 
   useEffect(() => {
@@ -82,7 +83,16 @@ export const NotificationBell = () => {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  const sortedItems = useMemo(() => items, [items]);
+  useEffect(() => {
+    const handleEscape = (event) => {
+      if (event.key === "Escape") {
+        setOpen(false);
+      }
+    };
+
+    document.addEventListener("keydown", handleEscape);
+    return () => document.removeEventListener("keydown", handleEscape);
+  }, []);
 
   useEffect(() => {
     if (permission !== "granted" || typeof window === "undefined" || !("Notification" in window)) {
@@ -149,6 +159,7 @@ export const NotificationBell = () => {
         className="relative inline-flex h-9 w-9 items-center justify-center rounded-lg border border-neutral-200 bg-white text-neutral-600 transition-colors hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-800"
         aria-haspopup="menu"
         aria-expanded={open}
+        aria-controls={menuId}
         aria-label="Open notifications"
       >
         <Bell size={16} />
@@ -161,6 +172,7 @@ export const NotificationBell = () => {
 
       {open ? (
         <div
+          id={menuId}
           role="menu"
           className="absolute right-0 z-40 mt-2 w-[22rem] max-w-[calc(100vw-1.5rem)] rounded-xl border border-neutral-200 bg-white shadow-xl dark:border-neutral-800 dark:bg-neutral-900"
         >
@@ -187,7 +199,7 @@ export const NotificationBell = () => {
                 <Loader2 size={14} className="animate-spin" />
                 Loading notifications
               </div>
-            ) : sortedItems.length === 0 ? (
+            ) : items.length === 0 ? (
               <div className="px-3 py-8 text-center">
                 <p className="text-sm font-medium text-neutral-900 dark:text-white">No notifications yet</p>
                 <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
@@ -196,7 +208,7 @@ export const NotificationBell = () => {
               </div>
             ) : (
               <div className="space-y-2">
-                {sortedItems.map((notification) => (
+                {items.map((notification) => (
                   <NotificationItem key={notification._id} notification={notification} onRead={handleRead} />
                 ))}
               </div>
