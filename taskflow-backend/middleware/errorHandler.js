@@ -1,5 +1,6 @@
 const errorHandler = (err, req, res, next) => {
   console.error(`[ERROR] ${err.message}`);
+  const normalizedMessage = (err.message || "").trimStart();
 
   if (err.code === "P2002") {
     const field = err.meta?.target?.[0] || "Field";
@@ -23,7 +24,7 @@ const errorHandler = (err, req, res, next) => {
     });
   }
 
-  if (err.name === "PrismaClientValidationError" || /^Invalid `prisma\./.test(err.message || "")) {
+  if (err.name === "PrismaClientValidationError" || normalizedMessage.startsWith("Invalid `prisma.")) {
     return res.status(400).json({
       success: false,
       message: "Invalid request data",
