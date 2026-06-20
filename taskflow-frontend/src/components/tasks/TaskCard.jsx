@@ -1,15 +1,16 @@
-import { format } from "date-fns";
 import { CalendarDays, PencilLine, Tag, Trash2 } from "lucide-react";
 import { Badge } from "../ui/Badge";
+import { formatDateTimeValue, parseDateTimeValue } from "../../utils/dates";
 
 export const TaskCard = ({ task, onEdit, onDelete, highlighted = false }) => {
   const status = task.status || "pending";
   const isCompleted = status === "completed";
   const isArchived = status === "archived";
-  const isOverdue = Boolean(task.isOverdue) || Boolean(task.dueDate && new Date(task.dueDate) < new Date() && !isCompleted && !isArchived);
-  const dueDate = task.dueDate ? new Date(task.dueDate) : null;
+  const dueDate = parseDateTimeValue(task.dueDate);
+  const reminderDate = parseDateTimeValue(task.reminderDate);
+  const isOverdue = Boolean(task.isOverdue) || Boolean(dueDate && dueDate < new Date() && !isCompleted && !isArchived);
   const showTime = Boolean(dueDate && (dueDate.getHours() || dueDate.getMinutes()));
-  const dueDateLabel = dueDate ? format(dueDate, showTime ? "MMM d, yyyy h:mm a" : "MMM d, yyyy") : null;
+  const dueDateLabel = dueDate ? formatDateTimeValue(dueDate, showTime ? "MMM d, yyyy h:mm a" : "MMM d, yyyy") : null;
 
   return (
     <div
@@ -59,7 +60,7 @@ export const TaskCard = ({ task, onEdit, onDelete, highlighted = false }) => {
             {task.reminderDate ? (
               <span className="inline-flex items-center gap-1 rounded-md bg-neutral-100 px-2 py-0.5 text-xs font-medium text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400">
                 <CalendarDays size={12} />
-                Reminder {format(new Date(task.reminderDate), "MMM d, yyyy h:mm a")}
+                Reminder {formatDateTimeValue(reminderDate, "MMM d, yyyy h:mm a")}
               </span>
             ) : null}
             {task.tags?.map((tag) => (

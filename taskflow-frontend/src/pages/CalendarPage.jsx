@@ -21,6 +21,7 @@ import { Badge } from "../components/ui/Badge";
 import { EmptyState } from "../components/ui/EmptyState";
 import { Spinner } from "../components/ui/Spinner";
 import { fetchTasks } from "../store/slices/tasksSlice";
+import { parseDateTimeValue } from "../utils/dates";
 
 const weekStartsOn = 1;
 const localizer = dateFnsLocalizer({
@@ -43,10 +44,7 @@ const statusColors = {
   archived: "#737373",
 };
 
-const normalizeDate = (value) => {
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? null : date;
-};
+const normalizeDate = (value) => parseDateTimeValue(value);
 
 const getEventStyle = (event) => {
   const status = event.resource?.status || "pending";
@@ -106,11 +104,11 @@ export const CalendarPage = () => {
   const [editingTask, setEditingTask] = useState(null);
 
   useEffect(() => {
-    dispatch(fetchTasks({ limit: 50, sortBy: "dueDate", order: "asc" }));
+    dispatch(fetchTasks({ limit: 50, sortBy: "dueDate", order: "asc", force: true }));
   }, [dispatch]);
 
-  const refreshCalendar = () => {
-    dispatch(fetchTasks({ limit: 50, sortBy: "dueDate", order: "asc" }));
+  const refreshCalendar = async () => {
+    await dispatch(fetchTasks({ limit: 50, sortBy: "dueDate", order: "asc", force: true }));
   };
 
   const events = useMemo(
@@ -140,7 +138,7 @@ export const CalendarPage = () => {
     () =>
       items
         .filter((task) => task.dueDate && isSameDay(normalizeDate(task.dueDate), selectedDate))
-        .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate)),
+        .sort((a, b) => (normalizeDate(a.dueDate)?.getTime() || 0) - (normalizeDate(b.dueDate)?.getTime() || 0)),
     [items, selectedDate]
   );
 
@@ -153,7 +151,7 @@ export const CalendarPage = () => {
         const dueDate = normalizeDate(task.dueDate);
         return dueDate && dueDate >= today && dueDate <= nextWeek && task.status !== "archived";
       })
-      .sort((a, b) => new Date(a.dueDate) - new Date(b.dueDate))
+      .sort((a, b) => (normalizeDate(a.dueDate)?.getTime() || 0) - (normalizeDate(b.dueDate)?.getTime() || 0))
       .slice(0, 6);
   }, [items]);
 
@@ -203,7 +201,7 @@ export const CalendarPage = () => {
           </p>
         </div>
 
-        <button type="button" onClick={() => setModalOpen(true)} className="btn-primary">
+        <button type="button" onClick={() => setModalOpen(true)} className="btn-primary w-full sm:w-auto">
           <Plus size={16} />
           Add task
         </button>

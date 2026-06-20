@@ -63,6 +63,13 @@ const normalizeRecurrence = (recurrence) => {
   return validRecurrences.includes(recurrence) ? recurrence : TASK_RECURRENCE.NONE;
 };
 
+const toValidDate = (value) => {
+  if (value === undefined || value === null || value === "") return null;
+
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+};
+
 const getNextRecurrenceDate = (date, recurrence, step = 1) => {
   if (!date) return null;
 
@@ -244,8 +251,8 @@ const getTaskData = (data) => {
   if (data.status !== undefined) taskData.status = normalizeStatus(data.status);
   if (data.priority !== undefined) taskData.priority = data.priority;
   if (data.recurrence !== undefined) taskData.recurrence = normalizeRecurrence(data.recurrence);
-  if (data.dueDate !== undefined) taskData.dueDate = data.dueDate ? new Date(data.dueDate) : null;
-  if (data.reminderDate !== undefined) taskData.reminderDate = data.reminderDate ? new Date(data.reminderDate) : null;
+  if (data.dueDate !== undefined) taskData.dueDate = toValidDate(data.dueDate);
+  if (data.reminderDate !== undefined) taskData.reminderDate = toValidDate(data.reminderDate);
   if (data.tags !== undefined) taskData.tags = data.tags;
 
   return taskData;
