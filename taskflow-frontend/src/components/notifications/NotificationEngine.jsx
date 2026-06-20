@@ -1,7 +1,8 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { fetchNotifications } from "../../store/slices/notificationsSlice";
+import { getBrowserAlertsState, subscribeToBrowserAlertsChanges } from "./browserAlerts";
 
 const POLL_INTERVAL_MS = 30000;
 const BROWSER_NOTIFICATION_TYPES = new Set(["task_reminder", "due_soon", "due_today", "overdue"]);
@@ -11,7 +12,7 @@ export const NotificationEngine = () => {
   const navigate = useNavigate();
   const token = useSelector((state) => state.auth.token);
   const notifications = useSelector((state) => state.notifications.items);
-  const permission = typeof window !== "undefined" && "Notification" in window ? window.Notification.permission : "unsupported";
+  const [browserAlerts, setBrowserAlerts] = useState(() => getBrowserAlertsState());
   const shownIdsRef = useRef(new Set());
 
   useEffect(() => {
@@ -34,7 +35,12 @@ export const NotificationEngine = () => {
   }, [dispatch, token]);
 
   useEffect(() => {
-    if (permission !== "granted" || typeof window === "undefined" || !("Notification" in window)) {
+    const unsubscribe = subscribeToBrowserAlertsChanges(setBrowserAlerts);
+    return unsubscribe;
+  }, []);
+
+  useEffect(() => {
+    if (!browserAlerts.enabled || typeof window === "undefined" || !("Notification" in window)) {
       return;
     }
 
@@ -58,7 +64,7 @@ export const NotificationEngine = () => {
       });
 
     shownIdsRef.current = nextShownIds;
-  }, [navigate, notifications, permission]);
+  }, [browserAlerts.enabled, navigate, notifications]);
 
   return null;
 };
