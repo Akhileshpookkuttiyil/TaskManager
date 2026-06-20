@@ -4,12 +4,33 @@ const prisma = require("../config/prisma");
 const { JWT_EXPIRY } = require("../constants");
 const { serializeUser } = require("../utils/serializers");
 
+const normalizeEmail = (value) => (typeof value === "string" ? value.trim().toLowerCase() : "");
+const normalizeText = (value) => (typeof value === "string" ? value.trim() : "");
+
+const assertRequiredAuthFields = (email, password, name) => {
+  if (name !== undefined && !normalizeText(name)) {
+    const error = new Error("Name is required");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  if (!normalizeEmail(email) || !normalizeText(password)) {
+    const error = new Error("Email and password are required");
+    error.statusCode = 400;
+    throw error;
+  }
+};
+
 const generateToken = (userId) => {
   return jwt.sign({ id: userId }, process.env.JWT_SECRET, { expiresIn: JWT_EXPIRY });
 };
 
 const registerUser = async ({ name, email, password }) => {
-  const existing = await prisma.user.findUnique({ where: { email } });
+  assertRequiredAuthFields(email, password, name);
+
+  const normalizedName = normalizeText(name);
+  const normalizedEmail = normalizeEmail(email);
+  const existing = await prisma.user.findUnique({ where: { email: normalizedEmail } });
   if (existing) {
     const error = new Error("Email already in use");
     error.statusCode = 409;
@@ -20,8 +41,8 @@ const registerUser = async ({ name, email, password }) => {
   const user = await prisma.user
     .create({
       data: {
-        name,
-        email,
+        name: normalizedName,
+        email: normalizedEmail,
         password: hashedPassword,
       },
     })
@@ -44,7 +65,10 @@ const registerUser = async ({ name, email, password }) => {
 };
 
 const loginUser = async ({ email, password }) => {
-  const user = await prisma.user.findUnique({ where: { email } });
+  assertRequiredAuthFields(email, password);
+
+  const normalizedEmail = normalizeEmail(email);
+  const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
 
   if (!user || !(await bcrypt.compare(password, user.password))) {
     const error = new Error("Invalid email or password");
@@ -73,11 +97,16 @@ const updateProfile = async (userId, { name, email, currentPassword, newPassword
   const updates = {};
 
   if (name !== undefined) {
-    updates.name = name.trim();
+    updates.name = normalizeText(name);
   }
 
   if (email !== undefined) {
-    const nextEmail = email.trim().toLowerCase();
+    const nextEmail = normalizeEmail(email);
+    if (!nextEmail) {
+      const error = new Error("Email is required");
+      error.statusCode = 400;
+      throw error;
+    }
     if (nextEmail !== user.email) {
       const duplicate = await prisma.user.findUnique({ where: { email: nextEmail } });
       if (duplicate && duplicate.id !== userId) {
