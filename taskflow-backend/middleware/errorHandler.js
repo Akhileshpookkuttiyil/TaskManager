@@ -23,6 +23,13 @@ const errorHandler = (err, req, res, next) => {
     });
   }
 
+  if (err.name === "PrismaClientValidationError" || /^Invalid `prisma\./.test(err.message || "")) {
+    return res.status(400).json({
+      success: false,
+      message: "Invalid request data",
+    });
+  }
+
   const statusCode = err.statusCode || 500;
   return res.status(statusCode).json({
     success: false,
