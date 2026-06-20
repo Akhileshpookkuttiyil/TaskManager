@@ -7,17 +7,16 @@ import { Sidebar } from "./Sidebar";
 import { Topbar } from "./Topbar";
 
 export const AppLayout = () => {
-  const [navOpen, setNavOpen] = useState(false);
   const [taskModalOpen, setTaskModalOpen] = useState(false);
 
   return (
-    <div className="app-shell min-h-screen lg:flex">
+    <div className="app-shell min-h-screen min-[1025px]:flex">
       <NotificationEngine />
-      <Sidebar open={navOpen} onClose={() => setNavOpen(false)} />
+      <Sidebar />
 
       <div className="min-w-0 flex-1">
-        <Topbar onOpenNav={() => setNavOpen(true)} onQuickAdd={() => setTaskModalOpen(true)} />
-        <main className="mx-auto max-w-6xl px-4 py-6 pb-24 sm:px-6 lg:px-8 lg:pb-8">
+        <Topbar onQuickAdd={() => setTaskModalOpen(true)} />
+        <main className="mx-auto max-w-6xl px-4 py-6 max-[1024px]:pb-[calc(6.75rem+env(safe-area-inset-bottom))] sm:px-6 lg:px-8 min-[1025px]:pb-8">
           <Outlet />
         </main>
       </div>

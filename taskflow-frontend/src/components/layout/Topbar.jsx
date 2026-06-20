@@ -1,4 +1,4 @@
-import { ChevronDown, LogOut, Menu, Plus, UserRound } from "lucide-react";
+import { ChevronDown, LogOut, Plus, UserRound } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -13,7 +13,7 @@ const pageMeta = {
   "/profile": { title: "Profile" },
 };
 
-export const Topbar = ({ onOpenNav, onQuickAdd }) => {
+export const Topbar = ({ onQuickAdd }) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const location = useLocation();
@@ -56,14 +56,6 @@ export const Topbar = ({ onOpenNav, onQuickAdd }) => {
     <header className="sticky top-0 z-30 border-b border-neutral-200 bg-white/95 backdrop-blur dark:border-neutral-800 dark:bg-neutral-950/95">
       <div className="flex h-16 items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
         <div className="flex min-w-0 items-center gap-3">
-          <button
-            type="button"
-            onClick={onOpenNav}
-            className="btn-ghost h-9 w-9 px-0 text-neutral-500 lg:hidden"
-            aria-label="Open navigation"
-          >
-            <Menu size={18} />
-          </button>
           <h1 className="truncate text-lg font-semibold text-neutral-900 dark:text-white">{meta.title}</h1>
         </div>
 

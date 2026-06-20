@@ -1,12 +1,6 @@
-import { CalendarDays, CheckSquare, Home, Plus, UserRound } from "lucide-react";
+import { Plus } from "lucide-react";
 import { NavLink } from "react-router-dom";
-
-const items = [
-  { to: "/", label: "Home", icon: Home },
-  { to: "/tasks", label: "Tasks", icon: CheckSquare },
-  { to: "/calendar", label: "Calendar", icon: CalendarDays },
-  { to: "/profile", label: "Profile", icon: UserRound },
-];
+import { primaryNavItems } from "./navigation";
 
 const navClass = ({ isActive }) =>
   `flex flex-1 flex-col items-center gap-1 rounded-xl px-2 py-2 text-[11px] font-medium transition-colors ${
@@ -14,10 +8,10 @@ const navClass = ({ isActive }) =>
   }`;
 
 export const BottomNav = ({ onQuickAdd }) => (
-  <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-neutral-200 bg-white/98 px-2 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] pt-2 shadow-[0_-8px_24px_rgba(15,23,42,0.04)] backdrop-blur dark:border-neutral-800 dark:bg-neutral-950/98 lg:hidden">
+  <nav className="fixed inset-x-0 bottom-0 z-30 border-t border-neutral-200 bg-white/98 px-2 pb-[calc(env(safe-area-inset-bottom)+0.5rem)] pt-2 shadow-[0_-8px_24px_rgba(15,23,42,0.04)] backdrop-blur dark:border-neutral-800 dark:bg-neutral-950/98 min-[1025px]:hidden">
     <div className="mx-auto grid max-w-lg grid-cols-5 items-end gap-1">
-      {items.slice(0, 2).map(({ to, label, icon: Icon }) => (
-        <NavLink key={to} to={to} end={to === "/"} className={navClass}>
+      {primaryNavItems.slice(0, 2).map(({ to, label, icon: Icon, end }) => (
+        <NavLink key={to} to={to} end={end} className={navClass}>
           <Icon size={19} strokeWidth={1.85} />
           {label}
         </NavLink>
@@ -32,8 +26,8 @@ export const BottomNav = ({ onQuickAdd }) => (
         <Plus size={22} strokeWidth={2.4} />
       </button>
 
-      {items.slice(2).map(({ to, label, icon: Icon }) => (
-        <NavLink key={to} to={to} className={navClass}>
+      {primaryNavItems.slice(2).map(({ to, label, icon: Icon, end }) => (
+        <NavLink key={to} to={to} end={end} className={navClass}>
           <Icon size={19} strokeWidth={1.85} />
           {label}
         </NavLink>
