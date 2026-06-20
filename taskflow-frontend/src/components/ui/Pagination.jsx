@@ -10,12 +10,12 @@ export const Pagination = ({ pagination }) => {
   const { page, pages, total } = pagination;
 
   return (
-    <div className="flex items-center justify-between gap-4 pt-2">
+    <div className="flex flex-col gap-3 pt-2 sm:flex-row sm:items-center sm:justify-between">
       <p className="text-sm text-neutral-500 dark:text-neutral-400">
         {total} {total === 1 ? "task" : "tasks"} &middot; page {page} of {pages}
       </p>
 
-      <div className="flex gap-1.5">
+      <div className="flex justify-start gap-1.5 sm:justify-end">
         <button
           type="button"
           onClick={() => dispatch(setPage(page - 1))}
