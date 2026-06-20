@@ -10,6 +10,7 @@ import { StatCard } from "../components/ui/StatCard";
 import { TaskSkeletonList } from "../components/ui/shared";
 import { fetchRecentActivities } from "../store/slices/activitySlice";
 import { fetchStats, fetchTasks } from "../store/slices/tasksSlice";
+import { parseDateTimeValue } from "../utils/dates";
 
 const metricTone = {
   total: "neutral",
@@ -20,7 +21,14 @@ const metricTone = {
 };
 
 const getStreakMetrics = (tasks) => {
-  const completionDays = [...new Set(tasks.filter((task) => task.completedAt).map((task) => format(startOfDay(new Date(task.completedAt)), "yyyy-MM-dd")))];
+  const completionDays = [
+    ...new Set(
+      tasks
+        .map((task) => parseDateTimeValue(task.completedAt))
+        .filter(Boolean)
+        .map((date) => format(startOfDay(date), "yyyy-MM-dd"))
+    ),
+  ];
   const completionSet = new Set(completionDays);
 
   let current = 0;
@@ -35,7 +43,7 @@ const getStreakMetrics = (tasks) => {
   let run = 0;
   let previousDate = null;
 
-  completionDays
+    completionDays
     .map((value) => new Date(`${value}T00:00:00`))
     .sort((a, b) => a - b)
     .forEach((date) => {
@@ -53,8 +61,8 @@ const getStreakMetrics = (tasks) => {
 };
 
 const loadDashboardData = (dispatch) => {
-  dispatch(fetchStats());
-  dispatch(fetchTasks({ limit: 6, sortBy: "updatedAt", order: "desc" }));
+  dispatch(fetchStats({ force: true }));
+  dispatch(fetchTasks({ limit: 6, sortBy: "updatedAt", order: "desc", force: true }));
   dispatch(fetchRecentActivities({ limit: 5 }));
 };
 
@@ -64,24 +72,26 @@ const ActivityRow = ({ activity }) => {
   const messageNode = activity.taskId ? (
     <Link
       to={`/tasks?focus=${activity.taskId}`}
-      className="truncate text-sm font-medium text-neutral-900 transition-colors hover:text-brand-600 hover:underline dark:text-white dark:hover:text-brand-300"
+      className="block break-words text-sm font-medium leading-6 text-neutral-900 transition-colors hover:text-brand-600 hover:underline dark:text-white dark:hover:text-brand-300"
     >
       {message}
     </Link>
   ) : (
-    <p className="truncate text-sm font-medium text-neutral-900 dark:text-white">{message}</p>
+    <p className="break-words text-sm font-medium leading-6 text-neutral-900 dark:text-white">{message}</p>
   );
 
   return (
-    <div className="flex items-start justify-between gap-4 rounded-lg border border-neutral-200 p-3 dark:border-neutral-800">
-      <div className="min-w-0">
+    <div className="flex flex-col gap-3 rounded-lg border border-neutral-200 p-3 sm:flex-row sm:items-start sm:justify-between dark:border-neutral-800">
+      <div className="min-w-0 flex-1">
         {messageNode}
         <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-neutral-500 dark:text-neutral-400">
           <span>{activityTime ? formatDistanceToNow(new Date(activityTime), { addSuffix: true }) : "Recently"}</span>
           {!activity.taskId ? <span className="rounded-full bg-neutral-100 px-2 py-0.5 dark:bg-neutral-800">Task removed</span> : null}
         </div>
       </div>
-      <Badge value={activity.type} />
+      <div className="shrink-0">
+        <Badge value={activity.type} />
+      </div>
     </div>
   );
 };
@@ -97,8 +107,12 @@ export const DashboardPage = () => {
     loadDashboardData(dispatch);
   }, [dispatch]);
 
-  const refreshDashboard = () => {
-    loadDashboardData(dispatch);
+  const refreshDashboard = async () => {
+    await Promise.all([
+      dispatch(fetchStats({ force: true })),
+      dispatch(fetchTasks({ limit: 6, sortBy: "updatedAt", order: "desc", force: true })),
+      dispatch(fetchRecentActivities({ limit: 5 })),
+    ]);
   };
 
   const handleCloseModal = () => {
@@ -151,11 +165,11 @@ export const DashboardPage = () => {
           <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">Here&apos;s a snapshot of your day.</p>
         </div>
 
-        <div className="flex gap-2.5">
-          <Link to="/tasks" className="btn-secondary">
+        <div className="flex w-full flex-col gap-2.5 sm:w-auto sm:flex-row">
+          <Link to="/tasks" className="btn-secondary w-full sm:w-auto">
             View all tasks
           </Link>
-          <button type="button" onClick={() => setModalOpen(true)} className="btn-primary">
+          <button type="button" onClick={() => setModalOpen(true)} className="btn-primary w-full sm:w-auto">
             <Plus size={16} />
             New task
           </button>
