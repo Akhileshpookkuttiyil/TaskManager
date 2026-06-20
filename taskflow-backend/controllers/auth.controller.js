@@ -20,7 +20,6 @@ const login = async (req, res, next) => {
 };
 
 const getMe = async (req, res) => {
-  // req.user is already attached by protect middleware
   sendSuccess(res, { user: req.user });
 };
 

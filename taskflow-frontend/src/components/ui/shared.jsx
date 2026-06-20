@@ -1,5 +1,3 @@
-// Shared small components used across multiple pages
-
 export const FieldError = ({ message }) =>
   message ? (
     <p className="mt-1.5 text-xs font-medium text-rose-600 dark:text-rose-400">{message}</p>
