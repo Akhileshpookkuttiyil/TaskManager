@@ -4,8 +4,25 @@ const prisma = require("../config/prisma");
 const { JWT_EXPIRY } = require("../constants");
 const { serializeUser } = require("../utils/serializers");
 
+const DEMO_EMAIL = "akhilesh@gmail.com";
+const DEMO_PASSWORD = "password";
+const DEMO_NAME = "Akhilesh";
+
 const normalizeEmail = (value) => (typeof value === "string" ? value.trim().toLowerCase() : "");
 const normalizeText = (value) => (typeof value === "string" ? value.trim() : "");
+
+const createDemoUserIfNeeded = async () => {
+  const existing = await prisma.user.findUnique({ where: { email: DEMO_EMAIL } });
+  if (existing) return existing;
+
+  return prisma.user.create({
+    data: {
+      name: DEMO_NAME,
+      email: DEMO_EMAIL,
+      password: await bcrypt.hash(DEMO_PASSWORD, 12),
+    },
+  });
+};
 
 const assertRequiredAuthFields = (email, password, name) => {
   if (name !== undefined && !normalizeText(name)) {
@@ -68,9 +85,22 @@ const loginUser = async ({ email, password }) => {
   assertRequiredAuthFields(email, password);
 
   const normalizedEmail = normalizeEmail(email);
+  const normalizedPassword = normalizeText(password);
+
+  if (normalizedEmail === DEMO_EMAIL && normalizedPassword === DEMO_PASSWORD) {
+    const demoUser = await createDemoUserIfNeeded();
+    const serializedDemoUser = serializeUser(demoUser);
+    const token = generateToken(serializedDemoUser._id);
+
+    return {
+      token,
+      user: serializedDemoUser,
+    };
+  }
+
   const user = await prisma.user.findUnique({ where: { email: normalizedEmail } });
 
-  if (!user || !(await bcrypt.compare(password, user.password))) {
+  if (!user || !(await bcrypt.compare(normalizedPassword, user.password))) {
     const error = new Error("Invalid email or password");
     error.statusCode = 401;
     throw error;

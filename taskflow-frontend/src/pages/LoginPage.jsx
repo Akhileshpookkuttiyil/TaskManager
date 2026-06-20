@@ -8,12 +8,15 @@ import { FieldError } from "../components/ui/shared";
 import { Spinner } from "../components/ui/Spinner";
 import { clearError, loginUser } from "../store/slices/authSlice";
 
+const DEMO_EMAIL = "akhilesh@gmail.com";
+const DEMO_PASSWORD = "password";
+
 export const LoginPage = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { loading, error, token } = useSelector((s) => s.auth);
 
-  const [form, setForm] = useState({ email: "", password: "" });
+  const [form, setForm] = useState({ email: DEMO_EMAIL, password: DEMO_PASSWORD });
   const [showPassword, setShowPassword] = useState(false);
   const [errors, setErrors] = useState({});
 
@@ -37,6 +40,10 @@ export const LoginPage = () => {
   const validate = () => {
     const nextErrors = {};
 
+    if (!form.email.trim() && !form.password) {
+      return true;
+    }
+
     if (!form.email.trim()) nextErrors.email = "Email is required.";
     if (!form.password) nextErrors.password = "Password is required.";
 
@@ -51,7 +58,9 @@ export const LoginPage = () => {
       return;
     }
 
-    const result = await dispatch(loginUser({ email: form.email.trim(), password: form.password }));
+    const email = form.email.trim() || DEMO_EMAIL;
+    const password = form.password || DEMO_PASSWORD;
+    const result = await dispatch(loginUser({ email, password }));
     if (loginUser.fulfilled.match(result)) {
       toast.success("Welcome back.");
       navigate("/");
@@ -120,6 +129,11 @@ export const LoginPage = () => {
           </div>
           <FieldError message={errors.password} />
         </div>
+
+        <p className="text-xs text-neutral-500 dark:text-neutral-400">
+          Demo access: leave the fields as-is or submit empty to use <span className="font-medium">akhilesh@gmail.com</span> /{" "}
+          <span className="font-medium">password</span>.
+        </p>
 
         <button type="submit" disabled={loading} className="btn-primary w-full">
           {loading ? <Spinner size="sm" /> : <LogIn size={16} />}
