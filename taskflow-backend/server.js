@@ -9,22 +9,23 @@ const { errorHandler } = require("./middleware/errorHandler");
 dotenv.config();
 
 const app = express();
+const allowedOrigins = (process.env.CLIENT_URLS || process.env.CLIENT_URL || "")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+const corsOptions = allowedOrigins.length > 0 ? { origin: allowedOrigins } : { origin: true };
 
-// Security headers
 app.use(helmet());
+app.set("trust proxy", 1);
 
-// CORS — in production, replace * with your frontend domain
-app.use(cors({ origin: process.env.CLIENT_URL || "*", credentials: true }));
+app.use(cors(corsOptions));
 
-// Body parser
 app.use(express.json({ limit: "10kb" }));
 
-// Request logging (dev only)
 if (process.env.NODE_ENV !== "production") {
   app.use(morgan("dev"));
 }
 
-// Rate limiting — 100 requests per 15 minutes per IP
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   max: 500,
@@ -32,20 +33,16 @@ const limiter = rateLimit({
 });
 app.use("/api", limiter);
 
-// Routes
 app.use("/api/auth", require("./routes/auth.routes"));
 app.use("/api/tasks", require("./routes/task.routes"));
 app.use("/api/notifications", require("./routes/notification.routes"));
 app.use("/api/activities", require("./routes/activity.routes"));
 
-// Health check
 app.get("/", (req, res) => res.json({ status: "TaskFlow API is running" }));
 
-// 404 handler
 app.use((req, res) => res.status(404).json({ success: false, message: "Route not found" }));
 
-// Centralized error handler (must be last)
 app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on http://localhost:${PORT}`));
+app.listen(PORT);
