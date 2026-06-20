@@ -231,7 +231,7 @@ export const DashboardPage = () => {
               to="/tasks"
               className="text-sm font-medium text-brand-600 hover:text-brand-700 dark:text-brand-400 dark:hover:text-brand-300"
             >
-              Open tasks
+              Open
             </Link>
           </div>
 
