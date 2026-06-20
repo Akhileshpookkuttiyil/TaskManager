@@ -1,8 +1,8 @@
-import { format } from "date-fns";
 import { useState } from "react";
 import toast from "react-hot-toast";
 import { useDispatch } from "react-redux";
 import { createTask, updateTask } from "../../store/slices/tasksSlice";
+import { parseDateTimeValue, toDateTimeLocalValue, toIsoDateTimeString } from "../../utils/dates";
 import { TASK_PRIORITY, TASK_RECURRENCE, TASK_STATUS } from "../../utils/constants";
 import { Modal } from "../ui/Modal";
 import { Spinner } from "../ui/Spinner";
@@ -19,15 +19,6 @@ const defaultForm = {
   tags: "",
 };
 
-const toDateTimeLocal = (value) => {
-  if (!value) return "";
-
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return "";
-
-  return format(date, "yyyy-MM-dd'T'HH:mm");
-};
-
 export const TaskModal = ({ isOpen, onClose, task, onSaved }) => {
   const isEditing = Boolean(task);
   const initialForm = task
@@ -37,8 +28,8 @@ export const TaskModal = ({ isOpen, onClose, task, onSaved }) => {
         status: task.status || "pending",
         priority: task.priority || "medium",
         recurrence: task.recurrence || "none",
-        dueDate: toDateTimeLocal(task.dueDate),
-        reminderDate: toDateTimeLocal(task.reminderDate),
+        dueDate: toDateTimeLocalValue(task.dueDate),
+        reminderDate: toDateTimeLocalValue(task.reminderDate),
         tags: task.tags?.join(", ") || "",
       }
     : defaultForm;
@@ -83,7 +74,10 @@ const TaskForm = ({ initialForm, isEditing, onClose, onSaved, taskId }) => {
     if (form.title.trim().length > 120) nextErrors.title = "Use 120 characters or fewer.";
     if (form.description.trim().length > 500) nextErrors.description = "Use 500 characters or fewer.";
     if (form.tags.length > 120) nextErrors.tags = "Keep tags shorter.";
-    if (form.dueDate && form.reminderDate && new Date(form.reminderDate) > new Date(form.dueDate)) {
+    const dueDate = parseDateTimeValue(form.dueDate);
+    const reminderDate = parseDateTimeValue(form.reminderDate);
+
+    if (dueDate && reminderDate && reminderDate > dueDate) {
       nextErrors.reminderDate = "Reminder should be before the due date.";
     }
 
@@ -106,8 +100,8 @@ const TaskForm = ({ initialForm, isEditing, onClose, onSaved, taskId }) => {
       title: form.title.trim(),
       description: form.description.trim(),
       recurrence: form.recurrence,
-      dueDate: form.dueDate || null,
-      reminderDate: form.reminderDate || null,
+      dueDate: toIsoDateTimeString(form.dueDate),
+      reminderDate: toIsoDateTimeString(form.reminderDate),
       tags: form.tags
         ? form.tags
             .split(",")
@@ -121,11 +115,16 @@ const TaskForm = ({ initialForm, isEditing, onClose, onSaved, taskId }) => {
     setLoading(false);
 
     if ((isEditing ? updateTask : createTask).fulfilled.match(result)) {
-      toast.success(isEditing ? "Task updated." : "Task created.");
-      if (onSaved) {
-        onSaved();
+      try {
+        if (onSaved) {
+          await onSaved();
+        }
+      } catch (error) {
+        console.error("Task save refresh failed", error);
+      } finally {
+        toast.success(isEditing ? "Task updated." : "Task created.");
+        onClose();
       }
-      onClose();
     } else {
       toast.error(result.payload || "Something went wrong.");
     }

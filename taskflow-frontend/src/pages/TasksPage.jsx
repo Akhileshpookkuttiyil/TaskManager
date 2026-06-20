@@ -57,7 +57,7 @@ export const TasksPage = () => {
     const result = await dispatch(deleteTask(id));
     if (deleteTask.fulfilled.match(result)) {
       toast.success("Task deleted.");
-      dispatch(fetchTasks(filters));
+      dispatch(fetchTasks({ ...filters, force: true }));
     } else {
       toast.error("Failed to delete task.");
     }
@@ -96,12 +96,12 @@ export const TasksPage = () => {
             </p>
           </div>
 
-          <div className="flex gap-2.5">
-            <button type="button" onClick={toggleSort} className="btn-secondary">
+          <div className="flex w-full flex-col gap-2.5 sm:w-auto sm:flex-row">
+            <button type="button" onClick={toggleSort} className="btn-secondary w-full sm:w-auto">
               <ArrowDownUp size={15} />
               {filters.order === "desc" ? "Newest" : "Oldest"}
             </button>
-            <button type="button" onClick={() => setModalOpen(true)} className="btn-primary">
+            <button type="button" onClick={() => setModalOpen(true)} className="btn-primary w-full sm:w-auto">
               <Plus size={16} />
               New task
             </button>
@@ -154,7 +154,12 @@ export const TasksPage = () => {
       )}
 
       <Pagination pagination={pagination} />
-      <TaskModal isOpen={modalOpen} onClose={handleCloseModal} onSaved={() => dispatch(fetchTasks(filters))} task={editingTask} />
+      <TaskModal
+        isOpen={modalOpen}
+        onClose={handleCloseModal}
+        onSaved={() => dispatch(fetchTasks({ ...filters, force: true }))}
+        task={editingTask}
+      />
     </div>
   );
 };
