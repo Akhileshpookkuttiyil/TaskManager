@@ -4,6 +4,16 @@ const { TASK_STATUS, TASK_PRIORITY, TASK_RECURRENCE, LEGACY_TASK_STATUS } = requ
 const VALID_STATUSES = [...new Set([...Object.values(TASK_STATUS), ...Object.keys(LEGACY_TASK_STATUS)])];
 const VALID_PRIORITIES = Object.values(TASK_PRIORITY);
 const VALID_RECURRENCES = Object.values(TASK_RECURRENCE);
+const isValidTimeZone = (value) => {
+  if (value === null || value === undefined || value === "") return true;
+
+  try {
+    Intl.DateTimeFormat("en-US", { timeZone: value });
+    return true;
+  } catch (error) {
+    return false;
+  }
+};
 const isValidDateValue = (value) => {
   if (value === null || value === undefined || value === "") return true;
 
@@ -27,6 +37,7 @@ const taskValidator = [
     .withMessage(`Recurrence must be one of: ${VALID_RECURRENCES.join(", ")}`),
   body("dueDate").optional({ nullable: true }).custom(isValidDateValue).withMessage("Invalid date format"),
   body("reminderDate").optional({ nullable: true }).custom(isValidDateValue).withMessage("Invalid reminder date format"),
+  body("timeZone").optional().custom(isValidTimeZone).withMessage("Invalid time zone"),
   body("tags").optional().isArray().withMessage("Tags must be an array"),
 ];
 

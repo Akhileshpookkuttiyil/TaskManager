@@ -60,15 +60,12 @@ const getReminderNotificationType = (task, now = new Date()) => {
 
 const buildNotificationContent = (task, type) => {
   const titleBase = task.title || "Task";
-  const dueDateLabel = task.dueDate ? new Intl.DateTimeFormat("en-US", { dateStyle: "medium", timeStyle: "short" }).format(new Date(task.dueDate)) : null;
 
   switch (type) {
     case NOTIFICATION_TYPE.TASK_REMINDER:
       return {
         title: `${titleBase} reminder`,
-        message: dueDateLabel
-          ? `Your reminder time has arrived. Due ${dueDateLabel}.`
-          : "Your reminder time has arrived.",
+        message: "Your reminder time has arrived.",
       };
     case NOTIFICATION_TYPE.DUE_SOON:
       return {

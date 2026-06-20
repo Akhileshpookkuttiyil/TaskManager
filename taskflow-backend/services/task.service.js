@@ -413,6 +413,7 @@ const updateTask = async (taskId, userId, data) => {
   }
 
   const taskData = getTaskData(data);
+  const timeZone = data.timeZone;
   const task = await prisma.task.update({
     where: { id: taskId },
     data: {
@@ -449,6 +450,7 @@ const updateTask = async (taskId, userId, data) => {
       taskTitle: task.title,
       from: existingTask.dueDate,
       to: task.dueDate,
+      timeZone,
     });
   }
   if (hasCompletedStatusChange(existingTask, taskData)) {

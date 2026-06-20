@@ -100,6 +100,7 @@ const TaskForm = ({ initialForm, isEditing, onClose, onSaved, taskId }) => {
       title: form.title.trim(),
       description: form.description.trim(),
       recurrence: form.recurrence,
+      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       dueDate: toIsoDateTimeString(form.dueDate),
       reminderDate: toIsoDateTimeString(form.reminderDate),
       tags: form.tags
