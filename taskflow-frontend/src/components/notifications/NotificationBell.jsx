@@ -1,6 +1,7 @@
 import { formatDistanceToNow } from "date-fns";
 import { Bell, CheckCheck, Loader2, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { markAllNotificationsRead, markNotificationRead } from "../../store/slices/notificationsSlice";
@@ -100,10 +101,20 @@ export const NotificationBell = () => {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [alerts, setAlerts] = useState(() => getBrowserAlertsState());
+  const [isMobile, setIsMobile] = useState(false);
   const panelRef = useRef(null);
   const menuId = "notification-panel";
 
   const recentItems = useMemo(() => sortNotificationsByRecent(items), [items]);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth < 640);
+    };
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
 
   useEffect(() => {
     const unsubscribe = subscribeToBrowserAlertsChanges(setAlerts);
@@ -112,6 +123,7 @@ export const NotificationBell = () => {
 
   useEffect(() => {
     const handleClickOutside = (event) => {
+      if (window.innerWidth < 640) return; // Mobile has its own full screen backdrop button
       if (panelRef.current && !panelRef.current.contains(event.target)) {
         setOpen(false);
       }
@@ -173,6 +185,71 @@ export const NotificationBell = () => {
     });
   };
 
+  if (typeof document === "undefined") {
+    return null;
+  }
+
+  const renderPanel = () => {
+    return (
+      <div
+        id={menuId}
+        role="menu"
+        className="fixed inset-x-3 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-50 flex max-h-[calc(100dvh-8rem-env(safe-area-inset-bottom))] flex-col overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-2xl dark:border-neutral-800 dark:bg-neutral-900 sm:absolute sm:inset-auto sm:right-0 sm:top-[calc(100%+0.5rem)] sm:bottom-auto sm:left-auto sm:w-[min(22rem,calc(100vw-1.5rem))] sm:max-h-[min(28rem,calc(100dvh-6rem-env(safe-area-inset-bottom)))] md:w-[22rem] lg:w-80 xl:w-[23rem] 2xl:w-96 sm:rounded-xl sm:shadow-xl"
+      >
+        <div className="shrink-0 border-b border-neutral-100 px-3 py-2.5 dark:border-neutral-800">
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-xs font-medium uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
+              {unreadCount} unread
+            </p>
+
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-900 sm:hidden dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-white"
+              aria-label="Close notifications panel"
+            >
+              <X size={14} aria-hidden="true" />
+            </button>
+          </div>
+        </div>
+
+        <div className="shrink-0 border-b border-neutral-100 px-3 py-2.5 dark:border-neutral-800">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch">
+            <BrowserAlertsToggle alerts={alerts} onToggle={handleBrowserAlertsToggle} />
+            <button
+              type="button"
+              onClick={handleMarkAll}
+              disabled={unreadCount === 0}
+              className="inline-flex min-h-11 w-full items-center justify-center gap-1 rounded-xl border border-neutral-200 px-3 text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-10 sm:w-auto sm:shrink-0 dark:border-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-800"
+            >
+              <CheckCheck size={13} />
+              Mark all
+            </button>
+          </div>
+        </div>
+
+        <div className="min-h-0 flex-1 overflow-y-auto p-2">
+          {loading ? (
+            <div className="flex min-h-28 items-center justify-center gap-2 px-3 py-6 text-sm text-neutral-500 dark:text-neutral-400">
+              <Loader2 size={14} className="animate-spin" />
+              Loading notifications
+            </div>
+          ) : recentItems.length === 0 ? (
+            <div className="flex min-h-28 items-center justify-center px-3 py-6 text-center">
+              <p className="text-sm font-medium text-neutral-900 dark:text-white">No notifications yet</p>
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {recentItems.map((notification) => (
+                <NotificationItem key={notification._id} notification={notification} onRead={handleRead} />
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className="relative" ref={panelRef}>
       <button
@@ -193,71 +270,22 @@ export const NotificationBell = () => {
       </button>
 
       {open ? (
-        <>
-          <button
-            type="button"
-            aria-label="Close notifications"
-            onClick={() => setOpen(false)}
-            className="fixed inset-0 z-40 bg-neutral-950/20 backdrop-blur-[1px] sm:hidden"
-          />
-
-          <div
-            id={menuId}
-            role="menu"
-            className="fixed inset-x-3 bottom-[calc(4.5rem+env(safe-area-inset-bottom))] z-50 flex max-h-[calc(100dvh-8rem-env(safe-area-inset-bottom))] flex-col overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-2xl dark:border-neutral-800 dark:bg-neutral-900 sm:absolute sm:inset-auto sm:right-0 sm:top-[calc(100%+0.5rem)] sm:bottom-auto sm:left-auto sm:w-[min(22rem,calc(100vw-1.5rem))] sm:max-h-[min(28rem,calc(100dvh-6rem-env(safe-area-inset-bottom)))] md:w-[22rem] lg:w-80 xl:w-[23rem] 2xl:w-96 sm:rounded-xl sm:shadow-xl"
-          >
-            <div className="shrink-0 border-b border-neutral-100 px-3 py-2.5 dark:border-neutral-800">
-              <div className="flex items-center justify-between gap-2">
-                <p className="text-xs font-medium uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
-                  {unreadCount} unread
-                </p>
-
-                <button
-                  type="button"
-                  onClick={() => setOpen(false)}
-                  className="inline-flex h-7 w-7 items-center justify-center rounded-lg text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-900 sm:hidden dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-white"
-                  aria-label="Close notifications panel"
-                >
-                  <X size={14} aria-hidden="true" />
-                </button>
-              </div>
-            </div>
-
-            <div className="shrink-0 border-b border-neutral-100 px-3 py-2.5 dark:border-neutral-800">
-              <div className="flex flex-col gap-2 sm:flex-row sm:items-stretch">
-                <BrowserAlertsToggle alerts={alerts} onToggle={handleBrowserAlertsToggle} />
-                <button
-                  type="button"
-                  onClick={handleMarkAll}
-                  disabled={unreadCount === 0}
-                  className="inline-flex min-h-11 w-full items-center justify-center gap-1 rounded-xl border border-neutral-200 px-3 text-xs font-medium text-neutral-700 transition-colors hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-50 sm:min-h-10 sm:w-auto sm:shrink-0 dark:border-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-800"
-                >
-                  <CheckCheck size={13} />
-                  Mark all
-                </button>
-              </div>
-            </div>
-
-            <div className="min-h-0 flex-1 overflow-y-auto p-2">
-              {loading ? (
-                <div className="flex min-h-28 items-center justify-center gap-2 px-3 py-6 text-sm text-neutral-500 dark:text-neutral-400">
-                  <Loader2 size={14} className="animate-spin" />
-                  Loading notifications
-                </div>
-              ) : recentItems.length === 0 ? (
-                <div className="flex min-h-28 items-center justify-center px-3 py-6 text-center">
-                  <p className="text-sm font-medium text-neutral-900 dark:text-white">No notifications yet</p>
-                </div>
-              ) : (
-                <div className="space-y-2">
-                  {recentItems.map((notification) => (
-                    <NotificationItem key={notification._id} notification={notification} onRead={handleRead} />
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        </>
+        isMobile ? (
+          createPortal(
+            <>
+              <button
+                type="button"
+                aria-label="Close notifications"
+                onClick={() => setOpen(false)}
+                className="fixed inset-0 z-40 bg-neutral-950/20 backdrop-blur-[1px]"
+              />
+              {renderPanel()}
+            </>,
+            document.body
+          )
+        ) : (
+          renderPanel()
+        )
       ) : null}
     </div>
   );
