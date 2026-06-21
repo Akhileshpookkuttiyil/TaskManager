@@ -26,7 +26,6 @@ const ACTIVE_STATUSES = [TASK_STATUS.PENDING, TASK_STATUS.IN_PROGRESS];
 const COMPLETION_STATUSES = [TASK_STATUS.COMPLETED, TASK_STATUS.ARCHIVED];
 const VIEW_NAMES = new Set(["all", "my_day", "upcoming", "completed", "archived"]);
 const DATE_FILTERS = new Set(["all", "today", "tomorrow", "this_week", "overdue", "no_date"]);
-const RECURRING_GENERATION_LIMIT = 3;
 const GENERAL_UPDATE_FIELDS = ["title", "description", "reminderDate", "tags", "recurrence"];
 
 const getDayBounds = (date = new Date()) => {
@@ -88,74 +87,8 @@ const getNextRecurrenceDate = (date, recurrence, step = 1) => {
   return null;
 };
 
-const buildRecurringTaskPayload = (template, dueDate) => {
-  const templateDueDate = template.dueDate ? new Date(template.dueDate) : null;
-  const reminderOffset = template.reminderDate && templateDueDate ? new Date(template.reminderDate).getTime() - templateDueDate.getTime() : null;
-  const reminderDate = reminderOffset !== null ? new Date(dueDate.getTime() + reminderOffset) : null;
-
-  return {
-    title: template.title,
-    description: template.description,
-    status: TASK_STATUS.PENDING,
-    priority: template.priority,
-    recurrence: template.recurrence,
-    recurrenceParentId: template.id,
-    recurrenceKey: `${template.id}:${dueDate.toISOString()}`,
-    dueDate,
-    reminderDate,
-    completedAt: null,
-    archivedAt: null,
-    tags: template.tags || [],
-    userId: template.userId,
-  };
-};
-
-const syncRecurringTasks = async (userId) => {
-  const templates = await prisma.task.findMany({
-    where: {
-      userId,
-      recurrence: { not: TASK_RECURRENCE.NONE },
-      recurrenceParentId: null,
-      dueDate: { not: null },
-    },
-    select: {
-      id: true,
-      title: true,
-      description: true,
-      priority: true,
-      recurrence: true,
-      dueDate: true,
-      reminderDate: true,
-      tags: true,
-      userId: true,
-    },
-  });
-
-  const now = new Date();
-  const tasks = [];
-
-  templates.forEach((template) => {
-    const startDate = new Date(template.dueDate);
-
-    for (let step = 1; step <= RECURRING_GENERATION_LIMIT; step += 1) {
-      const dueDate = getNextRecurrenceDate(startDate, template.recurrence, step);
-      if (!dueDate || dueDate <= now) continue;
-
-      tasks.push(
-        prisma.task.upsert({
-          where: { recurrenceKey: `${template.id}:${dueDate.toISOString()}` },
-          create: buildRecurringTaskPayload(template, dueDate),
-          update: {},
-        })
-      );
-    }
-  });
-
-  await Promise.all(tasks);
-};
-
 const buildTaskWhere = (userId, { status, priority, search, view, dueDate }) => {
-  const where = { userId };
+  const where = { userId, recurrenceParentId: null };
   const filters = [];
   const now = new Date();
   const { start: todayStart, end: todayEnd } = getDayBounds(now);
@@ -333,7 +266,6 @@ const ensureTaskId = (taskId) => {
 
 const getTasks = async (userId, queryParams) => {
   await syncTaskNotifications(userId);
-  await syncRecurringTasks(userId);
   const where = buildTaskWhere(userId, queryParams);
   const { page, limit, skip } = getPagination(queryParams);
   const orderBy = getOrderBy(queryParams);
@@ -387,7 +319,6 @@ const createTask = async (userId, data) => {
   });
 
   await syncTaskNotifications(userId);
-  await syncRecurringTasks(userId);
   await recordActivity({
     userId,
     taskId: task.id,
@@ -414,71 +345,113 @@ const updateTask = async (taskId, userId, data) => {
 
   const taskData = getTaskData(data);
   const timeZone = data.timeZone;
-  const task = await prisma.task.update({
+  const nextLifecycleData = getLifecycleData(existingTask, taskData);
+
+  const updatedTask = await prisma.task.update({
     where: { id: taskId },
     data: {
       ...taskData,
-      ...getLifecycleData(existingTask, taskData),
+      ...nextLifecycleData,
     },
   });
 
+  let finalTask = updatedTask;
+  const shouldAdvanceRecurringTask =
+    existingTask.recurrence !== TASK_RECURRENCE.NONE &&
+    hasCompletedStatusChange(existingTask, taskData) &&
+    Boolean(existingTask.dueDate);
+
+  if (shouldAdvanceRecurringTask) {
+    const nextDueDate = getNextRecurrenceDate(existingTask.dueDate, existingTask.recurrence);
+    if (nextDueDate) {
+      const reminderOffset =
+        existingTask.reminderDate && existingTask.dueDate
+          ? new Date(existingTask.reminderDate).getTime() - new Date(existingTask.dueDate).getTime()
+          : null;
+
+      const nextReminderDate = reminderOffset !== null ? new Date(nextDueDate.getTime() + reminderOffset) : null;
+
+      finalTask = await prisma.task.update({
+        where: { id: taskId },
+        data: {
+          status: TASK_STATUS.PENDING,
+          completedAt: null,
+          archivedAt: null,
+          dueDate: nextDueDate,
+          reminderDate: nextReminderDate,
+        },
+      });
+
+      await recordActivity({
+        userId,
+        taskId: finalTask.id,
+        type: ACTIVITY_TYPE.DUE_DATE_CHANGED,
+        taskTitle: finalTask.title,
+        from: existingTask.dueDate,
+        to: finalTask.dueDate,
+        timeZone,
+      });
+    }
+  }
+
   await syncTaskNotifications(userId);
-  await syncRecurringTasks(userId);
+
   if (hasMeaningfulTaskUpdate(existingTask, taskData)) {
     await recordActivity({
       userId,
-      taskId: task.id,
+      taskId: finalTask.id,
       type: ACTIVITY_TYPE.TASK_UPDATED,
-      taskTitle: task.title,
+      taskTitle: finalTask.title,
     });
   }
   if (hasPriorityChanged(existingTask, taskData)) {
     await recordActivity({
       userId,
-      taskId: task.id,
+      taskId: finalTask.id,
       type: ACTIVITY_TYPE.PRIORITY_CHANGED,
-      taskTitle: task.title,
+      taskTitle: finalTask.title,
       from: existingTask.priority,
-      to: task.priority,
+      to: finalTask.priority,
     });
   }
   if (hasDueDateChanged(existingTask, taskData)) {
     await recordActivity({
       userId,
-      taskId: task.id,
+      taskId: finalTask.id,
       type: ACTIVITY_TYPE.DUE_DATE_CHANGED,
-      taskTitle: task.title,
+      taskTitle: finalTask.title,
       from: existingTask.dueDate,
-      to: task.dueDate,
+      to: finalTask.dueDate,
       timeZone,
     });
   }
   if (hasCompletedStatusChange(existingTask, taskData)) {
     await recordActivity({
       userId,
-      taskId: task.id,
+      taskId: updatedTask.id,
       type: ACTIVITY_TYPE.TASK_COMPLETED,
-      taskTitle: task.title,
+      taskTitle: updatedTask.title,
     });
   }
   if (hasArchivedStatusChange(existingTask, taskData)) {
     await recordActivity({
       userId,
-      taskId: task.id,
+      taskId: finalTask.id,
       type: ACTIVITY_TYPE.TASK_ARCHIVED,
-      taskTitle: task.title,
+      taskTitle: finalTask.title,
     });
   }
   if (hasRestoredStatusChange(existingTask, taskData)) {
     await recordActivity({
       userId,
-      taskId: task.id,
+      taskId: finalTask.id,
       type: ACTIVITY_TYPE.TASK_RESTORED,
-      taskTitle: task.title,
+      taskTitle: finalTask.title,
     });
   }
-  await recordTaskCompletion(userId, task);
-  return serializeTask(task);
+
+  await recordTaskCompletion(userId, updatedTask);
+  return serializeTask(finalTask);
 };
 
 const deleteTask = async (taskId, userId) => {
@@ -517,9 +490,8 @@ const deleteTask = async (taskId, userId) => {
 
 const getTaskStats = async (userId) => {
   await syncTaskNotifications(userId);
-  await syncRecurringTasks(userId);
   const tasks = await prisma.task.findMany({
-    where: { userId },
+    where: { userId, recurrenceParentId: null },
     select: {
       status: true,
       dueDate: true,

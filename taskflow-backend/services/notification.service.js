@@ -87,11 +87,6 @@ const buildNotificationContent = (task, type) => {
         title: `${titleBase} completed`,
         message: "Nice work. This task was marked complete.",
       };
-    case NOTIFICATION_TYPE.RECURRING_TASK_GENERATED:
-      return {
-        title: `${titleBase} generated`,
-        message: "A new recurring task has been created for you.",
-      };
     case NOTIFICATION_TYPE.STREAK_MILESTONE:
       return {
         title: "Streak milestone reached",
@@ -126,7 +121,7 @@ const upsertNotification = async ({ userId, taskId = null, type, dedupeKey, titl
 
 const syncTaskNotifications = async (userId) => {
   const tasks = await prisma.task.findMany({
-    where: { userId },
+    where: { userId, recurrenceParentId: null },
     select: {
       id: true,
       title: true,
