@@ -5,6 +5,8 @@ import { useDebounce } from "../../hooks/useDebounce";
 import { setFilters } from "../../store/slices/tasksSlice";
 import { TASK_DUE_DATE_FILTERS, TASK_PRIORITY, TASK_STATUS } from "../../utils/constants";
 
+import { useNavigate } from "react-router-dom";
+
 const FilterSelect = ({ label, value, options, onChange, id }) => (
   <div className="space-y-1.5">
     <label htmlFor={id} className="text-xs font-medium text-neutral-500 dark:text-neutral-400">
@@ -22,6 +24,7 @@ const FilterSelect = ({ label, value, options, onChange, id }) => (
 
 export const TaskFilters = () => {
   const dispatch = useDispatch();
+  const navigate = useNavigate();
   const { filters } = useSelector((state) => state.tasks);
   const [searchInput, setSearchInput] = useState(filters.search || "");
   const debouncedSearch = useDebounce(searchInput, 400);
@@ -31,7 +34,12 @@ export const TaskFilters = () => {
   }, [debouncedSearch, dispatch]);
 
   const updateFilter = (key) => (event) => {
-    dispatch(setFilters({ [key]: event.target.value }));
+    const val = event.target.value;
+    if (key === "view") {
+      navigate(`/tasks?view=${val}`);
+    } else {
+      dispatch(setFilters({ [key]: val }));
+    }
   };
 
   const clearFilters = () => {
@@ -42,12 +50,11 @@ export const TaskFilters = () => {
         priority: "",
         dueDate: "",
         search: "",
-        view: "all",
       })
     );
   };
 
-  const hasActiveFilters = filters.status || filters.priority || filters.dueDate || filters.search || filters.view !== "all";
+  const hasActiveFilters = Boolean(filters.status || filters.priority || filters.dueDate || filters.search);
 
   return (
     <div className="card space-y-4 p-4">
