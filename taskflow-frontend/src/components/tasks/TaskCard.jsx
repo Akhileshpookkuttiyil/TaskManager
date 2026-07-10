@@ -1,99 +1,146 @@
-import { CalendarDays, PencilLine, Tag, Trash2 } from "lucide-react";
-import { Badge } from "../ui/Badge";
+import { Tag, Trash2, Clock, Repeat } from "lucide-react";
 import { formatDateTimeValue, parseDateTimeValue } from "../../utils/dates";
 
-export const TaskCard = ({ task, onEdit, onDelete, highlighted = false }) => {
+export const TaskCard = ({ task, onEdit, onDelete, onComplete, highlighted = false }) => {
   const status = task.status || "pending";
   const isCompleted = status === "completed";
   const isArchived = status === "archived";
   const dueDate = parseDateTimeValue(task.dueDate);
-  const reminderDate = parseDateTimeValue(task.reminderDate);
   const isOverdue = Boolean(task.isOverdue) || Boolean(dueDate && dueDate < new Date() && !isCompleted && !isArchived);
+  
   const showTime = Boolean(dueDate && (dueDate.getHours() || dueDate.getMinutes()));
   const dueDateLabel = dueDate ? formatDateTimeValue(dueDate, showTime ? "MMM d, yyyy h:mm a" : "MMM d, yyyy") : null;
+
+  // Priority indicator colors
+  const priorityColors = {
+    high: "bg-rose-500 shadow-sm shadow-rose-500/20",
+    medium: "bg-amber-500 shadow-sm shadow-amber-500/20",
+    low: "bg-neutral-400 dark:bg-neutral-600",
+  };
 
   return (
     <div
       id={`task-${task._id}`}
-      className={`card scroll-mt-28 p-4 transition-colors hover:border-neutral-300 dark:hover:border-neutral-700 sm:p-4.5 ${
-        highlighted ? "border-brand-400 ring-2 ring-brand-100 dark:ring-brand-500/20" : ""
+      onClick={() => onEdit(task)}
+      className={`card cursor-pointer p-4 hover:shadow-md transition-all duration-200 group border-l-4 ${
+        highlighted ? "border-brand-500 ring-2 ring-brand-100 dark:ring-brand-500/10" : ""
+      } ${
+        task.priority === "high" ? "border-l-rose-500" :
+        task.priority === "medium" ? "border-l-amber-500" :
+        "border-l-neutral-300 dark:border-l-neutral-700"
       }`}
     >
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-2">
-            <h3
-              className={`text-sm font-medium text-neutral-900 dark:text-white ${
-                isCompleted ? "text-neutral-400 line-through dark:text-neutral-500" : ""
-              }`}
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0 flex-1 space-y-2.5">
+          {/* Title and Badges */}
+          <div className="flex items-start gap-2.5">
+            {/* Quick check circle */}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (onComplete) {
+                  onComplete(task);
+                }
+              }}
+              className="flex h-11 w-11 shrink-0 items-center justify-center -m-3.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 rounded-full"
+              aria-label={isCompleted ? "Mark task incomplete" : "Mark task complete"}
             >
-              {task.title}
-            </h3>
-            {isOverdue ? (
-              <span className="rounded-md bg-rose-50 px-1.5 py-0.5 text-xs font-medium text-rose-700 dark:bg-rose-500/10 dark:text-rose-300">
-                Overdue
+              <span className={`flex h-4.5 w-4.5 items-center justify-center rounded border transition-colors ${
+                isCompleted
+                  ? "bg-brand-600 border-brand-600 text-white dark:bg-brand-500 dark:border-brand-500"
+                  : "border-neutral-300 bg-white hover:border-brand-500 dark:border-neutral-700 dark:bg-neutral-900"
+              }`}>
+                {isCompleted && <span className="text-[10px] font-bold">✓</span>}
               </span>
-            ) : null}
-          </div>
+            </button>
 
-          {task.description ? (
-            <p className="mt-1.5 text-sm leading-6 text-neutral-500 dark:text-neutral-400">{task.description}</p>
-          ) : null}
-
-          <div className="mt-3 flex flex-wrap items-center gap-1.5">
-            <Badge value={status} />
-            <Badge value={task.priority} />
-            {task.recurrence && task.recurrence !== "none" ? <Badge value={task.recurrence} /> : null}
-            {isOverdue ? <Badge value="overdue" /> : null}
-            {task.dueDate ? (
-              <span
-                className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium ${
-                  isOverdue
-                    ? "bg-rose-50 text-rose-700 dark:bg-rose-500/10 dark:text-rose-300"
-                    : "bg-neutral-100 text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400"
+            <div className="min-w-0">
+              <h3
+                className={`text-sm font-semibold text-neutral-900 dark:text-white leading-5 truncate ${
+                  isCompleted ? "text-neutral-400 line-through dark:text-neutral-500" : ""
                 }`}
               >
-                <CalendarDays size={12} />
+                {task.title}
+              </h3>
+              
+              {task.description && (
+                <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400 line-clamp-1 leading-relaxed">
+                  {task.description}
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* Metadata Badges */}
+          <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+            {/* Priority dot */}
+            <span className="inline-flex items-center gap-1 rounded-md bg-neutral-50 border border-neutral-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-neutral-600 dark:bg-neutral-900/50 dark:border-neutral-800 dark:text-neutral-400">
+              <span className={`h-1.5 w-1.5 rounded-full ${priorityColors[task.priority] || priorityColors.low}`} />
+              {task.priority}
+            </span>
+
+            {/* Recurrence Repeat */}
+            {task.recurrence && task.recurrence !== "none" && (
+              <span className="inline-flex items-center gap-1 rounded-md bg-neutral-50 border border-neutral-100 px-2 py-0.5 text-[10px] font-semibold text-neutral-500 dark:bg-neutral-900/50 dark:border-neutral-800 dark:text-neutral-400">
+                <Repeat size={11} />
+                {task.recurrence}
+              </span>
+            )}
+
+            {/* Overdue Badge / Due Date */}
+            {task.dueDate && (
+              <span
+                className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-semibold ${
+                  isOverdue
+                    ? "bg-rose-50 border border-rose-100 text-rose-700 dark:bg-rose-950/20 dark:border-rose-900/30 dark:text-rose-400"
+                    : "bg-neutral-50 border border-neutral-100 text-neutral-500 dark:bg-neutral-900/50 dark:border-neutral-800 dark:text-neutral-400"
+                }`}
+              >
+                <Clock size={11} />
                 {dueDateLabel}
               </span>
-            ) : null}
-            {task.reminderDate ? (
-              <span className="inline-flex items-center gap-1 rounded-md bg-neutral-100 px-2 py-0.5 text-xs font-medium text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400">
-                <CalendarDays size={12} />
-                Reminder {formatDateTimeValue(reminderDate, "MMM d, yyyy h:mm a")}
+            )}
+
+            {/* Reminder Date */}
+            {task.reminderDate && (
+              <span className="inline-flex items-center gap-1 rounded-md bg-amber-50 border border-amber-100 text-amber-700 dark:bg-amber-950/10 dark:border-amber-900/30 dark:text-amber-400 px-2 py-0.5 text-[10px] font-semibold">
+                <Clock size={11} className="text-amber-500" />
+                Alert
               </span>
-            ) : null}
+            )}
+
+            {/* Standard label tags */}
             {task.tags?.map((tag) => (
               <span
                 key={tag}
-                className="inline-flex items-center gap-1 rounded-md bg-neutral-100 px-2 py-0.5 text-xs font-medium text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400"
+                className="inline-flex items-center gap-1 rounded-md bg-neutral-50 border border-neutral-100 px-2 py-0.5 text-[10px] font-semibold text-neutral-500 dark:bg-neutral-900/50 dark:border-neutral-800 dark:text-neutral-400"
               >
-                <Tag size={12} />
+                <Tag size={10} />
                 {tag}
               </span>
             ))}
           </div>
         </div>
 
-        <div className="flex items-center gap-1 self-end sm:self-start">
+        {/* Action button trigger */}
+        <div className="flex items-center shrink-0 opacity-0 group-hover:opacity-100 transition-opacity ml-1.5 self-center">
           <button
             type="button"
-            onClick={() => onEdit(task)}
-            className="btn-ghost h-8 w-8 px-0 text-neutral-400"
-            aria-label={`Edit task ${task.title}`}
-          >
-            <PencilLine size={15} />
-          </button>
-          <button
-            type="button"
-            onClick={() => onDelete(task._id)}
-            className="btn-ghost h-8 w-8 px-0 text-neutral-400 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-500/10 dark:hover:text-rose-400"
+            onClick={(e) => {
+              e.stopPropagation();
+              if (onDelete) {
+                onDelete(task._id);
+              }
+            }}
+            className="btn-ghost h-11 w-11 -m-1.5 p-0 text-neutral-400 hover:bg-rose-50 hover:text-rose-600 dark:hover:bg-rose-500/10 dark:hover:text-rose-400 flex items-center justify-center rounded-full"
             aria-label={`Delete task ${task.title}`}
           >
-            <Trash2 size={15} />
+            <Trash2 size={14} />
           </button>
         </div>
       </div>
     </div>
   );
 };
+export default TaskCard;
