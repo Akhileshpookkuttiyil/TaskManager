@@ -1,14 +1,21 @@
 import { differenceInCalendarDays, format, startOfDay, subDays } from "date-fns";
-import { CalendarDays, LockKeyhole, Mail, UserRound } from "lucide-react";
+import { CalendarDays, LockKeyhole, Mail, UserRound, Sparkles, Globe } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import { useDispatch, useSelector } from "react-redux";
 import { Spinner } from "../components/ui/Spinner";
 import { updateProfile } from "../store/slices/authSlice";
 import { fetchStats, fetchTasks } from "../store/slices/tasksSlice";
+import { useTheme } from "../components/theme/theme-context";
 
 const getStreakMetrics = (tasks) => {
-  const completionDays = [...new Set(tasks.filter((task) => task.completedAt).map((task) => format(startOfDay(new Date(task.completedAt)), "yyyy-MM-dd")))];
+  const completionDays = [
+    ...new Set(
+      tasks
+        .filter((task) => task.completedAt)
+        .map((task) => format(startOfDay(new Date(task.completedAt)), "yyyy-MM-dd"))
+    ),
+  ];
   const completionSet = new Set(completionDays);
 
   let current = 0;
@@ -202,6 +209,129 @@ const ProfileSettingsForm = ({ user }) => {
   );
 };
 
+const PreferencesSettingsForm = () => {
+  const { theme, setTheme } = useTheme();
+
+  const [defaultPriority, setDefaultPriority] = useState(
+    () => localStorage.getItem("taskflow-settings-default-priority") || "medium"
+  );
+  const [defaultOffset, setDefaultOffset] = useState(
+    () => localStorage.getItem("taskflow-settings-default-offset-hours") || "24"
+  );
+  const [timezone, setTimezone] = useState(
+    () => localStorage.getItem("taskflow-settings-timezone") || Intl.DateTimeFormat().resolvedOptions().timeZone
+  );
+
+  const handleSavePreferences = (e) => {
+    e.preventDefault();
+    localStorage.setItem("taskflow-settings-default-priority", defaultPriority);
+    localStorage.setItem("taskflow-settings-default-offset-hours", defaultOffset);
+    localStorage.setItem("taskflow-settings-timezone", timezone);
+    toast.success("Preferences saved successfully!");
+  };
+
+  return (
+    <form className="card p-6 space-y-5" onSubmit={handleSavePreferences}>
+      <div>
+        <p className="section-eyebrow">Preferences</p>
+        <h3 className="mt-1 text-base font-semibold text-neutral-900 dark:text-white">Workspace Preferences</h3>
+        <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
+          Customize theme, default task priority, offsets, and timezone profiles.
+        </p>
+      </div>
+
+      <div className="space-y-4">
+        {/* Appearance Mode */}
+        <div>
+          <label className="label">Appearance</label>
+          <div className="flex gap-1 rounded-lg border border-neutral-200/80 p-0.5 bg-neutral-50/50 dark:border-neutral-800 dark:bg-neutral-900/40 w-fit">
+            {[
+              { id: "light", label: "Light" },
+              { id: "dark", label: "Dark" },
+              { id: "system", label: "System" },
+            ].map((opt) => (
+              <button
+                key={opt.id}
+                type="button"
+                onClick={() => setTheme(opt.id)}
+                className={`rounded-md px-3.5 py-1.5 text-xs font-semibold transition-all ${
+                  theme === opt.id
+                    ? "bg-white text-neutral-900 shadow-sm dark:bg-neutral-950 dark:text-white"
+                    : "text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white"
+                }`}
+              >
+                {opt.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Priority Setting */}
+        <div>
+          <label htmlFor="pref-priority" className="label">Default Task Priority</label>
+          <select
+            id="pref-priority"
+            value={defaultPriority}
+            onChange={(e) => setDefaultPriority(e.target.value)}
+            className="input text-sm py-1.5"
+          >
+            <option value="low">Low</option>
+            <option value="medium">Medium</option>
+            <option value="high">High</option>
+          </select>
+        </div>
+
+        {/* Default Date Offset */}
+        <div>
+          <label htmlFor="pref-offset" className="label">Default Due Date Offset</label>
+          <select
+            id="pref-offset"
+            value={defaultOffset}
+            onChange={(e) => setDefaultOffset(e.target.value)}
+            className="input text-sm py-1.5"
+          >
+            <option value="0">Today</option>
+            <option value="24">Tomorrow (24 hours)</option>
+            <option value="72">3 Days (72 hours)</option>
+            <option value="168">7 Days (168 hours)</option>
+          </select>
+        </div>
+
+        {/* Timezone Profile */}
+        <div>
+          <label htmlFor="pref-timezone" className="label flex items-center gap-1">
+            <Globe size={13} />
+            Timezone Profile
+          </label>
+          <select
+            id="pref-timezone"
+            value={timezone}
+            onChange={(e) => setTimezone(e.target.value)}
+            className="input text-sm py-1.5"
+          >
+            <option value="UTC">UTC (Coordinated Universal Time)</option>
+            <option value="America/New_York">EST/EDT (New York)</option>
+            <option value="America/Chicago">CST/CDT (Chicago)</option>
+            <option value="America/Denver">MST/MDT (Denver)</option>
+            <option value="America/Los_Angeles">PST/PDT (Los Angeles)</option>
+            <option value="Europe/London">GMT/BST (London)</option>
+            <option value="Europe/Paris">CET/CEST (Paris)</option>
+            <option value="Asia/Kolkata">IST (Kolkata)</option>
+            <option value="Asia/Tokyo">JST (Tokyo)</option>
+            <option value="Australia/Sydney">AEST/AEDT (Sydney)</option>
+          </select>
+        </div>
+
+        <div className="flex justify-end pt-2 border-t border-neutral-100 dark:border-neutral-900">
+          <button type="submit" className="btn-primary min-w-[140px]">
+            Save preferences
+          </button>
+        </div>
+      </div>
+    </form>
+  );
+};
+
 export const ProfilePage = () => {
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
@@ -227,7 +357,7 @@ export const ProfilePage = () => {
   }, [items, stats]);
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-6">
+    <div className="space-y-6">
       <div className="space-y-2">
         <p className="section-eyebrow">Account</p>
         <h2 className="text-2xl font-semibold text-neutral-900 dark:text-white">Profile settings</h2>
@@ -237,6 +367,7 @@ export const ProfilePage = () => {
       </div>
 
       <section className="grid gap-6 xl:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]">
+        {/* Left Column Data readouts */}
         <div className="space-y-6">
           <div className="card p-6">
             <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
@@ -254,7 +385,7 @@ export const ProfilePage = () => {
                     Member since {user?.createdAt ? format(new Date(user.createdAt), "MMM d, yyyy") : "-"}
                   </span>
                   <span className="inline-flex items-center gap-1.5 rounded-full bg-neutral-100 px-3 py-1 text-xs font-medium text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300">
-                    <UserRound size={12} />
+                    <Sparkles size={12} className="text-brand-500" />
                     TaskFlow member
                   </span>
                 </div>
@@ -287,8 +418,13 @@ export const ProfilePage = () => {
           </div>
         </div>
 
-        <ProfileSettingsForm key={user?._id || "profile"} user={user} />
+        {/* Right Column Forms */}
+        <div className="space-y-6">
+          <ProfileSettingsForm key={user?._id || "profile"} user={user} />
+          <PreferencesSettingsForm />
+        </div>
       </section>
     </div>
   );
 };
+export default ProfilePage;

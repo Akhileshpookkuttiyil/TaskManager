@@ -1,10 +1,38 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Instrument+Serif:ital@0;1&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Instrument+Serif:ital@0;1&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
+  :root {
+    --bg-app: #f8fafc;
+    --bg-surface: #ffffff;
+    --border-subtle: #f1f5f9;
+    --border-neutral: #e2e8f0;
+    --text-primary: #0f172a;
+    --text-secondary: #475569;
+    --text-muted: #94a3b8;
+    --brand-50: #eef2ff;
+    --brand-500: #6366f1;
+    --brand-600: #4f46e5;
+    --brand-700: #4338ca;
+  }
+
+  .dark {
+    --bg-app: #030712;
+    --bg-surface: #0b0f19;
+    --border-subtle: #1f2937;
+    --border-neutral: #374151;
+    --text-primary: #f9fafb;
+    --text-secondary: #9ca3af;
+    --text-muted: #6b7280;
+    --brand-50: #1e1b4b;
+    --brand-500: #6366f1;
+    --brand-600: #4f46e5;
+    --brand-700: #4338ca;
+  }
+
   * {
     box-sizing: border-box;
   }
@@ -14,7 +42,10 @@
   }
 
   body {
-    @apply min-h-screen bg-neutral-50 font-sans text-neutral-900 selection:bg-brand-100 selection:text-brand-700 dark:bg-neutral-950 dark:text-neutral-100;
+    background-color: var(--bg-app);
+    color: var(--text-primary);
+    @apply min-h-screen font-sans selection:bg-brand-500/20 selection:text-brand-600;
+    transition: background-color 0.2s ease, color 0.2s ease;
   }
 
   button,
@@ -53,51 +84,108 @@
 
 @layer components {
   .app-shell {
-    @apply min-h-screen bg-neutral-50 text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100;
+    background-color: var(--bg-app);
   }
 
+  /* Card */
   .card {
-    @apply rounded-xl border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900;
+    background-color: var(--bg-surface);
+    border: 1px solid var(--border-neutral);
+    @apply rounded-xl shadow-sm transition-all duration-200;
   }
 
+  .card-hover:hover {
+    @apply -translate-y-0.5 shadow-md border-neutral-300 dark:border-neutral-700;
+  }
+
+  /* Button Primitives */
   .btn-primary {
-    @apply inline-flex min-h-9 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg bg-brand-600 px-3.5 py-2 text-sm font-medium text-white transition-colors hover:bg-brand-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60;
+    background-color: var(--brand-600);
+    @apply inline-flex min-h-9 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg px-3.5 py-2 text-sm font-medium text-white transition-all duration-200 hover:bg-brand-700 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 shadow-sm;
   }
 
   .btn-secondary {
-    @apply inline-flex min-h-9 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg border border-neutral-200 bg-white px-3.5 py-2 text-sm font-medium text-neutral-700 transition-colors hover:bg-neutral-50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-200 dark:hover:bg-neutral-800;
+    background-color: var(--bg-surface);
+    border: 1px solid var(--border-neutral);
+    color: var(--text-secondary);
+    @apply inline-flex min-h-9 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg px-3.5 py-2 text-sm font-medium transition-all duration-200 hover:bg-neutral-50 hover:text-neutral-900 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 dark:hover:bg-neutral-800 dark:hover:text-white shadow-sm;
   }
 
   .btn-ghost {
-    @apply inline-flex min-h-9 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg px-3.5 py-2 text-sm font-medium text-neutral-600 transition-colors hover:bg-neutral-100 hover:text-neutral-900 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 dark:text-neutral-300 dark:hover:bg-neutral-800 dark:hover:text-white;
+    color: var(--text-secondary);
+    @apply inline-flex min-h-9 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg px-3.5 py-2 text-sm font-medium transition-all duration-200 hover:bg-neutral-100 hover:text-neutral-900 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 dark:hover:bg-neutral-800 dark:hover:text-white;
   }
 
   .btn-danger {
-    @apply inline-flex min-h-9 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg bg-rose-600 px-3.5 py-2 text-sm font-medium text-white transition-colors hover:bg-rose-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60;
+    @apply inline-flex min-h-9 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg bg-rose-600 px-3.5 py-2 text-sm font-medium text-white transition-all duration-200 hover:bg-rose-700 active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-rose-500 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 shadow-sm;
   }
 
+  /* Form Elements */
   .input {
-    @apply w-full rounded-lg border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900 placeholder:text-neutral-400 transition-colors focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-100 dark:placeholder:text-neutral-500 dark:focus:border-brand-400;
+    background-color: var(--bg-surface);
+    border: 1px solid var(--border-neutral);
+    color: var(--text-primary);
+    @apply w-full rounded-lg px-3.5 py-2.5 text-sm placeholder:text-neutral-400 transition-all duration-200 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-500/20 dark:placeholder:text-neutral-500 dark:focus:border-brand-400;
   }
 
   .input-error {
-    @apply border-rose-400 focus:border-rose-500 focus:ring-rose-500/20;
+    @apply border-rose-400 focus:border-rose-500 focus:ring-rose-500/20 dark:border-rose-500/60;
   }
 
   .label {
-    @apply mb-1.5 block text-sm font-medium text-neutral-700 dark:text-neutral-200;
+    color: var(--text-secondary);
+    @apply mb-1.5 block text-xs font-semibold uppercase tracking-wider;
   }
 
   .field-hint {
-    @apply mt-1 text-xs text-neutral-500 dark:text-neutral-400;
+    color: var(--text-muted);
+    @apply mt-1 text-xs;
   }
 
   .section-eyebrow {
-    @apply text-xs font-medium uppercase tracking-widest text-neutral-400 dark:text-neutral-500;
+    color: var(--text-muted);
+    @apply text-xs font-semibold uppercase tracking-widest;
   }
 
+  /* Skeleton Loaders */
+  .skeleton {
+    @apply animate-pulse rounded-lg bg-neutral-200/80 dark:bg-neutral-800/80;
+  }
+
+  .skeleton-shimmer {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .skeleton-shimmer::after {
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    transform: translateX(-100%);
+    background-image: linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0) 0%,
+      rgba(255, 255, 255, 0.08) 20%,
+      rgba(255, 255, 255, 0.16) 60%,
+      rgba(255, 255, 255, 0) 100%
+    );
+    animation: shimmer 1.6s infinite;
+    content: '';
+  }
+
+  @keyframes shimmer {
+    100% {
+      transform: translateX(100%);
+    }
+  }
+
+  /* Big Calendar Styling Overrides */
   .calendar-shell .rbc-calendar {
-    @apply rounded-xl border border-neutral-200 bg-white p-3 dark:border-neutral-800 dark:bg-neutral-900;
+    background-color: var(--bg-surface);
+    border: 1px solid var(--border-neutral);
+    @apply rounded-xl p-3;
   }
 
   .calendar-shell .rbc-toolbar {
@@ -105,60 +193,72 @@
   }
 
   .calendar-shell .rbc-toolbar-label {
-    @apply text-sm font-semibold text-neutral-900 dark:text-white;
+    color: var(--text-primary);
+    @apply text-sm font-semibold;
   }
 
   .calendar-shell .rbc-btn-group {
-    @apply inline-flex overflow-hidden rounded-lg border border-neutral-200 dark:border-neutral-700;
+    border: 1px solid var(--border-neutral);
+    @apply inline-flex overflow-hidden rounded-lg;
   }
 
   .calendar-shell .rbc-btn-group button {
-    @apply bg-white px-3 py-1.5 text-sm text-neutral-600 transition-colors hover:bg-neutral-50 dark:bg-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-800;
+    background-color: var(--bg-surface);
+    color: var(--text-secondary);
+    @apply px-3 py-1.5 text-sm transition-colors hover:bg-neutral-50 dark:hover:bg-neutral-800;
   }
 
   .calendar-shell .rbc-btn-group button + button {
-    @apply border-l border-neutral-200 dark:border-neutral-700;
+    border-left: 1px solid var(--border-neutral);
   }
 
   .calendar-shell .rbc-btn-group button.rbc-active {
-    @apply bg-neutral-900 text-white dark:bg-white dark:text-neutral-900;
+    background-color: var(--text-primary);
+    color: var(--bg-surface);
   }
 
   .calendar-shell .rbc-month-view,
   .calendar-shell .rbc-time-view,
   .calendar-shell .rbc-agenda-view {
-    @apply border-neutral-200 dark:border-neutral-800;
+    border-color: var(--border-neutral);
   }
 
   .calendar-shell .rbc-header {
-    @apply border-neutral-200 py-2 text-xs font-semibold uppercase tracking-wider text-neutral-500 dark:border-neutral-800 dark:text-neutral-400;
+    border-color: var(--border-neutral);
+    color: var(--text-secondary);
+    @apply py-2 text-xs font-semibold uppercase tracking-wider;
   }
 
   .calendar-shell .rbc-off-range-bg {
-    @apply bg-neutral-50 dark:bg-neutral-950;
+    @apply bg-neutral-50/50 dark:bg-neutral-900/20;
   }
 
   .calendar-shell .rbc-today {
-    @apply bg-brand-50/60 dark:bg-brand-500/10;
+    background-color: var(--brand-50);
   }
 
   .calendar-shell .rbc-date-cell {
-    @apply px-2 py-1;
+    @apply px-2 py-1 text-xs font-medium;
   }
 
   .calendar-shell .rbc-day-bg + .rbc-day-bg {
-    @apply border-l border-neutral-200 dark:border-neutral-800;
+    border-left: 1px solid var(--border-neutral);
   }
 
   .calendar-shell .rbc-month-row + .rbc-month-row {
-    @apply border-t border-neutral-200 dark:border-neutral-800;
+    border-top: 1px solid var(--border-neutral);
   }
 
   .calendar-shell .rbc-event {
-    @apply rounded-md border-0 px-2 py-1 text-xs font-medium shadow-none;
+    @apply rounded-md border-0 px-2 py-1 text-xs font-medium shadow-sm transition-all duration-200 hover:scale-[1.02];
   }
 
   .calendar-shell .rbc-current-time-indicator {
     @apply bg-rose-500;
+  }
+  
+  /* Focus indicator ring */
+  .focus-ring {
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-neutral-950;
   }
 }
