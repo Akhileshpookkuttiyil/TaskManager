@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { Suspense, lazy, useEffect } from "react";
+import { Suspense, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchCurrentUser } from "./store/slices/authSlice";
 import { AppLayout } from "./components/layout/AppLayout";
@@ -10,8 +10,8 @@ import { DashboardPage } from "./pages/DashboardPage";
 import { TasksPage } from "./pages/TasksPage";
 import { ProfilePage } from "./pages/ProfilePage";
 import { Spinner } from "./components/ui/Spinner";
-
-const CalendarPage = lazy(() => import("./pages/CalendarPage").then((module) => ({ default: module.CalendarPage })));
+import { NotificationsPage } from "./pages/NotificationsPage";
+import { AnalyticsPage } from "./pages/AnalyticsPage";
 
 const App = () => {
   const dispatch = useDispatch();
@@ -53,7 +53,8 @@ const App = () => {
         >
           <Route path="/" element={<DashboardPage />} />
           <Route path="/tasks" element={<TasksPage />} />
-          <Route path="/calendar" element={<CalendarPage />} />
+          <Route path="/notifications" element={<NotificationsPage />} />
+          <Route path="/analytics" element={<AnalyticsPage />} />
           <Route path="/profile" element={<ProfilePage />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
