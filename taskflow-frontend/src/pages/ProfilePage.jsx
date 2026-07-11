@@ -385,7 +385,7 @@ export const ProfilePage = () => {
                     Member since {user?.createdAt ? format(new Date(user.createdAt), "MMM d, yyyy") : "-"}
                   </span>
                   <span className="inline-flex items-center gap-1.5 rounded-full bg-neutral-100 px-3 py-1 text-xs font-medium text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300">
-                    <Sparkles size={12} className="text-brand-500" />
+                    <Sparkles size={12} className="text-neutral-500 dark:text-neutral-400" />
                     TaskFlow member
                   </span>
                 </div>

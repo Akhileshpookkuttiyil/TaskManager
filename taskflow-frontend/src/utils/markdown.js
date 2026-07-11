@@ -23,7 +23,7 @@ export const parseMarkdown = (text = "") => {
   html = html.replace(/`(.*?)`/g, "<code class='px-1 py-0.5 rounded bg-neutral-100 dark:bg-neutral-800 text-xs font-mono'>$1</code>");
 
   // Links ([label](url))
-  html = html.replace(/\[(.*?)\]\((.*?)\)/g, "<a href='$2' target='_blank' rel='noopener noreferrer' class='text-brand-600 hover:underline dark:text-brand-400'>$1</a>");
+  html = html.replace(/\[(.*?)\]\((.*?)\)/g, "<a href='$2' target='_blank' rel='noopener noreferrer' class='font-medium text-neutral-900 hover:underline dark:text-white'>$1</a>");
 
   // Split lines to detect block elements like lists
   const lines = html.split("\n");

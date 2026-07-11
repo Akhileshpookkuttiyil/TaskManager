@@ -4,6 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import {
   Award,
   Calendar,
+  Check,
   CheckCircle2,
   Flame,
   Plus,
@@ -176,27 +177,27 @@ export const DashboardPage = () => {
         <div className="space-y-6">
           {/* Overdue alert banner */}
           {metrics.overdueCount > 0 && (
-            <div className="flex items-center justify-between rounded-xl border border-rose-200 bg-rose-50/50 p-4 dark:border-rose-900/30 dark:bg-rose-950/10">
+            <div className="flex items-center justify-between rounded-xl border border-red-700/20 bg-red-950/10 p-4 dark:border-red-300/20 dark:bg-red-950/20">
               <div className="flex items-center gap-3">
-                <AlertTriangle className="text-rose-600 dark:text-rose-400" size={18} />
+                <AlertTriangle className="text-red-700 dark:text-red-300" size={18} />
                 <div>
-                  <h4 className="text-sm font-semibold text-rose-800 dark:text-rose-300">
+                  <h4 className="text-sm font-semibold text-red-800 dark:text-red-200">
                     You have {metrics.overdueCount} overdue {metrics.overdueCount === 1 ? "task" : "tasks"}
                   </h4>
-                  <p className="text-xs text-rose-700 dark:text-rose-400 mt-0.5">
+                  <p className="text-xs text-red-700 dark:text-red-300 mt-0.5">
                     Reschedule them to keep your agenda on track.
                   </p>
                 </div>
               </div>
-              <Link to="/tasks?view=upcoming&status=pending" className="text-xs font-semibold text-rose-700 dark:text-rose-400 flex items-center gap-1 hover:underline">
+              <Link to="/tasks?view=upcoming&status=pending" className="text-xs font-semibold text-red-700 dark:text-red-300 flex items-center gap-1 hover:underline">
                 View All <ArrowRight size={12} />
               </Link>
             </div>
           )}
 
           {/* Today's Focus Card */}
-          <div className="card p-5 border-brand-500/20 dark:border-brand-500/10">
-            <span className="inline-flex items-center gap-1 rounded-full bg-brand-550/10 px-2 py-0.5 text-[10px] font-semibold text-brand-700 dark:text-brand-400 uppercase tracking-wider">
+          <div className="card p-5 border-neutral-300/70 dark:border-neutral-700">
+            <span className="inline-flex items-center gap-1 rounded-full bg-neutral-100 px-2 py-0.5 text-[10px] font-semibold text-neutral-700 dark:bg-neutral-800 dark:text-neutral-200 uppercase tracking-wider">
               <Zap size={10} />
               Today's Focus
             </span>
@@ -244,9 +245,9 @@ export const DashboardPage = () => {
                     <div className="flex items-center gap-3 min-w-0">
                       <button
                         onClick={() => handleCompleteTask(task)}
-                        className="h-4.5 w-4.5 rounded-md border border-neutral-300 dark:border-neutral-700 flex items-center justify-center text-transparent hover:text-brand-500 hover:border-brand-500 transition-colors"
+                        className="h-4.5 w-4.5 rounded-md border border-neutral-300 dark:border-neutral-700 flex items-center justify-center text-transparent hover:text-neutral-950 hover:border-neutral-950 dark:hover:text-white dark:hover:border-white transition-colors"
                       >
-                        ✓
+                        <Check size={11} strokeWidth={3} />
                       </button>
                       <Link to={`/tasks?focus=${task._id}`} className="text-sm font-medium text-neutral-900 dark:text-white truncate hover:underline">
                         {task.title}
@@ -285,8 +286,8 @@ export const DashboardPage = () => {
                       </p>
                     </div>
                     <span className={`rounded px-1.5 py-0.5 text-[10px] font-semibold capitalize ${
-                      task.priority === "high" ? "bg-rose-50 text-rose-700 dark:bg-rose-950/20 dark:text-rose-400" :
-                      task.priority === "medium" ? "bg-amber-50 text-amber-700 dark:bg-amber-950/20 dark:text-amber-400" :
+                      task.priority === "high" ? "bg-red-950/10 text-red-700 dark:bg-red-950/20 dark:text-red-300" :
+                      task.priority === "medium" ? "bg-neutral-100 text-neutral-700 dark:bg-neutral-800 dark:text-neutral-200" :
                       "bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300"
                     }`}>
                       {task.priority}
@@ -304,7 +305,7 @@ export const DashboardPage = () => {
           <div className="card p-5 space-y-5">
             <div>
               <h3 className="text-sm font-bold text-neutral-900 dark:text-white flex items-center gap-1.5">
-                <Award size={16} className="text-brand-500" />
+                <Award size={16} className="text-neutral-500 dark:text-neutral-400" />
                 Productivity Performance
               </h3>
               <p className="text-[11px] text-neutral-400 mt-0.5">Goal and completion metrics</p>
@@ -319,7 +320,7 @@ export const DashboardPage = () => {
                 {metrics.productivityScore}%
               </h4>
               <div className="mt-3 flex items-center justify-center gap-1 text-xs text-neutral-500 dark:text-neutral-400">
-                <TrendingUp size={14} className="text-emerald-500" />
+                <TrendingUp size={14} className="text-neutral-500 dark:text-neutral-400" />
                 <span>Steady focus this week</span>
               </div>
             </div>
@@ -327,14 +328,14 @@ export const DashboardPage = () => {
             {/* Streak Metrics */}
             <div className="grid grid-cols-2 gap-2.5">
               <div className="rounded-xl border border-neutral-100 dark:border-neutral-900 p-3 flex flex-col items-center">
-                <Flame size={18} className="text-amber-500" />
+                <Flame size={18} className="text-neutral-500 dark:text-neutral-400" />
                 <p className="text-[10px] font-semibold text-neutral-400 mt-1 uppercase">Current Streak</p>
                 <p className="text-lg font-bold text-neutral-900 dark:text-white mt-0.5 tabular-nums">
                   {metrics.streaks.current} {metrics.streaks.current === 1 ? "day" : "days"}
                 </p>
               </div>
               <div className="rounded-xl border border-neutral-100 dark:border-neutral-900 p-3 flex flex-col items-center">
-                <Award size={18} className="text-brand-500" />
+                <Award size={18} className="text-neutral-500 dark:text-neutral-400" />
                 <p className="text-[10px] font-semibold text-neutral-400 mt-1 uppercase">Best Streak</p>
                 <p className="text-lg font-bold text-neutral-900 dark:text-white mt-0.5 tabular-nums">
                   {metrics.streaks.best} {metrics.streaks.best === 1 ? "day" : "days"}
@@ -364,7 +365,7 @@ export const DashboardPage = () => {
               </div>
               <div className="h-1.5 rounded-full bg-neutral-100 dark:bg-neutral-800">
                 <div
-                  className="h-1.5 rounded-full bg-brand-600 dark:bg-brand-400 transition-all duration-500"
+                  className="h-1.5 rounded-full bg-neutral-900 dark:bg-white transition-all duration-500"
                   style={{ width: `${metrics.weekly.progressPercent}%` }}
                 />
               </div>
@@ -379,14 +380,14 @@ export const DashboardPage = () => {
                 to="/tasks"
                 className="flex flex-col items-center gap-1.5 rounded-xl border border-neutral-100 p-3 hover:bg-neutral-50 text-center dark:border-neutral-900 dark:hover:bg-neutral-800/50"
               >
-                <CheckCircle2 size={16} className="text-brand-500" />
+                <CheckCircle2 size={16} className="text-neutral-500 dark:text-neutral-400" />
                 <span className="text-[11px] font-semibold text-neutral-600 dark:text-neutral-300">Workspace</span>
               </Link>
               <Link
                 to="/tasks?viewMode=calendar"
                 className="flex flex-col items-center gap-1.5 rounded-xl border border-neutral-100 p-3 hover:bg-neutral-50 text-center dark:border-neutral-900 dark:hover:bg-neutral-800/50"
               >
-                <Calendar size={16} className="text-brand-500" />
+                <Calendar size={16} className="text-neutral-500 dark:text-neutral-400" />
                 <span className="text-[11px] font-semibold text-neutral-600 dark:text-neutral-300">Planner</span>
               </Link>
             </div>

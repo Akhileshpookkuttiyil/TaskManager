@@ -234,7 +234,7 @@ export const TasksPage = () => {
             toast.dismiss(t.id);
             handleUndoDelete(id);
           }}
-          className="text-xs font-bold text-brand-600 dark:text-brand-400 uppercase tracking-wider hover:underline focus:outline-none"
+          className="text-xs font-bold text-neutral-950 dark:text-white uppercase tracking-wider hover:underline focus:outline-none"
         >
           Undo
         </button>
@@ -468,7 +468,7 @@ export const TasksPage = () => {
                       type="checkbox"
                       checked={selectedIds.includes(task._id)}
                       onChange={() => handleSelectCard(task._id)}
-                      className="rounded border-neutral-300 text-brand-600 focus:ring-brand-500 h-4.5 w-4.5 dark:border-neutral-700"
+                      className="rounded border-neutral-300 text-neutral-950 focus:ring-neutral-950 h-4.5 w-4.5 dark:border-neutral-700 dark:text-white dark:focus:ring-white"
                     />
                   )}
                   <div className="flex-1 min-w-0">
@@ -529,7 +529,7 @@ export const TasksPage = () => {
 
       {/* Floating Bulk Actions bar */}
       {isSelectMode && selectedIds.length > 0 && (
-        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-40 flex items-center justify-between gap-4 rounded-xl bg-neutral-900 px-4 py-3 shadow-2xl dark:bg-white text-white dark:text-neutral-900 border border-neutral-800 dark:border-neutral-100 min-w-[280px] sm:min-w-[360px] animate-in slide-in-from-bottom duration-150">
+        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-40 flex items-center justify-between gap-4 rounded-xl bg-neutral-900 px-4 py-3 dark:bg-white text-white dark:text-neutral-900 border border-neutral-800 dark:border-neutral-100 min-w-[280px] sm:min-w-[360px] animate-in slide-in-from-bottom duration-150" style={{ boxShadow: "var(--shadow-elevated)" }}>
           <span className="text-xs font-bold tabular-nums">
             {selectedIds.length} selected
           </span>
@@ -544,7 +544,7 @@ export const TasksPage = () => {
             <button
               onClick={handleBulkDelete}
               disabled={loadingBulk}
-              className="inline-flex items-center gap-1 rounded-lg bg-rose-600 hover:bg-rose-700 text-white px-2.5 py-1.5 text-xs font-semibold disabled:opacity-50"
+              className="inline-flex items-center gap-1 rounded-lg bg-red-700 hover:bg-red-800 text-white px-2.5 py-1.5 text-xs font-semibold disabled:opacity-50 dark:bg-red-400 dark:text-neutral-950 dark:hover:bg-red-300"
             >
               Delete
             </button>

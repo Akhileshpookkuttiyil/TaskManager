@@ -131,9 +131,9 @@ export const AnalyticsPage = () => {
 
   const getHeatmapColor = (count) => {
     if (count === 0) return "bg-neutral-100 dark:bg-neutral-800";
-    if (count <= 2) return "bg-emerald-200 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-400";
-    if (count <= 4) return "bg-emerald-400 dark:bg-emerald-700/60 text-white";
-    return "bg-emerald-600 dark:bg-emerald-500 text-white";
+    if (count <= 2) return "bg-neutral-300 text-neutral-950 dark:bg-neutral-700 dark:text-neutral-100";
+    if (count <= 4) return "bg-neutral-600 text-white dark:bg-neutral-400 dark:text-neutral-950";
+    return "bg-neutral-950 text-white dark:bg-white dark:text-neutral-950";
   };
 
   return (
@@ -180,7 +180,7 @@ export const AnalyticsPage = () => {
             {metrics.productivityScore}%
           </h3>
           <p className="text-[10px] text-neutral-500 mt-1 flex items-center gap-1">
-            <TrendingUp size={11} className="text-emerald-500" /> Focus index target
+            <TrendingUp size={11} className="text-neutral-500 dark:text-neutral-400" /> Focus index target
           </p>
         </div>
 
@@ -201,7 +201,7 @@ export const AnalyticsPage = () => {
             Consective Streaks
           </span>
           <h3 className="text-3xl font-extrabold text-neutral-900 dark:text-white mt-1.5 flex items-center gap-1">
-            <Flame size={22} className="text-amber-500 fill-amber-500" />
+            <Flame size={22} className="text-neutral-500 dark:text-neutral-400" />
             {metrics.streaks.current}d
           </h3>
           <p className="text-[10px] text-neutral-500 mt-1">
@@ -253,7 +253,7 @@ export const AnalyticsPage = () => {
                     
                     {/* Completed Bar */}
                     <div
-                      className="w-2.5 rounded-t bg-brand-600 dark:bg-brand-400 transition-all duration-500"
+                      className="w-2.5 rounded-t bg-neutral-950 dark:bg-white transition-all duration-500"
                       style={{ height: `${compPercent}%` }}
                     />
                   </div>
@@ -270,7 +270,7 @@ export const AnalyticsPage = () => {
               <span>Created</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <span className="h-2 w-2 rounded-sm bg-brand-600 dark:bg-brand-400" />
+              <span className="h-2 w-2 rounded-sm bg-neutral-950 dark:bg-white" />
               <span>Completed</span>
             </div>
           </div>
@@ -315,7 +315,7 @@ export const AnalyticsPage = () => {
                   cx="88"
                   cy="88"
                   r="60"
-                  className="stroke-amber-500"
+                  className="stroke-neutral-500 dark:stroke-neutral-400"
                   strokeWidth="12"
                   fill="transparent"
                   strokeDasharray={377}
@@ -328,7 +328,7 @@ export const AnalyticsPage = () => {
                   cx="88"
                   cy="88"
                   r="60"
-                  className="stroke-rose-500"
+                  className="stroke-red-700 dark:stroke-red-300"
                   strokeWidth="12"
                   fill="transparent"
                   strokeDasharray={377}
@@ -351,7 +351,7 @@ export const AnalyticsPage = () => {
             <div className="space-y-3.5 min-w-[120px]">
               <div className="flex items-center justify-between text-xs">
                 <div className="flex items-center gap-2 font-medium text-neutral-600 dark:text-neutral-400">
-                  <span className="h-2.5 w-2.5 rounded-full bg-rose-500" />
+                  <span className="h-2.5 w-2.5 rounded-full bg-red-700 dark:bg-red-300" />
                   <span>High</span>
                 </div>
                 <span className="font-bold text-neutral-800 dark:text-white tabular-nums">
@@ -360,7 +360,7 @@ export const AnalyticsPage = () => {
               </div>
               <div className="flex items-center justify-between text-xs">
                 <div className="flex items-center gap-2 font-medium text-neutral-600 dark:text-neutral-400">
-                  <span className="h-2.5 w-2.5 rounded-full bg-amber-500" />
+                  <span className="h-2.5 w-2.5 rounded-full bg-neutral-500 dark:bg-neutral-400" />
                   <span>Medium</span>
                 </div>
                 <span className="font-bold text-neutral-800 dark:text-white tabular-nums">
@@ -415,9 +415,9 @@ export const AnalyticsPage = () => {
         <div className="flex items-center justify-end gap-1.5 mt-4 text-[10px] text-neutral-500">
           <span>Less</span>
           <span className="h-3 w-3 rounded-sm bg-neutral-100 dark:bg-neutral-800" />
-          <span className="h-3 w-3 rounded-sm bg-emerald-200 dark:bg-emerald-950/40" />
-          <span className="h-3 w-3 rounded-sm bg-emerald-400 dark:bg-emerald-700/60" />
-          <span className="h-3 w-3 rounded-sm bg-emerald-600 dark:bg-emerald-500" />
+          <span className="h-3 w-3 rounded-sm bg-neutral-300 dark:bg-neutral-700" />
+          <span className="h-3 w-3 rounded-sm bg-neutral-600 dark:bg-neutral-400" />
+          <span className="h-3 w-3 rounded-sm bg-neutral-950 dark:bg-white" />
           <span>More</span>
         </div>
       </div>
