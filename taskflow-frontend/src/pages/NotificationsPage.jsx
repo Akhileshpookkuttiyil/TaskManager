@@ -115,13 +115,13 @@ export const NotificationsPage = () => {
       case "task_reminder":
       case "due_soon":
       case "due_today":
-        return <Zap className="text-amber-500" size={16} />;
+        return <Zap className="text-neutral-500 dark:text-neutral-400" size={16} />;
       case "overdue":
-        return <Clock className="text-rose-500" size={16} />;
+        return <Clock className="text-red-700 dark:text-red-300" size={16} />;
       case "task_completed":
-        return <CheckCircle2 className="text-emerald-500" size={16} />;
+        return <CheckCircle2 className="text-neutral-500 dark:text-neutral-400" size={16} />;
       case "streak_milestone":
-        return <Award className="text-brand-500" size={16} />;
+        return <Award className="text-neutral-500 dark:text-neutral-400" size={16} />;
       default:
         return <Bell className="text-neutral-500" size={16} />;
     }
@@ -154,7 +154,7 @@ export const NotificationsPage = () => {
             </button>
             <button
               onClick={dismissAllNotifications}
-              className="btn-secondary text-xs font-semibold py-1.5 px-3 flex items-center gap-1.5 hover:text-rose-600 hover:border-rose-200 dark:hover:text-rose-400"
+              className="btn-secondary text-xs font-semibold py-1.5 px-3 flex items-center gap-1.5 hover:text-red-700 dark:hover:text-red-300"
             >
               <Trash2 size={14} />
               Clear all
@@ -227,13 +227,13 @@ export const NotificationsPage = () => {
               onClick={() => handleNotificationClick(notif)}
               className={`flex items-start justify-between gap-4 p-4 transition-all duration-200 cursor-pointer ${
                 !notif.isRead
-                  ? "bg-brand-50/10 dark:bg-brand-500/5 hover:bg-brand-50/20 dark:hover:bg-brand-500/10"
+                  ? "bg-neutral-100/70 dark:bg-neutral-800/40 hover:bg-neutral-100 dark:hover:bg-neutral-800/60"
                   : "hover:bg-neutral-50 dark:hover:bg-neutral-900/50"
               }`}
             >
               <div className="flex gap-3 min-w-0">
                 {/* Icon wrapper */}
-                <div className="mt-0.5 flex h-7.5 w-7.5 shrink-0 items-center justify-center rounded-lg bg-neutral-50 dark:bg-neutral-900 shadow-sm">
+                <div className="mt-0.5 flex h-7.5 w-7.5 shrink-0 items-center justify-center rounded-lg bg-neutral-50 dark:bg-neutral-900">
                   {getNotificationIcon(notif.type)}
                 </div>
 
@@ -245,7 +245,7 @@ export const NotificationsPage = () => {
                       {notif.title}
                     </h4>
                     {!notif.isRead && (
-                      <span className="h-2 w-2 rounded-full bg-brand-500 shrink-0" />
+                      <span className="h-2 w-2 rounded-full bg-neutral-950 dark:bg-white shrink-0" />
                     )}
                   </div>
                   <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1 leading-relaxed">
@@ -262,7 +262,7 @@ export const NotificationsPage = () => {
                 {!notif.isRead && (
                   <button
                     onClick={() => handleMarkRead(notif._id)}
-                    className="btn-ghost h-8 w-8 p-0 text-neutral-400 hover:text-brand-500"
+                    className="btn-ghost h-8 w-8 p-0 text-neutral-400 hover:text-neutral-950 dark:hover:text-white"
                     title="Mark as read"
                   >
                     <Eye size={14} />
@@ -270,7 +270,7 @@ export const NotificationsPage = () => {
                 )}
                 <button
                   onClick={() => dismissNotification(notif._id)}
-                  className="btn-ghost h-8 w-8 p-0 text-neutral-400 hover:text-rose-600 dark:hover:text-rose-400"
+                  className="btn-ghost h-8 w-8 p-0 text-neutral-400 hover:text-red-700 dark:hover:text-red-300"
                   title="Dismiss notification"
                 >
                   <Trash2 size={14} />
