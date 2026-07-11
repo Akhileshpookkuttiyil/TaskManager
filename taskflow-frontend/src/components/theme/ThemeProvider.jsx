@@ -15,6 +15,7 @@ export const ThemeProvider = ({ children }) => {
         isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
       }
       root.classList.toggle("dark", isDark);
+      root.classList.toggle("light", !isDark);
       root.style.colorScheme = isDark ? "dark" : "light";
     };
 
@@ -25,6 +26,7 @@ export const ThemeProvider = ({ children }) => {
       const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
       const listener = (e) => {
         root.classList.toggle("dark", e.matches);
+        root.classList.toggle("light", !e.matches);
         root.style.colorScheme = e.matches ? "dark" : "light";
       };
       mediaQuery.addEventListener("change", listener);
