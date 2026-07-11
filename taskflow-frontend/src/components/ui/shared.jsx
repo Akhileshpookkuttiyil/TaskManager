@@ -1,6 +1,6 @@
 export const FieldError = ({ message }) =>
   message ? (
-    <p className="mt-1.5 text-xs font-medium text-rose-600 dark:text-rose-400">{message}</p>
+    <p className="mt-1.5 text-xs font-medium text-red-700 dark:text-red-300">{message}</p>
   ) : null;
 
 export const TaskSkeletonList = ({ count = 3 }) => (

@@ -1,27 +1,15 @@
 const variants = {
-  pending: "bg-amber-50 text-amber-700 ring-1 ring-amber-200 dark:bg-amber-500/10 dark:text-amber-300 dark:ring-amber-500/20",
-  in_progress: "bg-blue-50 text-blue-700 ring-1 ring-blue-200 dark:bg-blue-500/10 dark:text-blue-300 dark:ring-blue-500/20",
-  completed: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-300 dark:ring-emerald-500/20",
-  archived: "bg-neutral-100 text-neutral-500 ring-1 ring-neutral-200 dark:bg-neutral-800 dark:text-neutral-400 dark:ring-neutral-700",
-  low: "bg-neutral-100 text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400",
-  medium: "bg-amber-50 text-amber-700 ring-1 ring-amber-200 dark:bg-amber-500/10 dark:text-amber-300 dark:ring-amber-500/20",
-  high: "bg-rose-50 text-rose-700 ring-1 ring-rose-200 dark:bg-rose-500/10 dark:text-rose-300 dark:ring-rose-500/20",
-  overdue: "bg-rose-50 text-rose-700 ring-1 ring-rose-200 dark:bg-rose-500/10 dark:text-rose-300 dark:ring-rose-500/20",
-  due_soon: "bg-rose-50 text-rose-700 ring-1 ring-rose-200 dark:bg-rose-500/10 dark:text-rose-300 dark:ring-rose-500/20",
-  due_today: "bg-amber-50 text-amber-700 ring-1 ring-amber-200 dark:bg-amber-500/10 dark:text-amber-300 dark:ring-amber-500/20",
-  task_reminder: "bg-sky-50 text-sky-700 ring-1 ring-sky-200 dark:bg-sky-500/10 dark:text-sky-300 dark:ring-sky-500/20",
-  task_completed: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-300 dark:ring-emerald-500/20",
-  streak_milestone: "bg-violet-50 text-violet-700 ring-1 ring-violet-200 dark:bg-violet-500/10 dark:text-violet-300 dark:ring-violet-500/20",
-  task_created: "bg-blue-50 text-blue-700 ring-1 ring-blue-200 dark:bg-blue-500/10 dark:text-blue-300 dark:ring-blue-500/20",
-  task_updated: "bg-neutral-100 text-neutral-600 ring-1 ring-neutral-200 dark:bg-neutral-800 dark:text-neutral-300 dark:ring-neutral-700",
-  priority_changed: "bg-amber-50 text-amber-700 ring-1 ring-amber-200 dark:bg-amber-500/10 dark:text-amber-300 dark:ring-amber-500/20",
-  due_date_changed: "bg-sky-50 text-sky-700 ring-1 ring-sky-200 dark:bg-sky-500/10 dark:text-sky-300 dark:ring-sky-500/20",
-  task_restored: "bg-emerald-50 text-emerald-700 ring-1 ring-emerald-200 dark:bg-emerald-500/10 dark:text-emerald-300 dark:ring-emerald-500/20",
-  task_deleted: "bg-rose-50 text-rose-700 ring-1 ring-rose-200 dark:bg-rose-500/10 dark:text-rose-300 dark:ring-rose-500/20",
-  none: "bg-neutral-100 text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400",
-  daily: "bg-blue-50 text-blue-700 ring-1 ring-blue-200 dark:bg-blue-500/10 dark:text-blue-300 dark:ring-blue-500/20",
-  weekly: "bg-violet-50 text-violet-700 ring-1 ring-violet-200 dark:bg-violet-500/10 dark:text-violet-300 dark:ring-violet-500/20",
-  monthly: "bg-amber-50 text-amber-700 ring-1 ring-amber-200 dark:bg-amber-500/10 dark:text-amber-300 dark:ring-amber-500/20",
+  pending: "bg-neutral-100 text-neutral-700 ring-1 ring-neutral-200 dark:bg-neutral-800 dark:text-neutral-300 dark:ring-neutral-700",
+  in_progress: "bg-neutral-900 text-white ring-1 ring-neutral-700 dark:bg-white dark:text-neutral-950 dark:ring-white",
+  completed: "bg-neutral-100 text-neutral-600 ring-1 ring-neutral-200 dark:bg-neutral-800 dark:text-neutral-300 dark:ring-neutral-700",
+  archived: "bg-neutral-100 text-neutral-500 ring-1 ring-neutral-200 dark:bg-neutral-900 dark:text-neutral-500 dark:ring-neutral-800",
+  low: "bg-neutral-100 text-neutral-500 ring-1 ring-neutral-200 dark:bg-neutral-900 dark:text-neutral-400 dark:ring-neutral-800",
+  medium: "bg-neutral-100 text-neutral-700 ring-1 ring-neutral-300 dark:bg-neutral-800 dark:text-neutral-200 dark:ring-neutral-700",
+  high: "bg-red-950/10 text-red-700 ring-1 ring-red-700/20 dark:bg-red-950/20 dark:text-red-300 dark:ring-red-300/20",
+  overdue: "bg-red-950/10 text-red-700 ring-1 ring-red-700/20 dark:bg-red-950/20 dark:text-red-300 dark:ring-red-300/20",
+  due_soon: "bg-red-950/10 text-red-700 ring-1 ring-red-700/20 dark:bg-red-950/20 dark:text-red-300 dark:ring-red-300/20",
+  due_today: "bg-neutral-100 text-neutral-700 ring-1 ring-neutral-300 dark:bg-neutral-800 dark:text-neutral-200 dark:ring-neutral-700",
+  task_deleted: "bg-red-950/10 text-red-700 ring-1 ring-red-700/20 dark:bg-red-950/20 dark:text-red-300 dark:ring-red-300/20",
 };
 
 const labels = {
@@ -53,7 +41,7 @@ const labels = {
 export const Badge = ({ value }) => (
   <span
     className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium ${
-      variants[value] || "bg-neutral-100 text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300"
+      variants[value] || "bg-neutral-100 text-neutral-600 ring-1 ring-neutral-200 dark:bg-neutral-800 dark:text-neutral-300 dark:ring-neutral-700"
     }`}
   >
     {labels[value] || value}

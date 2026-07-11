@@ -9,7 +9,7 @@ export const Spinner = ({ size = "md" }) => {
     <div
       role="status"
       aria-label="Loading"
-      className={`${sizes[size]} animate-spin rounded-full border-neutral-200 border-t-brand-600 dark:border-neutral-700 dark:border-t-brand-400`}
+      className={`${sizes[size]} animate-spin rounded-full border-neutral-300 border-t-neutral-950 dark:border-neutral-800 dark:border-t-white`}
     />
   );
 };

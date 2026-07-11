@@ -16,12 +16,12 @@ export const ShortcutsModal = ({ isOpen, onClose }) => {
       <div className="fixed inset-0 bg-neutral-950/40 backdrop-blur-[1px] transition-opacity" onClick={onClose} />
 
       {/* Shortcuts content */}
-      <div className="relative w-full max-w-sm rounded-2xl bg-white p-5 shadow-2xl dark:bg-neutral-950 border border-neutral-100 dark:border-neutral-900 animate-in zoom-in-95 duration-150">
+      <div className="relative w-full max-w-sm rounded-2xl bg-white p-5 dark:bg-neutral-950 border border-neutral-100 dark:border-neutral-900 animate-in zoom-in-95 duration-150" style={{ boxShadow: "var(--shadow-elevated)" }}>
         
         {/* Header */}
         <div className="flex items-center justify-between border-b border-neutral-100 pb-3 dark:border-neutral-900">
           <div className="flex items-center gap-2 text-neutral-800 dark:text-white">
-            <Keyboard size={16} className="text-brand-500" />
+            <Keyboard size={16} className="text-neutral-500 dark:text-neutral-400" />
             <h3 className="text-sm font-bold">Keyboard Shortcuts</h3>
           </div>
           <button

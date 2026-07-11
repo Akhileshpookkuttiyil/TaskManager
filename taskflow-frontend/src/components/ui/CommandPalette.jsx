@@ -125,7 +125,7 @@ export const CommandPalette = ({ isOpen, onClose, onQuickAdd }) => {
       {/* Click backdrop to close */}
       <div className="fixed inset-0 -z-10" onClick={onClose} />
 
-      <div className="flex w-full max-w-lg flex-col overflow-hidden rounded-xl border border-neutral-200 bg-white shadow-2xl dark:border-neutral-800 dark:bg-neutral-900 animate-in fade-in zoom-in-95 duration-150">
+      <div className="flex w-full max-w-lg flex-col overflow-hidden rounded-xl border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900 animate-in fade-in zoom-in-95 duration-150" style={{ boxShadow: "var(--shadow-elevated)" }}>
         {/* Search Input Box */}
         <div className="flex items-center gap-2.5 border-b border-neutral-100 px-4 py-3 dark:border-neutral-800">
           <Search size={18} className="text-neutral-400" />
@@ -166,7 +166,7 @@ export const CommandPalette = ({ isOpen, onClose, onQuickAdd }) => {
                 role="option"
                 aria-selected={isSelected}
               >
-                <div className={`flex h-6.5 w-6.5 items-center justify-center rounded-md border border-neutral-200 bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 ${isSelected ? "text-brand-500" : "text-neutral-400"}`}>
+                <div className={`flex h-6.5 w-6.5 items-center justify-center rounded-md border border-neutral-200 bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 ${isSelected ? "text-neutral-950 dark:text-white" : "text-neutral-400"}`}>
                   <Icon size={14} />
                 </div>
                 <div className="min-w-0 flex-1">

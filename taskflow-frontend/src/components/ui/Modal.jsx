@@ -34,7 +34,8 @@ export const Modal = ({ isOpen, onClose, title, children, description }) => {
         role="dialog"
         aria-modal="true"
         aria-labelledby="modal-title"
-        className="card relative z-10 w-full max-w-lg overflow-hidden shadow-2xl"
+        className="card relative z-10 w-full max-w-lg overflow-hidden"
+        style={{ boxShadow: "var(--shadow-elevated)" }}
       >
         <div className="flex items-start justify-between gap-4 border-b border-neutral-200 px-5 py-4 dark:border-neutral-800">
           <div>
