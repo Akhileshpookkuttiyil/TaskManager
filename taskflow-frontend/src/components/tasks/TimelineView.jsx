@@ -20,10 +20,10 @@ export const TimelineView = ({ tasks = [], onEdit, onDelete, onComplete }) => {
     weekEnd.setDate(weekEnd.getDate() + 7);
 
     const groups = {
-      overdue: { title: "Overdue", icon: AlertCircle, color: "text-rose-500", bg: "bg-rose-500/10", tasks: [] },
-      today: { title: "Today", icon: Clock, color: "text-brand-500", bg: "bg-brand-500/10", tasks: [] },
-      tomorrow: { title: "Tomorrow", icon: Calendar, color: "text-amber-500", bg: "bg-amber-500/10", tasks: [] },
-      thisWeek: { title: "This Week", icon: CalendarDays, color: "text-emerald-500", bg: "bg-emerald-500/10", tasks: [] },
+      overdue: { title: "Overdue", icon: AlertCircle, color: "text-red-700 dark:text-red-300", bg: "bg-red-950/10 dark:bg-red-950/20", tasks: [] },
+      today: { title: "Today", icon: Clock, color: "text-neutral-950 dark:text-white", bg: "bg-neutral-100 dark:bg-neutral-800", tasks: [] },
+      tomorrow: { title: "Tomorrow", icon: Calendar, color: "text-neutral-700 dark:text-neutral-200", bg: "bg-neutral-100 dark:bg-neutral-800", tasks: [] },
+      thisWeek: { title: "This Week", icon: CalendarDays, color: "text-neutral-600 dark:text-neutral-300", bg: "bg-neutral-100 dark:bg-neutral-800", tasks: [] },
       later: { title: "Later", icon: CalendarDays, color: "text-neutral-500", bg: "bg-neutral-500/10", tasks: [] },
       noDate: { title: "No Date", icon: Inbox, color: "text-neutral-400", bg: "bg-neutral-400/10", tasks: [] },
     };
@@ -82,7 +82,7 @@ export const TimelineView = ({ tasks = [], onEdit, onDelete, onComplete }) => {
           <div key={key} className="relative space-y-3.5">
             {/* Timeline anchor head */}
             <div className="flex items-center gap-3 select-none">
-              <span className={`absolute -left-5.5 z-10 flex h-7 w-7 items-center justify-center rounded-full border border-white dark:border-neutral-950 bg-white dark:bg-neutral-950 shadow-sm`}>
+              <span className={`absolute -left-5.5 z-10 flex h-7 w-7 items-center justify-center rounded-full border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950`}>
                 <span className={`flex h-5 w-5 items-center justify-center rounded-full ${group.bg} ${group.color}`}>
                   <Icon size={12} strokeWidth={2.5} />
                 </span>

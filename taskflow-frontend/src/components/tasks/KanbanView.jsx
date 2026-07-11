@@ -6,10 +6,10 @@ import { TaskCard } from "./TaskCard";
 import toast from "react-hot-toast";
 
 const COLUMNS = [
-  { id: "pending", title: "Pending", color: "border-t-amber-500" },
-  { id: "in_progress", title: "In Progress", color: "border-t-blue-500" },
-  { id: "completed", title: "Completed", color: "border-t-emerald-500" },
-  { id: "archived", title: "Archived", color: "border-t-neutral-400" },
+  { id: "pending", title: "Pending", color: "border-t-neutral-500" },
+  { id: "in_progress", title: "In Progress", color: "border-t-neutral-200 dark:border-t-white" },
+  { id: "completed", title: "Completed", color: "border-t-neutral-400" },
+  { id: "archived", title: "Archived", color: "border-t-neutral-700" },
 ];
 
 export const KanbanView = ({ tasks = [], onEdit, onDelete, onComplete }) => {
@@ -108,7 +108,7 @@ export const KanbanView = ({ tasks = [], onEdit, onDelete, onComplete }) => {
                             {...providedDraggable.draggableProps}
                             {...providedDraggable.dragHandleProps}
                             className={`transform-none ${
-                              snapshotDraggable.isDragging ? "shadow-2xl z-50 scale-[1.01]" : ""
+                              snapshotDraggable.isDragging ? "z-50 scale-[1.01]" : ""
                             }`}
                           >
                             <TaskCard

@@ -5,6 +5,7 @@ import {
   CheckSquare,
   ExternalLink,
   History,
+  Pencil,
 } from "lucide-react";
 import { createTask, updateTask } from "../../store/slices/tasksSlice";
 import { formatDateTimeValue, toDateTimeLocalValue, toIsoDateTimeString } from "../../utils/dates";
@@ -249,12 +250,12 @@ export const TaskDetailDrawer = ({ isOpen, onClose, task, onSaved }) => {
       <div className="fixed inset-0 bg-neutral-950/40 backdrop-blur-[1px] transition-opacity" onClick={onClose} />
 
       {/* Drawer Container */}
-      <div id="task-detail-drawer" className="relative z-10 flex h-full w-full flex-col bg-white shadow-2xl dark:bg-neutral-950 sm:w-[500px] animate-in slide-in-from-right duration-250">
+      <div id="task-detail-drawer" className="relative z-10 flex h-full w-full flex-col bg-white dark:bg-neutral-950 sm:w-[500px] animate-in slide-in-from-right duration-250" style={{ boxShadow: "var(--shadow-elevated)" }}>
         
         {/* Drawer Header */}
         <div className="flex h-16 items-center justify-between border-b border-neutral-200 px-5 dark:border-neutral-800 shrink-0">
           <div className="flex items-center gap-2">
-            <CheckSquare className="text-brand-500" size={18} />
+            <CheckSquare className="text-neutral-500 dark:text-neutral-400" size={18} />
             <span className="text-sm font-bold text-neutral-900 dark:text-white">
               {isCreateMode ? "New Task" : "Task Details"}
             </span>
@@ -292,7 +293,7 @@ export const TaskDetailDrawer = ({ isOpen, onClose, task, onSaved }) => {
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               onBlur={(e) => handleFieldChange("title", e.target.value)}
-              className="w-full bg-transparent text-lg font-bold border-0 border-b border-transparent hover:border-neutral-200 focus:border-brand-500 focus:outline-none dark:text-white dark:hover:border-neutral-800 dark:focus:border-brand-400 py-1"
+              className="w-full bg-transparent text-lg font-bold border-0 border-b border-transparent hover:border-neutral-200 focus:border-neutral-900 focus:outline-none dark:text-white dark:hover:border-neutral-800 dark:focus:border-white py-1"
               autoFocus={isCreateMode}
             />
           </div>
@@ -305,7 +306,7 @@ export const TaskDetailDrawer = ({ isOpen, onClose, task, onSaved }) => {
                 id="drawer-status"
                 value={status}
                 onChange={(e) => handleFieldChange("status", e.target.value)}
-                className="input py-1.5 text-xs focus:ring-2 focus:ring-brand-500"
+                className="input py-1.5 text-xs"
               >
                 <option value="pending">Pending</option>
                 <option value="in_progress">In Progress</option>
@@ -320,7 +321,7 @@ export const TaskDetailDrawer = ({ isOpen, onClose, task, onSaved }) => {
                 id="drawer-priority"
                 value={priority}
                 onChange={(e) => handleFieldChange("priority", e.target.value)}
-                className="input py-1.5 text-xs focus:ring-2 focus:ring-brand-500"
+                className="input py-1.5 text-xs"
               >
                 <option value="low">Low</option>
                 <option value="medium">Medium</option>
@@ -334,7 +335,7 @@ export const TaskDetailDrawer = ({ isOpen, onClose, task, onSaved }) => {
                 id="drawer-recurrence"
                 value={recurrence}
                 onChange={(e) => handleFieldChange("recurrence", e.target.value)}
-                className="input py-1.5 text-xs focus:ring-2 focus:ring-brand-500"
+                className="input py-1.5 text-xs"
               >
                 <option value="none">None</option>
                 <option value="daily">Daily</option>
@@ -353,7 +354,7 @@ export const TaskDetailDrawer = ({ isOpen, onClose, task, onSaved }) => {
                 onChange={(e) => setTags(e.target.value)}
                 onBlur={(e) => handleFieldChange("tags", e.target.value)}
                 placeholder="design, review"
-                className="input py-1.5 text-xs focus:ring-2 focus:ring-brand-500"
+                className="input py-1.5 text-xs"
               />
             </div>
 
@@ -364,7 +365,7 @@ export const TaskDetailDrawer = ({ isOpen, onClose, task, onSaved }) => {
                 type="datetime-local"
                 value={dueDate}
                 onChange={(e) => handleFieldChange("dueDate", e.target.value)}
-                className="input py-1.5 text-xs focus:ring-2 focus:ring-brand-500"
+                className="input py-1.5 text-xs"
               />
             </div>
 
@@ -375,7 +376,7 @@ export const TaskDetailDrawer = ({ isOpen, onClose, task, onSaved }) => {
                 type="datetime-local"
                 value={reminderDate}
                 onChange={(e) => handleFieldChange("reminderDate", e.target.value)}
-                className="input py-1.5 text-xs focus:ring-2 focus:ring-brand-500"
+                className="input py-1.5 text-xs"
               />
             </div>
           </div>
@@ -393,7 +394,7 @@ export const TaskDetailDrawer = ({ isOpen, onClose, task, onSaved }) => {
                   value={description}
                   onChange={(e) => setDescription(e.target.value)}
                   rows={6}
-                  className="input resize-none text-sm focus:ring-2 focus:ring-brand-500"
+                  className="input resize-none text-sm"
                   placeholder="Add details using markdown..."
                 />
                 {!isCreateMode && (
@@ -423,7 +424,8 @@ export const TaskDetailDrawer = ({ isOpen, onClose, task, onSaved }) => {
                   dangerouslySetInnerHTML={{ __html: parseMarkdown(description) || "<em>Click to add details...</em>" }}
                 />
                 <span className="absolute right-2 top-2 text-neutral-400 opacity-0 group-hover/desc:opacity-100 transition-opacity pointer-events-none text-xs flex items-center gap-1 font-semibold dark:text-neutral-500">
-                  ✎ edit
+                  <Pencil size={11} />
+                  edit
                 </span>
               </div>
             )}
