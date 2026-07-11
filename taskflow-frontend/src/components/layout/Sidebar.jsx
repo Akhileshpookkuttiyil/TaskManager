@@ -44,23 +44,23 @@ export const Sidebar = () => {
     const isActive = checkLinkActive(to);
     return `group flex items-center justify-between rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200 relative ${
       isActive
-        ? "bg-brand-50 text-brand-700 dark:bg-brand-500/10 dark:text-brand-400"
-        : "text-neutral-500 hover:bg-neutral-100/70 hover:text-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800/50 dark:hover:text-white"
+        ? "bg-neutral-900 text-white dark:bg-white dark:text-neutral-950"
+        : "text-neutral-500 hover:bg-neutral-100/70 hover:text-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800/70 dark:hover:text-white"
     }`;
   };
 
   return (
-    <aside className="hidden w-64 shrink-0 border-r border-neutral-200 bg-white px-4 py-6 dark:border-neutral-800 dark:bg-neutral-950 min-[1025px]:block">
+    <aside className="hidden w-64 shrink-0 border-r border-neutral-200 bg-white px-4 py-6 dark:border-neutral-800 dark:bg-[#090909] min-[1025px]:block">
       <div className="sticky top-6 flex h-[calc(100vh-3rem)] flex-col justify-between overflow-y-auto">
         <div className="space-y-6">
           {/* Logo Brand */}
           <div className="px-1">
             <Link
               to="/"
-              className="flex items-center gap-2.5 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-500"
+              className="flex items-center gap-2.5 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
             >
-              <div className="flex h-7.5 w-7.5 items-center justify-center rounded-lg bg-brand-600 shadow-sm shadow-brand-500/20">
-                <CheckSquare size={15} className="text-white" strokeWidth={2.5} />
+              <div className="flex h-7.5 w-7.5 items-center justify-center rounded-lg bg-neutral-950 dark:bg-white">
+                <CheckSquare size={15} className="text-white dark:text-neutral-950" strokeWidth={2.5} />
               </div>
               <span className="text-sm font-bold tracking-tight text-neutral-900 dark:text-white">TaskFlow</span>
             </Link>

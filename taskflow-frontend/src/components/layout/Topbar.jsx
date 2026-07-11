@@ -81,7 +81,7 @@ export const Topbar = ({ onQuickAdd, onOpenCommandPalette }) => {
   };
 
   return (
-    <header className="sticky top-0 z-30 border-b border-neutral-200/80 bg-white/95 backdrop-blur dark:border-neutral-800/80 dark:bg-neutral-950/95 transition-all">
+    <header className="sticky top-0 z-30 border-b border-neutral-200/80 bg-white/95 backdrop-blur dark:border-neutral-800/80 dark:bg-[#090909]/95 transition-all">
       <div className="flex h-16 items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
         {/* Navigation Context Info */}
         <div className="flex min-w-0 flex-col">
@@ -130,7 +130,7 @@ export const Topbar = ({ onQuickAdd, onOpenCommandPalette }) => {
               aria-controls={menuId}
               aria-label="User account options"
             >
-              <div className="flex h-6.5 w-6.5 items-center justify-center rounded-full bg-brand-500 text-xs font-bold text-white shadow-sm">
+              <div className="flex h-6.5 w-6.5 items-center justify-center rounded-full bg-neutral-950 text-xs font-bold text-white dark:bg-white dark:text-neutral-950">
                 {user?.name?.[0]?.toUpperCase() || "U"}
               </div>
               <span className="hidden max-w-[100px] truncate text-sm font-semibold text-neutral-700 sm:block dark:text-neutral-300">
@@ -143,7 +143,8 @@ export const Topbar = ({ onQuickAdd, onOpenCommandPalette }) => {
               <div
                 id={menuId}
                 role="menu"
-                className="absolute right-0 mt-2 w-52 rounded-xl border border-neutral-200 bg-white p-1.5 shadow-lg dark:border-neutral-800 dark:bg-neutral-900 animate-in fade-in slide-in-from-top-2 duration-150"
+                className="absolute right-0 mt-2 w-52 rounded-xl border border-neutral-200 bg-white p-1.5 dark:border-neutral-800 dark:bg-neutral-900 animate-in fade-in slide-in-from-top-2 duration-150"
+                style={{ boxShadow: "var(--shadow-elevated)" }}
               >
                 <div className="border-b border-neutral-100 px-2.5 py-2 dark:border-neutral-800">
                   <p className="truncate text-xs font-semibold uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
@@ -173,7 +174,7 @@ export const Topbar = ({ onQuickAdd, onOpenCommandPalette }) => {
                 <button
                   type="button"
                   onClick={handleLogout}
-                  className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-sm font-semibold text-rose-600 transition-colors hover:bg-rose-50 dark:text-rose-400 dark:hover:bg-rose-500/10"
+                  className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-sm font-semibold text-red-700 transition-colors hover:bg-red-950/10 dark:text-red-300 dark:hover:bg-red-950/20"
                   role="menuitem"
                 >
                   <LogOut size={15} />
