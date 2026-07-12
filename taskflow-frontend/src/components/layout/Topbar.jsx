@@ -1,10 +1,9 @@
-import { ChevronDown, LogOut, Plus, UserRound, Keyboard } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { useLocation, useNavigate } from "react-router-dom";
+import { ChevronDown, Keyboard, Plus } from "lucide-react";
+import { useCallback, useMemo, useRef, useState } from "react";
+import { useSelector } from "react-redux";
+import { useLocation } from "react-router-dom";
 import { NotificationBell } from "../notifications/NotificationBell";
-import { logout } from "../../store/slices/authSlice";
-import { ThemeToggle } from "../theme/ThemeToggle";
+import { UserMenu } from "./UserMenu";
 
 const pageMeta = {
   "/": { title: "Dashboard", subtitle: "Productivity snapshot" },
@@ -15,13 +14,15 @@ const pageMeta = {
   "/notifications": { title: "Notification Center", subtitle: "Manage system notifications & alerts" },
 };
 
-export const Topbar = ({ onQuickAdd, onOpenCommandPalette }) => {
-  const dispatch = useDispatch();
-  const navigate = useNavigate();
+export const Topbar = ({ onQuickAdd, onOpenCommandPalette, onOpenShortcuts }) => {
   const location = useLocation();
   const { user } = useSelector((state) => state.auth);
   const [menuOpen, setMenuOpen] = useState(false);
-  const menuRef = useRef(null);
+
+  // Refs for focus management
+  const triggerRef = useRef(null);
+  const containerRef = useRef(null);
+
   const menuId = "user-menu";
 
   const meta = useMemo(() => {
@@ -50,56 +51,52 @@ export const Topbar = ({ onQuickAdd, onOpenCommandPalette }) => {
     return { title: "TaskFlow", subtitle: "Focused workspace" };
   }, [location.pathname, location.search]);
 
-  // Handle outside clicks for User profile dropdown
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (menuRef.current && !menuRef.current.contains(event.target)) {
-        setMenuOpen(false);
-      }
-    };
-
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+  const handleToggleMenu = useCallback(() => {
+    setMenuOpen((open) => !open);
   }, []);
 
-  // Handle Escape key closure
-  useEffect(() => {
-    const handleEscape = (event) => {
-      if (event.key === "Escape") {
-        setMenuOpen(false);
-      }
-    };
-
-    document.addEventListener("keydown", handleEscape);
-    return () => document.removeEventListener("keydown", handleEscape);
-  }, []);
-
-  const handleLogout = () => {
-    dispatch(logout());
-    navigate("/login");
+  const handleCloseMenu = useCallback(() => {
     setMenuOpen(false);
-  };
+  }, []);
+
+  // Derive initials for trigger button avatar
+  const initials = useMemo(() => {
+    if (!user?.name) return "U";
+    const parts = user.name.trim().split(/\s+/);
+    if (parts.length === 1) return parts[0][0].toUpperCase();
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  }, [user]);
 
   return (
-    <header className="sticky top-0 z-30 border-b border-neutral-200/80 bg-white/95 backdrop-blur dark:border-neutral-800/80 dark:bg-[#090909]/95 transition-all">
+    <header
+      className="sticky top-0 z-30 border-b bg-white/95 backdrop-blur transition-all dark:bg-[#090909]/95"
+      style={{ borderColor: "var(--border-subtle)" }}
+    >
       <div className="flex h-16 items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
         {/* Navigation Context Info */}
         <div className="flex min-w-0 flex-col">
-          <h1 className="truncate text-base font-bold tracking-tight text-neutral-900 dark:text-white sm:text-lg">
+          <h1
+            className="truncate text-base font-bold tracking-tight sm:text-lg"
+            style={{ color: "var(--text-primary)" }}
+          >
             {meta.title}
           </h1>
-          <p className="hidden text-xs text-neutral-400 dark:text-neutral-500 sm:block">
+          <p
+            className="hidden text-xs sm:block"
+            style={{ color: "var(--text-muted)" }}
+          >
             {meta.subtitle}
           </p>
         </div>
 
         {/* Action Widgets */}
-        <div className="flex items-center gap-2">
-          {/* Shortcuts Info Trigger */}
+        <div className="flex items-center gap-1.5">
+          {/* Command Palette Trigger */}
           <button
             type="button"
             onClick={onOpenCommandPalette}
-            className="btn-ghost hidden h-9 w-9 items-center justify-center p-0 text-neutral-400 sm:flex"
+            className="btn-ghost hidden h-9 w-9 items-center justify-center p-0 sm:flex"
+            style={{ color: "var(--text-muted)" }}
             aria-label="Open Command Palette"
             title="Command Palette (Ctrl+K)"
           >
@@ -110,82 +107,80 @@ export const Topbar = ({ onQuickAdd, onOpenCommandPalette }) => {
           <button
             type="button"
             onClick={onQuickAdd}
-            className="btn-primary min-h-[34px] text-xs font-semibold py-1.5 px-3 hidden sm:inline-flex"
+            className="btn-primary hidden min-h-[34px] px-3 py-1.5 text-xs font-semibold sm:inline-flex"
           >
             <Plus size={14} strokeWidth={2.5} />
             Quick Add
           </button>
 
           <NotificationBell />
-          <ThemeToggle />
 
-          {/* User Account Menu */}
-          <div className="relative ml-1" ref={menuRef}>
+          {/* User Account Menu Trigger */}
+          <div ref={containerRef} className="relative ml-0.5">
             <button
+              ref={triggerRef}
               type="button"
-              onClick={() => setMenuOpen((open) => !open)}
-              className="inline-flex h-9 items-center gap-1.5 rounded-lg px-2 text-left transition-colors hover:bg-neutral-100 dark:hover:bg-neutral-800/60 focus-ring"
+              id={`${menuId}-trigger`}
+              onClick={handleToggleMenu}
+              className="inline-flex h-9 items-center gap-1.5 rounded-lg px-2 text-left transition-colors focus-ring"
+              style={
+                menuOpen
+                  ? { background: "var(--bg-hover)" }
+                  : undefined
+              }
+              onMouseEnter={(e) => {
+                if (!menuOpen) e.currentTarget.style.background = "var(--bg-hover)";
+              }}
+              onMouseLeave={(e) => {
+                if (!menuOpen) e.currentTarget.style.background = "";
+              }}
               aria-expanded={menuOpen}
               aria-haspopup="menu"
-              aria-controls={menuId}
+              aria-controls={menuOpen ? menuId : undefined}
               aria-label="User account options"
             >
-              <div className="flex h-6.5 w-6.5 items-center justify-center rounded-full bg-neutral-950 text-xs font-bold text-white dark:bg-white dark:text-neutral-950">
-                {user?.name?.[0]?.toUpperCase() || "U"}
+              {/* Avatar initials */}
+              <div
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold select-none"
+                style={{
+                  background: "var(--bg-pressed)",
+                  color: "var(--text-primary)",
+                  border: "1.5px solid var(--border-neutral)",
+                }}
+                aria-hidden="true"
+              >
+                {initials}
               </div>
-              <span className="hidden max-w-[100px] truncate text-sm font-semibold text-neutral-700 sm:block dark:text-neutral-300">
+              <span
+                className="hidden max-w-[96px] truncate text-sm font-semibold sm:block"
+                style={{ color: "var(--text-secondary)" }}
+              >
                 {user?.name?.split(" ")[0]}
               </span>
-              <ChevronDown size={14} className="hidden text-neutral-400 sm:block" />
+              <ChevronDown
+                size={13}
+                className="hidden transition-transform duration-150 sm:block"
+                style={{
+                  color: "var(--text-muted)",
+                  transform: menuOpen ? "rotate(180deg)" : "rotate(0deg)",
+                }}
+                aria-hidden="true"
+              />
             </button>
 
-            {menuOpen ? (
-              <div
-                id={menuId}
-                role="menu"
-                className="absolute right-0 mt-2 w-52 rounded-xl border border-neutral-200 bg-white p-1.5 dark:border-neutral-800 dark:bg-neutral-900 animate-in fade-in slide-in-from-top-2 duration-150"
-                style={{ boxShadow: "var(--shadow-elevated)" }}
-              >
-                <div className="border-b border-neutral-100 px-2.5 py-2 dark:border-neutral-800">
-                  <p className="truncate text-xs font-semibold uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
-                    My Account
-                  </p>
-                  <p className="mt-1 truncate text-sm font-bold text-neutral-900 dark:text-white">
-                    {user?.name}
-                  </p>
-                  <p className="truncate text-xs text-neutral-400 dark:text-neutral-500">
-                    {user?.email}
-                  </p>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    navigate("/profile");
-                    setMenuOpen(false);
-                  }}
-                  className="mt-1.5 flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-sm font-medium text-neutral-600 transition-colors hover:bg-neutral-50 dark:text-neutral-300 dark:hover:bg-neutral-800"
-                  role="menuitem"
-                >
-                  <UserRound size={15} />
-                  Settings & Profile
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleLogout}
-                  className="flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-sm font-semibold text-red-700 transition-colors hover:bg-red-950/10 dark:text-red-300 dark:hover:bg-red-950/20"
-                  role="menuitem"
-                >
-                  <LogOut size={15} />
-                  Log out
-                </button>
-              </div>
-            ) : null}
+            {/* UserMenu dropdown */}
+            <UserMenu
+              isOpen={menuOpen}
+              onClose={handleCloseMenu}
+              onOpenShortcuts={onOpenShortcuts}
+              triggerRef={triggerRef}
+              id={menuId}
+            />
           </div>
         </div>
       </div>
     </header>
   );
 };
+
 export default Topbar;
