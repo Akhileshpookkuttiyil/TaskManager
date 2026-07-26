@@ -69,22 +69,15 @@ export const Topbar = ({ onQuickAdd, onOpenCommandPalette, onOpenShortcuts }) =>
 
   return (
     <header
-      className="sticky top-0 z-30 border-b bg-white/95 backdrop-blur transition-all dark:bg-[#090909]/95"
-      style={{ borderColor: "var(--border-subtle)" }}
+      className="sticky top-0 z-30 border-b bg-app border-subtle transition-colors duration-150"
     >
       <div className="flex h-16 items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
         {/* Navigation Context Info */}
         <div className="flex min-w-0 flex-col">
-          <h1
-            className="truncate text-base font-bold tracking-tight sm:text-lg"
-            style={{ color: "var(--text-primary)" }}
-          >
+          <h1 className="truncate text-base font-bold tracking-tight text-primary sm:text-lg">
             {meta.title}
           </h1>
-          <p
-            className="hidden text-xs sm:block"
-            style={{ color: "var(--text-muted)" }}
-          >
+          <p className="hidden text-xs text-muted sm:block">
             {meta.subtitle}
           </p>
         </div>
@@ -95,8 +88,7 @@ export const Topbar = ({ onQuickAdd, onOpenCommandPalette, onOpenShortcuts }) =>
           <button
             type="button"
             onClick={onOpenCommandPalette}
-            className="btn-ghost hidden h-9 w-9 items-center justify-center p-0 sm:flex"
-            style={{ color: "var(--text-muted)" }}
+            className="btn-ghost hidden h-9 w-9 items-center justify-center p-0 text-muted sm:flex"
             aria-label="Open Command Palette"
             title="Command Palette (Ctrl+K)"
           >
@@ -141,27 +133,18 @@ export const Topbar = ({ onQuickAdd, onOpenCommandPalette, onOpenShortcuts }) =>
             >
               {/* Avatar initials */}
               <div
-                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold select-none"
-                style={{
-                  background: "var(--bg-pressed)",
-                  color: "var(--text-primary)",
-                  border: "1.5px solid var(--border-neutral)",
-                }}
+                className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold select-none bg-pressed text-primary border border-neutral"
                 aria-hidden="true"
               >
                 {initials}
               </div>
-              <span
-                className="hidden max-w-[96px] truncate text-sm font-semibold sm:block"
-                style={{ color: "var(--text-secondary)" }}
-              >
+              <span className="hidden max-w-[96px] truncate text-sm font-semibold text-secondary sm:block">
                 {user?.name?.split(" ")[0]}
               </span>
               <ChevronDown
                 size={13}
-                className="hidden transition-transform duration-150 sm:block"
+                className="hidden transition-transform duration-150 text-muted sm:block"
                 style={{
-                  color: "var(--text-muted)",
                   transform: menuOpen ? "rotate(180deg)" : "rotate(0deg)",
                 }}
                 aria-hidden="true"

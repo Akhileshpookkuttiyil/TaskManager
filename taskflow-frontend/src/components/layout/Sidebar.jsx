@@ -14,7 +14,7 @@ export const Sidebar = () => {
   // Extract unique labels/tags from active tasks
   const labels = [...new Set(tasks.flatMap((task) => task.tags || []))].slice(0, 8);
 
-  // Central calculations using analytics logic (or simple direct values from selector)
+  // Central calculations using analytics logic
   const pendingTasks = tasks.filter((t) => t.status === "pending" || t.status === "in_progress");
   const inboxCount = pendingTasks.length;
 
@@ -42,42 +42,40 @@ export const Sidebar = () => {
 
   const getNavLinkClass = (to) => {
     const isActive = checkLinkActive(to);
-    return `group flex items-center justify-between rounded-lg px-3 py-2 text-sm font-medium transition-all duration-200 relative ${
+    return `group flex items-center justify-between rounded-md px-3 py-1.5 text-sm font-medium transition-colors duration-150 relative ${
       isActive
-        ? "bg-neutral-900 text-white dark:bg-white dark:text-neutral-950"
-        : "text-neutral-500 hover:bg-neutral-100/70 hover:text-neutral-900 dark:text-neutral-400 dark:hover:bg-neutral-800/70 dark:hover:text-white"
+        ? "bg-hover text-primary font-semibold"
+        : "text-secondary hover:bg-hover hover:text-primary"
     }`;
   };
 
   return (
-    <aside className="hidden w-64 shrink-0 border-r border-neutral-200 bg-white px-4 py-6 dark:border-neutral-800 dark:bg-[#090909] min-[1025px]:block">
-      <div className="sticky top-6 flex h-[calc(100vh-3rem)] flex-col justify-between overflow-y-auto">
+    <aside className="hidden w-64 shrink-0 border-r border-neutral bg-app px-4 py-6 min-[1025px]:block">
+      <div className="flex h-full flex-col justify-between space-y-6">
         <div className="space-y-6">
-          {/* Logo Brand */}
-          <div className="px-1">
-            <Link
-              to="/"
-              className="flex items-center gap-2.5 rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70"
-            >
-              <div className="flex h-7.5 w-7.5 items-center justify-center rounded-lg bg-neutral-950 dark:bg-white">
-                <CheckSquare size={15} className="text-white dark:text-neutral-950" strokeWidth={2.5} />
-              </div>
-              <span className="text-sm font-bold tracking-tight text-neutral-900 dark:text-white">TaskFlow</span>
-            </Link>
-          </div>
+          {/* Brand Header */}
+          <Link to="/" className="flex items-center gap-2.5 px-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--text-primary)] text-[var(--bg-app)]">
+              <CheckSquare size={18} strokeWidth={2.5} />
+            </div>
+            <div>
+              <span className="text-base font-bold tracking-tight text-primary">TaskFlow</span>
+              <span className="ml-1.5 rounded bg-elevated border border-subtle px-1.5 py-0.5 text-[10px] font-semibold text-muted">v1.0</span>
+            </div>
+          </Link>
 
-          {/* Primary Navigation */}
-          <nav className="space-y-1" aria-label="Primary navigation">
+          {/* Navigation Links */}
+          <nav className="space-y-1">
             {primaryNavItems.map(({ to, label, icon: Icon, end }) => {
               const count = getBadgeCount(label);
               return (
-                <NavLink key={to} to={to} end={end} className={getNavLinkClass(to)}>
+                <NavLink key={to} to={to} end={end} className={() => getNavLinkClass(to)}>
                   <div className="flex items-center gap-2.5">
-                    <Icon size={16} strokeWidth={1.75} />
+                    <Icon size={16} className="text-muted group-hover:text-primary transition-colors" />
                     <span>{label}</span>
                   </div>
                   {count > 0 && (
-                    <span className="flex min-h-5 min-w-5 items-center justify-center rounded-full bg-neutral-100 px-1.5 text-[10px] font-semibold text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300">
+                    <span className="rounded-full bg-elevated border border-subtle px-2 py-0.5 text-xs font-semibold text-secondary tabular-nums">
                       {count}
                     </span>
                   )}
@@ -86,33 +84,41 @@ export const Sidebar = () => {
             })}
           </nav>
 
-          {/* Collapsible Labels section */}
-          <div className="space-y-1.5">
-            <button
-              onClick={() => setLabelsExpanded(!labelsExpanded)}
-              className="flex w-full items-center justify-between px-2 text-xs font-semibold uppercase tracking-wider text-neutral-400 transition-colors hover:text-neutral-600 dark:text-neutral-500 dark:hover:text-neutral-300"
-            >
-              <span>Labels</span>
-              {labelsExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
-            </button>
+          {/* Labels Section */}
+          {labels.length > 0 && (
+            <div className="pt-2 border-t border-neutral">
+              <button
+                type="button"
+                onClick={() => setLabelsExpanded((prev) => !prev)}
+                className="flex w-full items-center justify-between px-2 py-1 text-xs font-semibold text-muted hover:text-primary"
+              >
+                <span className="uppercase tracking-wider">Labels</span>
+                {labelsExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+              </button>
 
-            {labelsExpanded && (
-              <div className="space-y-0.5 pl-1.5">
-                {labels.map((label) => (
-                  <Link
-                    key={label}
-                    to={`/tasks?label=${label}`}
-                    className="group flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-sm font-medium text-neutral-500 hover:bg-neutral-50 hover:text-neutral-950 dark:text-neutral-400 dark:hover:bg-neutral-900 dark:hover:text-white"
-                  >
-                    <Tag size={12} className="text-neutral-400 group-hover:text-neutral-600 dark:group-hover:text-neutral-200" />
-                    <span className="truncate">{label}</span>
-                  </Link>
-                ))}
-                {labels.length === 0 && (
-                  <p className="px-2.5 py-1 text-xs text-neutral-400 dark:text-neutral-600">No active labels</p>
-                )}
-              </div>
-            )}
+              {labelsExpanded && (
+                <div className="mt-1 space-y-0.5">
+                  {labels.map((label) => (
+                    <Link
+                      key={label}
+                      to={`/tasks?label=${encodeURIComponent(label)}`}
+                      className="flex items-center gap-2 rounded-md px-3 py-1.5 text-xs font-medium text-secondary hover:bg-hover hover:text-primary transition-colors"
+                    >
+                      <Tag size={12} className="text-muted" />
+                      <span className="truncate">{label}</span>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Footer / System Status */}
+        <div className="border-t border-neutral pt-4 px-2">
+          <div className="flex items-center gap-2">
+            <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+            <span className="text-xs font-medium text-muted">System Active</span>
           </div>
         </div>
       </div>
