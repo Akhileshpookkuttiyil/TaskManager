@@ -11,9 +11,27 @@ dotenv.config();
 const app = express();
 const allowedOrigins = (process.env.CLIENT_URLS || process.env.CLIENT_URL || "")
   .split(",")
-  .map((origin) => origin.trim())
+  .map((origin) => origin.trim().replace(/\/$/, ""))
   .filter(Boolean);
-const corsOptions = allowedOrigins.length > 0 ? { origin: allowedOrigins } : { origin: true };
+
+const corsOptions = {
+  origin: (origin, callback) => {
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.length === 0) return callback(null, true);
+
+    const cleanOrigin = origin.replace(/\/$/, "");
+    const isAllowed = allowedOrigins.some(
+      (allowed) => allowed === "*" || allowed === cleanOrigin || cleanOrigin.endsWith(".vercel.app")
+    );
+
+    if (isAllowed) {
+      callback(null, true);
+    } else {
+      callback(null, false);
+    }
+  },
+  credentials: true,
+};
 
 app.use(helmet());
 app.set("trust proxy", 1);
