@@ -130,10 +130,10 @@ export const AnalyticsPage = () => {
   };
 
   const getHeatmapColor = (count) => {
-    if (count === 0) return "bg-neutral-100 dark:bg-neutral-800";
+    if (count === 0) return "bg-elevated border border-subtle text-muted";
     if (count <= 2) return "bg-neutral-300 text-neutral-950 dark:bg-neutral-700 dark:text-neutral-100";
     if (count <= 4) return "bg-neutral-600 text-white dark:bg-neutral-400 dark:text-neutral-950";
-    return "bg-neutral-950 text-white dark:bg-white dark:text-neutral-950";
+    return "bg-[var(--text-primary)] text-[var(--bg-app)]";
   };
 
   return (
@@ -142,13 +142,13 @@ export const AnalyticsPage = () => {
       {/* Title Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between print:hidden">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted">
             Performance Engine
           </p>
-          <h2 className="text-2xl font-bold tracking-tight text-neutral-900 dark:text-white">
+          <h2 className="text-2xl font-bold tracking-tight text-primary">
             Workspace Analytics
           </h2>
-          <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
+          <p className="mt-1 text-sm text-muted">
             Insights on streaks, priorities, and workflow completion.
           </p>
         </div>
@@ -163,9 +163,9 @@ export const AnalyticsPage = () => {
       </div>
 
       {/* Printable Report Header */}
-      <div className="hidden print:block border-b pb-4 mb-6">
-        <h1 className="text-3xl font-bold text-neutral-950">TaskFlow Workspace Report</h1>
-        <p className="text-sm text-neutral-500 mt-1">
+      <div className="hidden print:block border-b border-neutral pb-4 mb-6">
+        <h1 className="text-3xl font-bold text-primary">TaskFlow Workspace Report</h1>
+        <p className="text-sm text-muted mt-1">
           Generated on {new Date().toLocaleDateString()}
         </p>
       </div>
@@ -173,50 +173,50 @@ export const AnalyticsPage = () => {
       {/* Key Metric Indicators Grid */}
       <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
         <div className="card p-4 flex flex-col justify-between">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-muted">
             Productivity Score
           </span>
-          <h3 className="text-3xl font-extrabold text-neutral-900 dark:text-white mt-1.5">
+          <h3 className="text-3xl font-extrabold text-primary mt-1.5">
             {metrics.productivityScore}%
           </h3>
-          <p className="text-[10px] text-neutral-500 mt-1 flex items-center gap-1">
-            <TrendingUp size={11} className="text-neutral-500 dark:text-neutral-400" /> Focus index target
+          <p className="text-[10px] text-muted mt-1 flex items-center gap-1">
+            <TrendingUp size={11} className="text-muted" /> Focus index target
           </p>
         </div>
 
         <div className="card p-4 flex flex-col justify-between">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-muted">
             Completion Rate
           </span>
-          <h3 className="text-3xl font-extrabold text-neutral-900 dark:text-white mt-1.5">
+          <h3 className="text-3xl font-extrabold text-primary mt-1.5">
             {metrics.completionRate}%
           </h3>
-          <p className="text-[10px] text-neutral-500 mt-1">
+          <p className="text-[10px] text-muted mt-1">
             {metrics.completed} of {metrics.total} done
           </p>
         </div>
 
         <div className="card p-4 flex flex-col justify-between">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
-            Consective Streaks
+          <span className="text-[10px] font-bold uppercase tracking-wider text-muted">
+            Consecutive Streaks
           </span>
-          <h3 className="text-3xl font-extrabold text-neutral-900 dark:text-white mt-1.5 flex items-center gap-1">
-            <Flame size={22} className="text-neutral-500 dark:text-neutral-400" />
+          <h3 className="text-3xl font-extrabold text-primary mt-1.5 flex items-center gap-1">
+            <Flame size={22} className="text-muted" />
             {metrics.streaks.current}d
           </h3>
-          <p className="text-[10px] text-neutral-500 mt-1">
+          <p className="text-[10px] text-muted mt-1">
             Best streak: {metrics.streaks.best} days
           </p>
         </div>
 
         <div className="card p-4 flex flex-col justify-between">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-muted">
             Weekly Goals Target
           </span>
-          <h3 className="text-3xl font-extrabold text-neutral-900 dark:text-white mt-1.5">
+          <h3 className="text-3xl font-extrabold text-primary mt-1.5">
             {metrics.weekly.completedThisWeek}/7
           </h3>
-          <p className="text-[10px] text-neutral-500 mt-1">
+          <p className="text-[10px] text-muted mt-1">
             {metrics.weekly.progressPercent}% of target achieved
           </p>
         </div>
@@ -227,7 +227,7 @@ export const AnalyticsPage = () => {
         
         {/* Weekly Completion Bar Chart */}
         <div className="card p-5">
-          <h3 className="text-sm font-bold text-neutral-900 dark:text-white mb-6">
+          <h3 className="text-sm font-bold text-primary mb-6">
             Weekly Completed vs Created
           </h3>
           <div className="h-64 flex items-end justify-between gap-2.5 pt-4">
@@ -241,36 +241,36 @@ export const AnalyticsPage = () => {
                   <div className="w-full flex items-end justify-center gap-1 h-44 relative">
                     
                     {/* Tooltip on Hover */}
-                    <div className="absolute -top-8 bg-neutral-900 dark:bg-white text-white dark:text-neutral-950 text-[10px] font-bold px-1.5 py-0.5 rounded shadow opacity-0 group-hover:opacity-100 transition-opacity z-10 shrink-0 pointer-events-none">
+                    <div className="absolute -top-8 bg-[var(--text-primary)] text-[var(--bg-app)] text-[10px] font-bold px-1.5 py-0.5 rounded shadow opacity-0 group-hover:opacity-100 transition-opacity z-10 shrink-0 pointer-events-none">
                       Done: {day.completed} / Add: {day.created}
                     </div>
 
                     {/* Created Bar */}
                     <div
-                      className="w-2.5 rounded-t bg-neutral-200 dark:bg-neutral-800 transition-all duration-500"
+                      className="w-2.5 rounded-t bg-elevated border border-subtle transition-all duration-500"
                       style={{ height: `${creatPercent}%` }}
                     />
                     
                     {/* Completed Bar */}
                     <div
-                      className="w-2.5 rounded-t bg-neutral-950 dark:bg-white transition-all duration-500"
+                      className="w-2.5 rounded-t bg-[var(--text-primary)] transition-all duration-500"
                       style={{ height: `${compPercent}%` }}
                     />
                   </div>
-                  <span className="text-[10px] font-semibold text-neutral-400 dark:text-neutral-500">
+                  <span className="text-[10px] font-semibold text-muted">
                     {day.label}
                   </span>
                 </div>
               );
             })}
           </div>
-          <div className="flex gap-4 items-center justify-center mt-4 border-t pt-3 text-[10px] font-bold uppercase tracking-wider text-neutral-500">
+          <div className="flex gap-4 items-center justify-center mt-4 border-t border-subtle pt-3 text-[10px] font-bold uppercase tracking-wider text-muted">
             <div className="flex items-center gap-1.5">
-              <span className="h-2 w-2 rounded-sm bg-neutral-200 dark:bg-neutral-800" />
+              <span className="h-2 w-2 rounded-sm bg-elevated border border-subtle" />
               <span>Created</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <span className="h-2 w-2 rounded-sm bg-neutral-950 dark:bg-white" />
+              <span className="h-2 w-2 rounded-sm bg-[var(--text-primary)]" />
               <span>Completed</span>
             </div>
           </div>
@@ -279,7 +279,7 @@ export const AnalyticsPage = () => {
         {/* Priority Donut Chart */}
         <div className="card p-5 flex flex-col justify-between">
           <div>
-            <h3 className="text-sm font-bold text-neutral-900 dark:text-white mb-6">
+            <h3 className="text-sm font-bold text-primary mb-6">
               Priority Tasks Share
             </h3>
           </div>
@@ -293,7 +293,7 @@ export const AnalyticsPage = () => {
                   cx="88"
                   cy="88"
                   r="60"
-                  className="stroke-neutral-100 dark:stroke-neutral-900"
+                  className="stroke-[var(--border-subtle)]"
                   strokeWidth="12"
                   fill="transparent"
                 />
@@ -303,7 +303,7 @@ export const AnalyticsPage = () => {
                   cx="88"
                   cy="88"
                   r="60"
-                  className="stroke-neutral-400 dark:stroke-neutral-600"
+                  className="stroke-neutral-400"
                   strokeWidth="12"
                   fill="transparent"
                   strokeDasharray={377}
@@ -315,7 +315,7 @@ export const AnalyticsPage = () => {
                   cx="88"
                   cy="88"
                   r="60"
-                  className="stroke-neutral-500 dark:stroke-neutral-400"
+                  className="stroke-neutral-500"
                   strokeWidth="12"
                   fill="transparent"
                   strokeDasharray={377}
@@ -328,7 +328,7 @@ export const AnalyticsPage = () => {
                   cx="88"
                   cy="88"
                   r="60"
-                  className="stroke-red-700 dark:stroke-red-300"
+                  className="stroke-red-500"
                   strokeWidth="12"
                   fill="transparent"
                   strokeDasharray={377}
@@ -338,10 +338,10 @@ export const AnalyticsPage = () => {
               </svg>
 
               <div className="text-center">
-                <h4 className="text-2xl font-black text-neutral-900 dark:text-white">
+                <h4 className="text-2xl font-black text-primary">
                   {metrics.total}
                 </h4>
-                <p className="text-[10px] font-bold text-neutral-400 uppercase tracking-wider mt-0.5">
+                <p className="text-[10px] font-bold text-muted uppercase tracking-wider mt-0.5">
                   Tasks
                 </p>
               </div>
@@ -350,29 +350,29 @@ export const AnalyticsPage = () => {
             {/* Chart Legend */}
             <div className="space-y-3.5 min-w-[120px]">
               <div className="flex items-center justify-between text-xs">
-                <div className="flex items-center gap-2 font-medium text-neutral-600 dark:text-neutral-400">
-                  <span className="h-2.5 w-2.5 rounded-full bg-red-700 dark:bg-red-300" />
+                <div className="flex items-center gap-2 font-medium text-muted">
+                  <span className="h-2.5 w-2.5 rounded-full bg-red-500" />
                   <span>High</span>
                 </div>
-                <span className="font-bold text-neutral-800 dark:text-white tabular-nums">
+                <span className="font-bold text-primary tabular-nums">
                   {priorityDistribution.high.percent}%
                 </span>
               </div>
               <div className="flex items-center justify-between text-xs">
-                <div className="flex items-center gap-2 font-medium text-neutral-600 dark:text-neutral-400">
-                  <span className="h-2.5 w-2.5 rounded-full bg-neutral-500 dark:bg-neutral-400" />
+                <div className="flex items-center gap-2 font-medium text-muted">
+                  <span className="h-2.5 w-2.5 rounded-full bg-neutral-500" />
                   <span>Medium</span>
                 </div>
-                <span className="font-bold text-neutral-800 dark:text-white tabular-nums">
+                <span className="font-bold text-primary tabular-nums">
                   {priorityDistribution.medium.percent}%
                 </span>
               </div>
               <div className="flex items-center justify-between text-xs">
-                <div className="flex items-center gap-2 font-medium text-neutral-600 dark:text-neutral-400">
-                  <span className="h-2.5 w-2.5 rounded-full bg-neutral-400 dark:bg-neutral-600" />
+                <div className="flex items-center gap-2 font-medium text-muted">
+                  <span className="h-2.5 w-2.5 rounded-full bg-neutral-400" />
                   <span>Low</span>
                 </div>
-                <span className="font-bold text-neutral-800 dark:text-white tabular-nums">
+                <span className="font-bold text-primary tabular-nums">
                   {priorityDistribution.low.percent}%
                 </span>
               </div>
@@ -384,10 +384,10 @@ export const AnalyticsPage = () => {
       {/* Month Heatmap Calendar Grid */}
       <div className="card p-5">
         <div className="mb-4">
-          <h3 className="text-sm font-bold text-neutral-900 dark:text-white">
+          <h3 className="text-sm font-bold text-primary">
             Task Completion Activity
           </h3>
-          <p className="text-[11px] text-neutral-400 dark:text-neutral-500 mt-0.5">
+          <p className="text-[11px] text-muted mt-0.5">
             Completed tasks mapping during the last 30 days
           </p>
         </div>
@@ -404,7 +404,7 @@ export const AnalyticsPage = () => {
               {cell.dayNum}
               
               {/* Tooltip */}
-              <div className="absolute -top-8 bg-neutral-900 dark:bg-white text-white dark:text-neutral-950 text-[9px] font-bold px-1.5 py-0.5 rounded shadow opacity-0 group-hover:opacity-100 transition-opacity z-10 whitespace-nowrap pointer-events-none">
+              <div className="absolute -top-8 bg-[var(--text-primary)] text-[var(--bg-app)] text-[9px] font-bold px-1.5 py-0.5 rounded shadow opacity-0 group-hover:opacity-100 transition-opacity z-10 whitespace-nowrap pointer-events-none">
                 {cell.completed} done on {cell.dateStr}
               </div>
             </div>
@@ -412,12 +412,12 @@ export const AnalyticsPage = () => {
         </div>
 
         {/* Grid key scale */}
-        <div className="flex items-center justify-end gap-1.5 mt-4 text-[10px] text-neutral-500">
+        <div className="flex items-center justify-end gap-1.5 mt-4 text-[10px] text-muted">
           <span>Less</span>
-          <span className="h-3 w-3 rounded-sm bg-neutral-100 dark:bg-neutral-800" />
+          <span className="h-3 w-3 rounded-sm bg-elevated border border-subtle" />
           <span className="h-3 w-3 rounded-sm bg-neutral-300 dark:bg-neutral-700" />
           <span className="h-3 w-3 rounded-sm bg-neutral-600 dark:bg-neutral-400" />
-          <span className="h-3 w-3 rounded-sm bg-neutral-950 dark:bg-white" />
+          <span className="h-3 w-3 rounded-sm bg-[var(--text-primary)]" />
           <span>More</span>
         </div>
       </div>
