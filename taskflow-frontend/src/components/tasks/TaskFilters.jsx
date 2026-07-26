@@ -4,12 +4,11 @@ import { useDispatch, useSelector } from "react-redux";
 import { useDebounce } from "../../hooks/useDebounce";
 import { setFilters } from "../../store/slices/tasksSlice";
 import { TASK_DUE_DATE_FILTERS, TASK_PRIORITY, TASK_STATUS } from "../../utils/constants";
-
 import { useNavigate } from "react-router-dom";
 
 const FilterSelect = ({ label, value, options, onChange, id }) => (
   <div className="space-y-1.5">
-    <label htmlFor={id} className="text-xs font-medium text-neutral-500 dark:text-neutral-400">
+    <label htmlFor={id} className="text-xs font-medium text-muted">
       {label}
     </label>
     <select id={id} value={value} onChange={onChange} className="input h-10">
@@ -59,7 +58,7 @@ export const TaskFilters = () => {
   return (
     <div className="card space-y-4 p-4">
       <div className="relative">
-        <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" />
+        <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
         <input
           value={searchInput}
           onChange={(event) => setSearchInput(event.target.value)}
@@ -110,7 +109,7 @@ export const TaskFilters = () => {
         <button
           type="button"
           onClick={clearFilters}
-          className="inline-flex items-center gap-1 text-xs font-medium text-neutral-500 hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-neutral-200"
+          className="inline-flex items-center gap-1 text-xs font-medium text-muted hover:text-primary transition-colors duration-150"
         >
           <X size={12} />
           Clear filters

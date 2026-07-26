@@ -21,8 +21,8 @@ export const TaskCard = ({ task, onEdit, onDelete, onComplete, highlighted = fal
     <div
       id={`task-${task._id}`}
       onClick={() => onEdit(task)}
-      className={`card cursor-pointer p-4 transition-all duration-200 group border-l-4 hover:border-neutral-300 dark:hover:border-neutral-600 ${
-        highlighted ? "ring-2 ring-white/20" : ""
+      className={`card cursor-pointer p-4 transition-colors duration-150 group border-l-4 hover:border-strong ${
+        highlighted ? "ring-2 ring-[var(--text-primary)]/20" : ""
       } ${
         task.priority === "high" ? "border-l-red-400" :
         task.priority === "medium" ? "border-l-neutral-400" :
@@ -40,13 +40,13 @@ export const TaskCard = ({ task, onEdit, onDelete, onComplete, highlighted = fal
                   onComplete(task);
                 }
               }}
-              className="flex h-11 w-11 shrink-0 items-center justify-center -m-3.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/70 rounded-full"
+              className="flex h-11 w-11 shrink-0 items-center justify-center -m-3.5 focus-ring rounded-full"
               aria-label={isCompleted ? "Mark task incomplete" : "Mark task complete"}
             >
-              <span className={`flex h-4.5 w-4.5 items-center justify-center rounded border transition-colors ${
+              <span className={`flex h-4.5 w-4.5 items-center justify-center rounded transition-colors ${
                 isCompleted
-                  ? "bg-neutral-950 border-neutral-950 text-white dark:bg-white dark:border-white dark:text-neutral-950"
-                  : "border-neutral-300 bg-white hover:border-neutral-900 dark:border-neutral-700 dark:bg-neutral-900 dark:hover:border-white"
+                  ? "bg-[var(--text-primary)] text-[var(--bg-app)] border border-[var(--text-primary)]"
+                  : "border border-strong bg-app hover:border-[var(--text-primary)]"
               }`}>
                 {isCompleted && <Check size={11} strokeWidth={3} />}
               </span>
@@ -54,15 +54,15 @@ export const TaskCard = ({ task, onEdit, onDelete, onComplete, highlighted = fal
 
             <div className="min-w-0">
               <h3
-                className={`text-sm font-semibold text-neutral-900 dark:text-white leading-5 truncate ${
-                  isCompleted ? "text-neutral-400 line-through dark:text-neutral-500" : ""
+                className={`text-sm font-semibold text-primary leading-5 truncate ${
+                  isCompleted ? "text-muted line-through" : ""
                 }`}
               >
                 {task.title}
               </h3>
 
               {task.description && (
-                <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400 line-clamp-1 leading-relaxed">
+                <p className="mt-1 text-xs text-muted line-clamp-1 leading-relaxed">
                   {task.description}
                 </p>
               )}
@@ -70,13 +70,13 @@ export const TaskCard = ({ task, onEdit, onDelete, onComplete, highlighted = fal
           </div>
 
           <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
-            <span className="inline-flex items-center gap-1 rounded-md bg-neutral-50 border border-neutral-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-neutral-600 dark:bg-neutral-900/50 dark:border-neutral-800 dark:text-neutral-400">
+            <span className="inline-flex items-center gap-1 rounded-md bg-elevated border border-subtle px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider text-secondary">
               <span className={`h-1.5 w-1.5 rounded-full ${priorityColors[task.priority] || priorityColors.low}`} />
               {task.priority}
             </span>
 
             {task.recurrence && task.recurrence !== "none" && (
-              <span className="inline-flex items-center gap-1 rounded-md bg-neutral-50 border border-neutral-100 px-2 py-0.5 text-[10px] font-semibold text-neutral-500 dark:bg-neutral-900/50 dark:border-neutral-800 dark:text-neutral-400">
+              <span className="inline-flex items-center gap-1 rounded-md bg-elevated border border-subtle px-2 py-0.5 text-[10px] font-semibold text-muted">
                 <Repeat size={11} />
                 {task.recurrence}
               </span>
@@ -87,7 +87,7 @@ export const TaskCard = ({ task, onEdit, onDelete, onComplete, highlighted = fal
                 className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-semibold ${
                   isOverdue
                     ? "bg-red-950/10 border border-red-700/20 text-red-700 dark:bg-red-950/20 dark:border-red-300/20 dark:text-red-300"
-                    : "bg-neutral-50 border border-neutral-100 text-neutral-500 dark:bg-neutral-900/50 dark:border-neutral-800 dark:text-neutral-400"
+                    : "bg-elevated border border-subtle text-muted"
                 }`}
               >
                 <Clock size={11} />
@@ -96,7 +96,7 @@ export const TaskCard = ({ task, onEdit, onDelete, onComplete, highlighted = fal
             )}
 
             {task.reminderDate && (
-              <span className="inline-flex items-center gap-1 rounded-md bg-neutral-50 border border-neutral-100 text-neutral-600 dark:bg-neutral-900/50 dark:border-neutral-800 dark:text-neutral-300 px-2 py-0.5 text-[10px] font-semibold">
+              <span className="inline-flex items-center gap-1 rounded-md bg-elevated border border-subtle text-secondary px-2 py-0.5 text-[10px] font-semibold">
                 <Clock size={11} />
                 Alert
               </span>
@@ -105,7 +105,7 @@ export const TaskCard = ({ task, onEdit, onDelete, onComplete, highlighted = fal
             {task.tags?.map((tag) => (
               <span
                 key={tag}
-                className="inline-flex items-center gap-1 rounded-md bg-neutral-50 border border-neutral-100 px-2 py-0.5 text-[10px] font-semibold text-neutral-500 dark:bg-neutral-900/50 dark:border-neutral-800 dark:text-neutral-400"
+                className="inline-flex items-center gap-1 rounded-md bg-elevated border border-subtle px-2 py-0.5 text-[10px] font-semibold text-muted"
               >
                 <Tag size={10} />
                 {tag}
@@ -123,7 +123,7 @@ export const TaskCard = ({ task, onEdit, onDelete, onComplete, highlighted = fal
                 onDelete(task._id);
               }
             }}
-            className="btn-ghost h-11 w-11 -m-1.5 p-0 text-neutral-400 hover:text-red-600 dark:hover:text-red-300 flex items-center justify-center rounded-full"
+            className="btn-ghost h-11 w-11 -m-1.5 p-0 text-muted hover:text-red-600 dark:hover:text-red-300 flex items-center justify-center rounded-full"
             aria-label={`Delete task ${task.title}`}
           >
             <Trash2 size={14} />

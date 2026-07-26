@@ -7,9 +7,9 @@ import toast from "react-hot-toast";
 
 const COLUMNS = [
   { id: "pending", title: "Pending", color: "border-t-neutral-500" },
-  { id: "in_progress", title: "In Progress", color: "border-t-neutral-200 dark:border-t-white" },
-  { id: "completed", title: "Completed", color: "border-t-neutral-400" },
-  { id: "archived", title: "Archived", color: "border-t-neutral-700" },
+  { id: "in_progress", title: "In Progress", color: "border-t-[var(--text-primary)]" },
+  { id: "completed", title: "Completed", color: "border-t-green-500" },
+  { id: "archived", title: "Archived", color: "border-t-neutral-400" },
 ];
 
 export const KanbanView = ({ tasks = [], onEdit, onDelete, onComplete }) => {
@@ -76,14 +76,14 @@ export const KanbanView = ({ tasks = [], onEdit, onDelete, onComplete }) => {
           return (
             <div
               key={col.id}
-              className={`card flex flex-col border-t-4 ${col.color} bg-neutral-50/50 p-3 min-w-[250px] max-h-full dark:bg-neutral-900/10`}
+              className={`card flex flex-col border-t-4 ${col.color} bg-elevated p-3 min-w-[250px] max-h-full`}
             >
               {/* Column Header */}
               <div className="mb-3 flex items-center justify-between px-1">
-                <h4 className="text-sm font-bold text-neutral-900 dark:text-white capitalize">
+                <h4 className="text-sm font-bold text-primary capitalize">
                   {col.title}
                 </h4>
-                <span className="rounded bg-neutral-100 px-2 py-0.5 text-xs font-semibold text-neutral-600 dark:bg-neutral-800 dark:text-neutral-400 tabular-nums">
+                <span className="rounded bg-app border border-subtle px-2 py-0.5 text-xs font-semibold text-secondary tabular-nums">
                   {colTasks.length}
                 </span>
               </div>
@@ -96,7 +96,7 @@ export const KanbanView = ({ tasks = [], onEdit, onDelete, onComplete }) => {
                     {...provided.droppableProps}
                     className={`flex-1 overflow-y-auto space-y-2.5 rounded-lg p-1 transition-colors ${
                       snapshot.isDraggingOver
-                        ? "bg-neutral-100/60 dark:bg-neutral-800/20"
+                        ? "bg-hover"
                         : "bg-transparent"
                     }`}
                   >

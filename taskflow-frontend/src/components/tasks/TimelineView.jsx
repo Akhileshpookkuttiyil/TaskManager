@@ -20,12 +20,12 @@ export const TimelineView = ({ tasks = [], onEdit, onDelete, onComplete }) => {
     weekEnd.setDate(weekEnd.getDate() + 7);
 
     const groups = {
-      overdue: { title: "Overdue", icon: AlertCircle, color: "text-red-700 dark:text-red-300", bg: "bg-red-950/10 dark:bg-red-950/20", tasks: [] },
-      today: { title: "Today", icon: Clock, color: "text-neutral-950 dark:text-white", bg: "bg-neutral-100 dark:bg-neutral-800", tasks: [] },
-      tomorrow: { title: "Tomorrow", icon: Calendar, color: "text-neutral-700 dark:text-neutral-200", bg: "bg-neutral-100 dark:bg-neutral-800", tasks: [] },
-      thisWeek: { title: "This Week", icon: CalendarDays, color: "text-neutral-600 dark:text-neutral-300", bg: "bg-neutral-100 dark:bg-neutral-800", tasks: [] },
-      later: { title: "Later", icon: CalendarDays, color: "text-neutral-500", bg: "bg-neutral-500/10", tasks: [] },
-      noDate: { title: "No Date", icon: Inbox, color: "text-neutral-400", bg: "bg-neutral-400/10", tasks: [] },
+      overdue: { title: "Overdue", icon: AlertCircle, color: "text-red-600", bg: "bg-red-500/10", tasks: [] },
+      today: { title: "Today", icon: Clock, color: "text-primary", bg: "bg-elevated", tasks: [] },
+      tomorrow: { title: "Tomorrow", icon: Calendar, color: "text-secondary", bg: "bg-elevated", tasks: [] },
+      thisWeek: { title: "This Week", icon: CalendarDays, color: "text-secondary", bg: "bg-elevated", tasks: [] },
+      later: { title: "Later", icon: CalendarDays, color: "text-muted", bg: "bg-elevated", tasks: [] },
+      noDate: { title: "No Date", icon: Inbox, color: "text-muted", bg: "bg-elevated", tasks: [] },
     };
 
     tasks.forEach((task) => {
@@ -64,14 +64,14 @@ export const TimelineView = ({ tasks = [], onEdit, onDelete, onComplete }) => {
 
   if (!hasAnyTasks) {
     return (
-      <div className="py-12 text-center text-sm text-neutral-500 dark:text-neutral-400">
+      <div className="py-12 text-center text-sm text-muted">
         No tasks scheduled yet. Create a task with a due date to build your timeline.
       </div>
     );
   }
 
   return (
-    <div className="space-y-6 relative pl-4 before:absolute before:left-7.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-neutral-100 dark:before:bg-neutral-900">
+    <div className="space-y-6 relative pl-4 before:absolute before:left-7.5 before:top-2 before:bottom-2 before:w-0.5 before:bg-neutral">
       {groupKeys.map((key) => {
         const group = timelineGroups[key];
         if (group.tasks.length === 0) return null;
@@ -82,15 +82,15 @@ export const TimelineView = ({ tasks = [], onEdit, onDelete, onComplete }) => {
           <div key={key} className="relative space-y-3.5">
             {/* Timeline anchor head */}
             <div className="flex items-center gap-3 select-none">
-              <span className={`absolute -left-5.5 z-10 flex h-7 w-7 items-center justify-center rounded-full border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-950`}>
+              <span className={`absolute -left-5.5 z-10 flex h-7 w-7 items-center justify-center rounded-full border border-subtle bg-app`}>
                 <span className={`flex h-5 w-5 items-center justify-center rounded-full ${group.bg} ${group.color}`}>
                   <Icon size={12} strokeWidth={2.5} />
                 </span>
               </span>
-              <h4 className="text-xs font-bold uppercase tracking-wider text-neutral-900 dark:text-white">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-primary">
                 {group.title}
               </h4>
-              <span className="rounded bg-neutral-100 px-1.5 py-0.5 text-[10px] font-bold text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400 tabular-nums">
+              <span className="rounded bg-elevated border border-subtle px-1.5 py-0.5 text-[10px] font-bold text-secondary tabular-nums">
                 {group.tasks.length}
               </span>
             </div>
