@@ -93,12 +93,12 @@ export const LoginPage = () => {
     >
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h2 className="text-xl font-semibold tracking-tight text-neutral-900 dark:text-white">Sign in</h2>
-          <p className="mt-1.5 text-sm text-neutral-500 dark:text-neutral-400">
+          <h2 className="text-xl font-semibold tracking-tight text-primary">Sign in</h2>
+          <p className="mt-1.5 text-sm text-muted">
             Use your account or jump into the demo workspace.
           </p>
         </div>
-        <div className="hidden h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-neutral-200 bg-neutral-50 text-neutral-500 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-400 sm:flex">
+        <div className="hidden h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-subtle bg-elevated text-muted sm:flex">
           <ShieldCheck size={18} />
         </div>
       </div>
@@ -139,7 +139,7 @@ export const LoginPage = () => {
             <button
               type="button"
               onClick={() => setShowPassword((value) => !value)}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-md p-1.5 text-neutral-400 transition-colors hover:bg-neutral-100 hover:text-neutral-600 dark:hover:bg-neutral-800 dark:hover:text-neutral-300"
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-md p-1.5 text-muted transition-colors hover:bg-hover hover:text-primary"
               aria-label={showPassword ? "Hide password" : "Show password"}
             >
               {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
@@ -154,9 +154,9 @@ export const LoginPage = () => {
         </button>
       </form>
 
-      <p className="mt-6 text-center text-sm text-neutral-500 dark:text-neutral-400">
+      <p className="mt-6 text-center text-sm text-muted">
         Don&apos;t have an account?{" "}
-        <Link to="/register" className="font-medium text-neutral-900 transition-colors hover:text-neutral-600 dark:text-white dark:hover:text-neutral-300">
+        <Link to="/register" className="font-medium text-primary transition-colors hover:text-secondary">
           Create one
         </Link>
       </p>
@@ -172,13 +172,13 @@ const previewTasks = [
 
 const LoginWorkspacePreview = () => (
   <div className="hidden lg:block">
-    <div className="max-w-2xl rounded-xl border border-neutral-200 bg-white p-4 shadow-[var(--shadow-subtle)] dark:border-neutral-800 dark:bg-neutral-950">
-      <div className="flex items-center justify-between border-b border-neutral-100 pb-4 dark:border-neutral-800">
+    <div className="max-w-2xl rounded-xl border border-subtle bg-elevated p-4 shadow-[var(--shadow-subtle)]">
+      <div className="flex items-center justify-between border-b border-neutral pb-4">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-neutral-400 dark:text-neutral-500">Today&apos;s command center</p>
-          <h3 className="mt-1 text-lg font-semibold tracking-tight text-neutral-900 dark:text-white">Dashboard snapshot</h3>
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted">Today&apos;s command center</p>
+          <h3 className="mt-1 text-lg font-semibold tracking-tight text-primary">Dashboard snapshot</h3>
         </div>
-        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-neutral-950 text-white dark:bg-white dark:text-neutral-950">
+        <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-[var(--text-primary)] text-[var(--bg-app)]">
           <ListChecks size={18} />
         </div>
       </div>
@@ -189,36 +189,36 @@ const LoginWorkspacePreview = () => (
           ["8", "Due today"],
           ["82%", "Score"],
         ].map(([value, label]) => (
-          <div key={label} className="rounded-lg border border-neutral-100 bg-neutral-50 p-3 dark:border-neutral-800 dark:bg-neutral-900/70">
-            <p className="text-2xl font-semibold tracking-tight text-neutral-900 dark:text-white">{value}</p>
-            <p className="mt-1 text-[11px] font-semibold uppercase tracking-wider text-neutral-400 dark:text-neutral-500">{label}</p>
+          <div key={label} className="rounded-lg border border-subtle bg-app p-3">
+            <p className="text-2xl font-semibold tracking-tight text-primary">{value}</p>
+            <p className="mt-1 text-[11px] font-semibold uppercase tracking-wider text-muted">{label}</p>
           </div>
         ))}
       </div>
 
       <div className="mt-4 grid gap-4 xl:grid-cols-[1fr_220px]">
-        <div className="rounded-lg border border-neutral-100 p-3 dark:border-neutral-800">
+        <div className="rounded-lg border border-subtle p-3">
           <div className="mb-3 flex items-center justify-between">
-            <p className="text-sm font-semibold text-neutral-900 dark:text-white">Focus queue</p>
-            <span className="rounded-md bg-neutral-100 px-2 py-1 text-[11px] font-semibold text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300">
+            <p className="text-sm font-semibold text-primary">Focus queue</p>
+            <span className="rounded-md bg-elevated border border-subtle px-2 py-1 text-[11px] font-semibold text-secondary">
               Live
             </span>
           </div>
 
           <div className="space-y-2">
             {previewTasks.map((task, index) => (
-              <div key={task.title} className="flex items-center gap-3 rounded-lg bg-neutral-50 px-3 py-2.5 dark:bg-neutral-900/80">
-                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-neutral-200 bg-white text-neutral-500 dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-400">
+              <div key={task.title} className="flex items-center gap-3 rounded-lg bg-app px-3 py-2.5">
+                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg border border-subtle bg-elevated text-muted">
                   {index === 0 ? <CircleDot size={15} /> : <CheckCircle2 size={15} />}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-semibold text-neutral-800 dark:text-neutral-100">{task.title}</p>
-                  <p className="mt-0.5 flex items-center gap-1 text-[11px] text-neutral-400 dark:text-neutral-500">
+                  <p className="truncate text-sm font-semibold text-primary">{task.title}</p>
+                  <p className="mt-0.5 flex items-center gap-1 text-[11px] text-muted">
                     <Clock3 size={11} />
                     {task.meta}
                   </p>
                 </div>
-                <span className="rounded-md border border-neutral-200 px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-neutral-500 dark:border-neutral-700 dark:text-neutral-400">
+                <span className="rounded-md border border-subtle px-2 py-1 text-[10px] font-semibold uppercase tracking-wider text-muted">
                   {task.priority}
                 </span>
               </div>
@@ -226,25 +226,25 @@ const LoginWorkspacePreview = () => (
           </div>
         </div>
 
-        <div className="rounded-lg border border-neutral-100 p-3 dark:border-neutral-800">
+        <div className="rounded-lg border border-subtle p-3">
           <div className="flex items-center gap-2">
-            <CalendarDays size={15} className="text-neutral-500 dark:text-neutral-400" />
-            <p className="text-sm font-semibold text-neutral-900 dark:text-white">Weekly goal</p>
+            <CalendarDays size={15} className="text-muted" />
+            <p className="text-sm font-semibold text-primary">Weekly goal</p>
           </div>
           <div className="mt-5 flex items-end gap-1.5">
             {[44, 62, 38, 78, 58, 86, 70].map((height, index) => (
-              <div key={index} className="flex flex-1 items-end rounded-full bg-neutral-100 dark:bg-neutral-800" style={{ height: 86 }}>
-                <div className="w-full rounded-full bg-neutral-950 dark:bg-white" style={{ height: `${height}%` }} />
+              <div key={index} className="flex flex-1 items-end rounded-full bg-elevated" style={{ height: 86 }}>
+                <div className="w-full rounded-full bg-[var(--text-primary)]" style={{ height: `${height}%` }} />
               </div>
             ))}
           </div>
           <div className="mt-4 space-y-2">
-            <div className="flex items-center justify-between text-xs font-semibold text-neutral-500 dark:text-neutral-400">
+            <div className="flex items-center justify-between text-xs font-semibold text-muted">
               <span>Completion rate</span>
               <span>82%</span>
             </div>
-            <div className="h-1.5 rounded-full bg-neutral-100 dark:bg-neutral-800">
-              <div className="h-1.5 w-[82%] rounded-full bg-neutral-950 dark:bg-white" />
+            <div className="h-1.5 rounded-full bg-elevated">
+              <div className="h-1.5 w-[82%] rounded-full bg-[var(--text-primary)]" />
             </div>
           </div>
         </div>

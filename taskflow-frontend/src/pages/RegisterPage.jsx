@@ -79,8 +79,8 @@ export const RegisterPage = () => {
       ]}
     >
       <div>
-        <h2 className="text-xl font-semibold text-neutral-900 dark:text-white">Create your account</h2>
-        <p className="mt-1.5 text-sm text-neutral-500 dark:text-neutral-400">
+        <h2 className="text-xl font-semibold text-primary">Create your account</h2>
+        <p className="mt-1.5 text-sm text-muted">
           Free to use, fast to set up.
         </p>
       </div>
@@ -138,7 +138,7 @@ export const RegisterPage = () => {
             <button
               type="button"
               onClick={() => setShowPassword((value) => !value)}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-md p-1.5 text-neutral-400 transition-colors hover:bg-neutral-100 hover:text-neutral-600 dark:hover:bg-neutral-800 dark:hover:text-neutral-300"
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-md p-1.5 text-muted transition-colors hover:bg-hover hover:text-primary"
               aria-label={showPassword ? "Hide password" : "Show password"}
             >
               {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
@@ -153,9 +153,9 @@ export const RegisterPage = () => {
         </button>
       </form>
 
-      <p className="mt-6 text-center text-sm text-neutral-500 dark:text-neutral-400">
+      <p className="mt-6 text-center text-sm text-muted">
         Already have an account?{" "}
-        <Link to="/login" className="font-medium text-neutral-900 transition-colors hover:text-neutral-600 dark:text-white dark:hover:text-neutral-300">
+        <Link to="/login" className="font-medium text-primary transition-colors hover:text-secondary">
           Sign in
         </Link>
       </p>
