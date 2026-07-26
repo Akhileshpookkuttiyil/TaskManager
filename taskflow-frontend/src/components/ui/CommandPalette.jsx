@@ -125,19 +125,19 @@ export const CommandPalette = ({ isOpen, onClose, onQuickAdd }) => {
       {/* Click backdrop to close */}
       <div className="fixed inset-0 -z-10" onClick={onClose} />
 
-      <div className="flex w-full max-w-lg flex-col overflow-hidden rounded-xl border border-neutral-200 bg-white dark:border-neutral-800 dark:bg-neutral-900 animate-in fade-in zoom-in-95 duration-150" style={{ boxShadow: "var(--shadow-elevated)" }}>
+      <div className="flex w-full max-w-lg flex-col overflow-hidden rounded-xl border border-neutral bg-surface shadow-elevated animate-in fade-in zoom-in-95 duration-150">
         {/* Search Input Box */}
-        <div className="flex items-center gap-2.5 border-b border-neutral-100 px-4 py-3 dark:border-neutral-800">
-          <Search size={18} className="text-neutral-400" />
+        <div className="flex items-center gap-2.5 border-b border-subtle px-4 py-3">
+          <Search size={18} className="text-muted" />
           <input
             ref={inputRef}
             type="text"
             placeholder="Type a command or search..."
             value={query}
             onChange={(e) => { setQuery(e.target.value); setSelectedIndex(0); }}
-            className="w-full bg-transparent text-sm text-neutral-900 placeholder:text-neutral-400 focus:outline-none dark:text-white dark:placeholder:text-neutral-500"
+            className="w-full bg-transparent text-sm text-primary placeholder:text-muted focus:outline-none"
           />
-          <kbd className="hidden rounded bg-neutral-100 px-1.5 py-0.5 text-[10px] font-semibold text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400 sm:inline-block">
+          <kbd className="hidden rounded bg-elevated border border-neutral px-1.5 py-0.5 text-[10px] font-semibold text-muted sm:inline-block">
             ESC
           </kbd>
         </div>
@@ -160,22 +160,22 @@ export const CommandPalette = ({ isOpen, onClose, onQuickAdd }) => {
                 onMouseEnter={() => setSelectedIndex(idx)}
                 className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-left transition-colors ${
                   isSelected
-                    ? "bg-neutral-100 text-neutral-900 dark:bg-neutral-800 dark:text-white"
-                    : "text-neutral-600 dark:text-neutral-300"
+                    ? "bg-hover text-primary"
+                    : "text-secondary"
                 }`}
                 role="option"
                 aria-selected={isSelected}
               >
-                <div className={`flex h-6.5 w-6.5 items-center justify-center rounded-md border border-neutral-200 bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-800 ${isSelected ? "text-neutral-950 dark:text-white" : "text-neutral-400"}`}>
+                <div className={`flex h-6.5 w-6.5 items-center justify-center rounded-md border border-neutral bg-elevated ${isSelected ? "text-primary" : "text-muted"}`}>
                   <Icon size={14} />
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium truncate">{item.title}</p>
                   {item.subtitle && (
-                    <p className="text-xs text-neutral-400 capitalize">{item.subtitle}</p>
+                    <p className="text-xs text-muted capitalize">{item.subtitle}</p>
                   )}
                 </div>
-                <span className="shrink-0 text-[10px] font-semibold tracking-wider text-neutral-400 uppercase">
+                <span className="shrink-0 text-[10px] font-semibold tracking-wider text-muted uppercase">
                   {item.category}
                 </span>
               </button>
@@ -183,7 +183,7 @@ export const CommandPalette = ({ isOpen, onClose, onQuickAdd }) => {
           })}
 
           {filteredItems.length === 0 && (
-            <div className="px-4 py-8 text-center text-sm text-neutral-500 dark:text-neutral-400">
+            <div className="px-4 py-8 text-center text-sm text-muted">
               No matching commands or results found.
             </div>
           )}

@@ -63,12 +63,7 @@ export const FloatingMenuItem = memo(
             {keys.map((k, i) => (
               <kbd
                 key={i}
-                className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-semibold leading-none"
-                style={{
-                  background: "var(--bg-pressed)",
-                  color: "var(--text-muted)",
-                  border: "1px solid var(--border-neutral)",
-                }}
+                className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-semibold leading-none bg-pressed text-muted border border-neutral"
               >
                 {k}
               </kbd>
