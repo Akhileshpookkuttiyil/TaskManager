@@ -115,15 +115,15 @@ export const NotificationsPage = () => {
       case "task_reminder":
       case "due_soon":
       case "due_today":
-        return <Zap className="text-neutral-500 dark:text-neutral-400" size={16} />;
+        return <Zap className="text-muted" size={16} />;
       case "overdue":
-        return <Clock className="text-red-700 dark:text-red-300" size={16} />;
+        return <Clock className="text-red-500" size={16} />;
       case "task_completed":
-        return <CheckCircle2 className="text-neutral-500 dark:text-neutral-400" size={16} />;
+        return <CheckCircle2 className="text-muted" size={16} />;
       case "streak_milestone":
-        return <Award className="text-neutral-500 dark:text-neutral-400" size={16} />;
+        return <Award className="text-muted" size={16} />;
       default:
-        return <Bell className="text-neutral-500" size={16} />;
+        return <Bell className="text-muted" size={16} />;
     }
   };
 
@@ -132,13 +132,13 @@ export const NotificationsPage = () => {
       {/* Title Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
+          <p className="text-xs font-semibold uppercase tracking-wider text-muted">
             Workspace Inbox
           </p>
-          <h2 className="text-2xl font-bold tracking-tight text-neutral-900 dark:text-white">
+          <h2 className="text-2xl font-bold tracking-tight text-primary">
             Notification Center
           </h2>
-          <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
+          <p className="mt-1 text-sm text-muted">
             You have {unreadCount} unread {unreadCount === 1 ? "notification" : "notifications"}.
           </p>
         </div>
@@ -154,7 +154,7 @@ export const NotificationsPage = () => {
             </button>
             <button
               onClick={dismissAllNotifications}
-              className="btn-secondary text-xs font-semibold py-1.5 px-3 flex items-center gap-1.5 hover:text-red-700 dark:hover:text-red-300"
+              className="btn-secondary text-xs font-semibold py-1.5 px-3 flex items-center gap-1.5 hover:text-red-600"
             >
               <Trash2 size={14} />
               Clear all
@@ -167,7 +167,7 @@ export const NotificationsPage = () => {
       <div className="grid gap-4 sm:grid-cols-[1fr_auto]">
         {/* Search */}
         <div className="relative">
-          <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400" />
+          <Search size={15} className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted" />
           <input
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
@@ -178,7 +178,7 @@ export const NotificationsPage = () => {
         </div>
 
         {/* Category Tabs */}
-        <div className="flex gap-1 rounded-lg border border-neutral-200/80 p-0.5 bg-neutral-50/50 dark:border-neutral-800 dark:bg-neutral-900/40 w-fit">
+        <div className="flex gap-1 rounded-md border border-subtle p-0.5 bg-elevated w-fit">
           {[
             { id: "all", label: "All" },
             { id: "unread", label: "Unread" },
@@ -188,10 +188,10 @@ export const NotificationsPage = () => {
             <button
               key={tab.id}
               onClick={() => setFilterType(tab.id)}
-              className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-all duration-150 ${
+              className={`rounded-md px-3 py-1.5 text-xs font-semibold transition-colors duration-150 ${
                 filterType === tab.id
-                  ? "bg-white text-neutral-900 shadow-sm dark:bg-neutral-950 dark:text-white"
-                  : "text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white"
+                  ? "bg-app text-primary shadow-sm border border-neutral"
+                  : "text-muted hover:text-primary hover:bg-hover"
               }`}
             >
               {tab.label}
@@ -201,7 +201,7 @@ export const NotificationsPage = () => {
       </div>
 
       {/* Notifications List Container */}
-      <div className="card p-2.5 divide-y divide-neutral-100 dark:divide-neutral-900">
+      <div className="card p-2.5 divide-y divide-neutral">
         {loading && filteredNotifications.length === 0 ? (
           <div className="space-y-4 p-4">
             <div className="h-6 w-1/3 skeleton" />
@@ -210,13 +210,13 @@ export const NotificationsPage = () => {
           </div>
         ) : filteredNotifications.length === 0 ? (
           <div className="py-12 text-center">
-            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-neutral-50 dark:bg-neutral-900 mx-auto text-neutral-400">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-elevated border border-subtle mx-auto text-muted">
               <Bell size={20} />
             </div>
-            <h3 className="text-sm font-bold text-neutral-900 dark:text-white mt-3">
+            <h3 className="text-sm font-bold text-primary mt-3">
               Your inbox is clean
             </h3>
-            <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1 max-w-xs mx-auto">
+            <p className="text-xs text-muted mt-1 max-w-xs mx-auto">
               No new alerts or updates right now. Check back later!
             </p>
           </div>
@@ -225,33 +225,33 @@ export const NotificationsPage = () => {
             <div
               key={notif._id}
               onClick={() => handleNotificationClick(notif)}
-              className={`flex items-start justify-between gap-4 p-4 transition-all duration-200 cursor-pointer ${
+              className={`flex items-start justify-between gap-4 p-4 transition-colors duration-150 cursor-pointer ${
                 !notif.isRead
-                  ? "bg-neutral-100/70 dark:bg-neutral-800/40 hover:bg-neutral-100 dark:hover:bg-neutral-800/60"
-                  : "hover:bg-neutral-50 dark:hover:bg-neutral-900/50"
+                  ? "bg-elevated hover:bg-hover"
+                  : "hover:bg-hover"
               }`}
             >
               <div className="flex gap-3 min-w-0">
                 {/* Icon wrapper */}
-                <div className="mt-0.5 flex h-7.5 w-7.5 shrink-0 items-center justify-center rounded-lg bg-neutral-50 dark:bg-neutral-900">
+                <div className="mt-0.5 flex h-7.5 w-7.5 shrink-0 items-center justify-center rounded-lg bg-app border border-subtle">
                   {getNotificationIcon(notif.type)}
                 </div>
 
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
-                    <h4 className={`text-sm leading-5 font-semibold text-neutral-900 dark:text-white truncate ${
+                    <h4 className={`text-sm leading-5 font-semibold text-primary truncate ${
                       !notif.isRead ? "" : "opacity-80"
                     }`}>
                       {notif.title}
                     </h4>
                     {!notif.isRead && (
-                      <span className="h-2 w-2 rounded-full bg-neutral-950 dark:bg-white shrink-0" />
+                      <span className="h-2 w-2 rounded-full bg-[var(--text-primary)] shrink-0" />
                     )}
                   </div>
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-1 leading-relaxed">
+                  <p className="text-xs text-muted mt-1 leading-relaxed">
                     {notif.message}
                   </p>
-                  <span className="text-[10px] font-semibold text-neutral-400 mt-2 block">
+                  <span className="text-[10px] font-semibold text-muted mt-2 block">
                     {notif.createdAt ? formatDateTimeValue(notif.createdAt, "MMM d, h:mm a") : "Recently"}
                   </span>
                 </div>
@@ -262,7 +262,7 @@ export const NotificationsPage = () => {
                 {!notif.isRead && (
                   <button
                     onClick={() => handleMarkRead(notif._id)}
-                    className="btn-ghost h-8 w-8 p-0 text-neutral-400 hover:text-neutral-950 dark:hover:text-white"
+                    className="btn-ghost h-8 w-8 p-0 text-muted hover:text-primary"
                     title="Mark as read"
                   >
                     <Eye size={14} />
@@ -270,7 +270,7 @@ export const NotificationsPage = () => {
                 )}
                 <button
                   onClick={() => dismissNotification(notif._id)}
-                  className="btn-ghost h-8 w-8 p-0 text-neutral-400 hover:text-red-700 dark:hover:text-red-300"
+                  className="btn-ghost h-8 w-8 p-0 text-muted hover:text-red-600"
                   title="Dismiss notification"
                 >
                   <Trash2 size={14} />
