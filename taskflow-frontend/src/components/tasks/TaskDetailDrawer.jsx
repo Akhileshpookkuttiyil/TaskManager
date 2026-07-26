@@ -236,7 +236,7 @@ export const TaskDetailDrawer = ({ isOpen, onClose, task, onSaved }) => {
 
   // Copy shareable link
   const handleCopyLink = () => {
-    if (isCreateMode) return;
+    if (isCreateMode || !task) return;
     const url = `${window.location.origin}/tasks?focus=${task._id}`;
     navigator.clipboard.writeText(url);
     toast.success("Link copied to clipboard!");
@@ -250,13 +250,13 @@ export const TaskDetailDrawer = ({ isOpen, onClose, task, onSaved }) => {
       <div className="fixed inset-0 bg-neutral-950/40 backdrop-blur-[1px] transition-opacity" onClick={onClose} />
 
       {/* Drawer Container */}
-      <div id="task-detail-drawer" className="relative z-10 flex h-full w-full flex-col bg-white dark:bg-neutral-950 sm:w-[500px] animate-in slide-in-from-right duration-250" style={{ boxShadow: "var(--shadow-elevated)" }}>
+      <div id="task-detail-drawer" className="relative z-10 flex h-full w-full flex-col bg-app sm:w-[500px] animate-in slide-in-from-right duration-250" style={{ boxShadow: "var(--shadow-elevated)" }}>
         
         {/* Drawer Header */}
-        <div className="flex h-16 items-center justify-between border-b border-neutral-200 px-5 dark:border-neutral-800 shrink-0">
+        <div className="flex h-16 items-center justify-between border-b border-neutral px-5 shrink-0">
           <div className="flex items-center gap-2">
-            <CheckSquare className="text-neutral-500 dark:text-neutral-400" size={18} />
-            <span className="text-sm font-bold text-neutral-900 dark:text-white">
+            <CheckSquare className="text-muted" size={18} />
+            <span className="text-sm font-bold text-primary">
               {isCreateMode ? "New Task" : "Task Details"}
             </span>
           </div>
@@ -272,7 +272,7 @@ export const TaskDetailDrawer = ({ isOpen, onClose, task, onSaved }) => {
             )}
             <button
               onClick={onClose}
-              className="btn-ghost h-8 w-8 p-0 text-neutral-400 hover:text-neutral-900 dark:hover:text-white"
+              className="btn-ghost h-8 w-8 p-0 text-muted hover:text-primary"
               aria-label="Close drawer"
             >
               <X size={16} />
@@ -293,13 +293,13 @@ export const TaskDetailDrawer = ({ isOpen, onClose, task, onSaved }) => {
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               onBlur={(e) => handleFieldChange("title", e.target.value)}
-              className="w-full bg-transparent text-lg font-bold border-0 border-b border-transparent hover:border-neutral-200 focus:border-neutral-900 focus:outline-none dark:text-white dark:hover:border-neutral-800 dark:focus:border-white py-1"
+              className="w-full bg-transparent text-lg font-bold border-0 border-b border-transparent hover:border-neutral focus:border-strong focus:outline-none text-primary py-1"
               autoFocus={isCreateMode}
             />
           </div>
 
           {/* Parameters Grid */}
-          <div className="grid grid-cols-2 gap-4 rounded-xl border border-neutral-200/60 dark:border-neutral-800/80 p-4">
+          <div className="grid grid-cols-2 gap-4 rounded-xl border border-neutral p-4">
             <div>
               <label htmlFor="drawer-status" className="label">Status</label>
               <select
@@ -382,8 +382,8 @@ export const TaskDetailDrawer = ({ isOpen, onClose, task, onSaved }) => {
           </div>
 
           {/* Description Section */}
-          <div className="space-y-2 border-b border-neutral-100 pb-5 dark:border-neutral-900">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
+          <div className="space-y-2 border-b border-neutral pb-5">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-muted">
               Description
             </h4>
             {isEditingDescription || isCreateMode ? (
@@ -420,10 +420,10 @@ export const TaskDetailDrawer = ({ isOpen, onClose, task, onSaved }) => {
               <div className="relative group/desc">
                 <div
                   onClick={() => setIsEditingDescription(true)}
-                  className="min-h-16 rounded-lg border border-transparent p-2 pr-10 text-sm text-neutral-700 hover:bg-neutral-50 dark:text-neutral-300 dark:hover:bg-neutral-900/40 cursor-pointer prose prose-sm dark:prose-invert hover:border-neutral-200 dark:hover:border-neutral-800"
+                  className="min-h-16 rounded-lg border border-transparent p-2 pr-10 text-sm text-secondary hover:bg-hover hover:border-neutral cursor-pointer prose prose-sm dark:prose-invert"
                   dangerouslySetInnerHTML={{ __html: parseMarkdown(description) || "<em>Click to add details...</em>" }}
                 />
-                <span className="absolute right-2 top-2 text-neutral-400 opacity-0 group-hover/desc:opacity-100 transition-opacity pointer-events-none text-xs flex items-center gap-1 font-semibold dark:text-neutral-500">
+                <span className="absolute right-2 top-2 text-muted opacity-0 group-hover/desc:opacity-100 transition-opacity pointer-events-none text-xs flex items-center gap-1 font-semibold">
                   <Pencil size={11} />
                   edit
                 </span>
@@ -434,21 +434,21 @@ export const TaskDetailDrawer = ({ isOpen, onClose, task, onSaved }) => {
           {/* Audit History Timeline section */}
           {!isCreateMode && (
             <div className="space-y-2">
-              <h4 className="text-xs font-bold uppercase tracking-wider text-neutral-400 dark:text-neutral-500 flex items-center gap-1.5">
+              <h4 className="text-xs font-bold uppercase tracking-wider text-muted flex items-center gap-1.5">
                 <History size={14} />
                 Audit History Log
               </h4>
               <div className="space-y-2 mt-2 max-h-48 overflow-y-auto text-[11px]">
                 {taskActivities.map((act) => (
                   <div key={act._id} className="flex items-start justify-between gap-4 p-1">
-                    <p className="text-neutral-600 dark:text-neutral-400">{act.message}</p>
-                    <span className="text-[10px] text-neutral-400 shrink-0">
+                    <p className="text-secondary">{act.message}</p>
+                    <span className="text-[10px] text-muted shrink-0">
                       {formatDateTimeValue(act.createdAt, "MM/dd h:mm a")}
                     </span>
                   </div>
                 ))}
                 {taskActivities.length === 0 && (
-                  <p className="text-neutral-400 dark:text-neutral-600 text-center py-3">No changes recorded yet.</p>
+                  <p className="text-muted text-center py-3">No changes recorded yet.</p>
                 )}
               </div>
             </div>
@@ -458,7 +458,7 @@ export const TaskDetailDrawer = ({ isOpen, onClose, task, onSaved }) => {
 
         {/* Create Mode Footer Buttons */}
         {isCreateMode && (
-          <div className="flex items-center justify-end gap-2.5 border-t border-neutral-200/80 px-5 py-4 dark:border-neutral-800 shrink-0 bg-neutral-50/50 dark:bg-neutral-900/30">
+          <div className="flex items-center justify-end gap-2.5 border-t border-neutral px-5 py-4 shrink-0 bg-elevated">
             <button
               type="button"
               onClick={onClose}
