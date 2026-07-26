@@ -48,23 +48,23 @@ const getStreakMetrics = (tasks) => {
 };
 
 const SummaryCard = ({ label, value, helper }) => (
-  <div className="rounded-2xl border border-neutral-200 bg-neutral-50/70 p-4 dark:border-neutral-800 dark:bg-neutral-900/40">
-    <p className="text-xs font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">{label}</p>
-    <p className="mt-2 text-2xl font-semibold tabular-nums text-neutral-900 dark:text-white">{value}</p>
-    {helper ? <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">{helper}</p> : null}
+  <div className="rounded-2xl border border-subtle bg-elevated p-4">
+    <p className="text-xs font-medium uppercase tracking-wide text-muted">{label}</p>
+    <p className="mt-2 text-2xl font-semibold tabular-nums text-primary">{value}</p>
+    {helper ? <p className="mt-1 text-sm text-muted">{helper}</p> : null}
   </div>
 );
 
 const FieldRow = ({ icon: Icon, label, value, helper }) => (
-  <div className="rounded-2xl border border-neutral-200 p-4 dark:border-neutral-800">
+  <div className="rounded-2xl border border-subtle bg-elevated p-4">
     <div className="flex items-start gap-3">
-      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-neutral-100 text-neutral-500 dark:bg-neutral-800 dark:text-neutral-300">
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-app text-secondary">
         <Icon size={16} />
       </div>
       <div className="min-w-0">
-        <p className="text-xs font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">{label}</p>
-        <p className="mt-1 truncate text-sm font-medium text-neutral-900 dark:text-white">{value}</p>
-        {helper ? <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">{helper}</p> : null}
+        <p className="text-xs font-medium uppercase tracking-wide text-muted">{label}</p>
+        <p className="mt-1 truncate text-sm font-medium text-primary">{value}</p>
+        {helper ? <p className="mt-1 text-sm text-muted">{helper}</p> : null}
       </div>
     </div>
   </div>
@@ -131,8 +131,8 @@ const ProfileSettingsForm = ({ user }) => {
     <form className="card p-6" onSubmit={handleSubmit}>
       <div>
         <p className="section-eyebrow">Account settings</p>
-        <h3 className="mt-1 text-base font-semibold text-neutral-900 dark:text-white">Update your profile</h3>
-        <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
+        <h3 className="mt-1 text-base font-semibold text-primary">Update your profile</h3>
+        <p className="mt-1 text-sm text-muted">
           Keep your public identity and security details up to date.
         </p>
       </div>
@@ -154,14 +154,14 @@ const ProfileSettingsForm = ({ user }) => {
           </div>
         </div>
 
-        <div className="rounded-2xl border border-neutral-200 p-4 dark:border-neutral-800">
+        <div className="rounded-2xl border border-subtle bg-elevated p-4">
           <div className="flex items-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-neutral-100 text-neutral-500 dark:bg-neutral-800 dark:text-neutral-300">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-app text-secondary">
               <LockKeyhole size={15} />
             </div>
             <div>
-              <p className="text-sm font-semibold text-neutral-900 dark:text-white">Change password</p>
-              <p className="text-sm text-neutral-500 dark:text-neutral-400">Optional. Leave blank to keep your current password.</p>
+              <p className="text-sm font-semibold text-primary">Change password</p>
+              <p className="text-sm text-muted">Optional. Leave blank to keep your current password.</p>
             </div>
           </div>
 
@@ -198,7 +198,7 @@ const ProfileSettingsForm = ({ user }) => {
           </div>
         </div>
 
-        <div className="flex flex-col-reverse gap-2.5 border-t border-neutral-200 pt-4 sm:flex-row sm:justify-end dark:border-neutral-800">
+        <div className="flex flex-col-reverse gap-2.5 border-t border-neutral pt-4 sm:flex-row sm:justify-end">
           <button type="submit" className="btn-primary min-w-[140px]" disabled={profileLoading}>
             {profileLoading ? <Spinner size="sm" /> : null}
             Save changes
@@ -234,8 +234,8 @@ const PreferencesSettingsForm = () => {
     <form className="card p-6 space-y-5" onSubmit={handleSavePreferences}>
       <div>
         <p className="section-eyebrow">Preferences</p>
-        <h3 className="mt-1 text-base font-semibold text-neutral-900 dark:text-white">Workspace Preferences</h3>
-        <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
+        <h3 className="mt-1 text-base font-semibold text-primary">Workspace Preferences</h3>
+        <p className="mt-1 text-sm text-muted">
           Customize theme, default task priority, offsets, and timezone profiles.
         </p>
       </div>
@@ -244,7 +244,7 @@ const PreferencesSettingsForm = () => {
         {/* Appearance Mode */}
         <div>
           <label className="label">Appearance</label>
-          <div className="flex gap-1 rounded-lg border border-neutral-200/80 p-0.5 bg-neutral-50/50 dark:border-neutral-800 dark:bg-neutral-900/40 w-fit">
+          <div className="flex gap-1 rounded-md border border-subtle p-0.5 bg-elevated w-fit">
             {[
               { id: "light", label: "Light" },
               { id: "dark", label: "Dark" },
@@ -254,10 +254,10 @@ const PreferencesSettingsForm = () => {
                 key={opt.id}
                 type="button"
                 onClick={() => setTheme(opt.id)}
-                className={`rounded-md px-3.5 py-1.5 text-xs font-semibold transition-all ${
+                className={`rounded-md px-3.5 py-1.5 text-xs font-semibold transition-colors duration-150 ${
                   theme === opt.id
-                    ? "bg-white text-neutral-900 shadow-sm dark:bg-neutral-950 dark:text-white"
-                    : "text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white"
+                    ? "bg-app text-primary shadow-sm border border-neutral"
+                    : "text-muted hover:text-primary hover:bg-hover"
                 }`}
               >
                 {opt.label}
@@ -322,7 +322,7 @@ const PreferencesSettingsForm = () => {
           </select>
         </div>
 
-        <div className="flex justify-end pt-2 border-t border-neutral-100 dark:border-neutral-900">
+        <div className="flex justify-end pt-2 border-t border-neutral">
           <button type="submit" className="btn-primary min-w-[140px]">
             Save preferences
           </button>
@@ -360,8 +360,8 @@ export const ProfilePage = () => {
     <div className="space-y-6">
       <div className="space-y-2">
         <p className="section-eyebrow">Account</p>
-        <h2 className="text-2xl font-semibold text-neutral-900 dark:text-white">Profile settings</h2>
-        <p className="max-w-2xl text-sm text-neutral-500 dark:text-neutral-400">
+        <h2 className="text-2xl font-semibold text-primary">Profile settings</h2>
+        <p className="max-w-2xl text-sm text-muted">
           Keep your account details current and review your productivity snapshot in one place.
         </p>
       </div>
@@ -371,21 +371,21 @@ export const ProfilePage = () => {
         <div className="space-y-6">
           <div className="card p-6">
             <div className="flex flex-col gap-5 sm:flex-row sm:items-center">
-              <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-neutral-900 text-2xl font-semibold text-white dark:bg-white dark:text-neutral-900">
+              <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-[var(--text-primary)] text-2xl font-semibold text-[var(--bg-app)]">
                 {user?.name?.[0]?.toUpperCase() || "U"}
               </div>
 
               <div className="min-w-0 flex-1">
                 <p className="section-eyebrow">Profile information</p>
-                <h3 className="mt-1 text-xl font-semibold text-neutral-900 dark:text-white">{user?.name || "Your name"}</h3>
-                <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">{user?.email || "your@email.com"}</p>
+                <h3 className="mt-1 text-xl font-semibold text-primary">{user?.name || "Your name"}</h3>
+                <p className="mt-1 text-sm text-muted">{user?.email || "your@email.com"}</p>
                 <div className="mt-4 flex flex-wrap gap-2">
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-neutral-100 px-3 py-1 text-xs font-medium text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300">
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-elevated border border-subtle px-3 py-1 text-xs font-medium text-secondary">
                     <CalendarDays size={12} />
                     Member since {user?.createdAt ? format(new Date(user.createdAt), "MMM d, yyyy") : "-"}
                   </span>
-                  <span className="inline-flex items-center gap-1.5 rounded-full bg-neutral-100 px-3 py-1 text-xs font-medium text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300">
-                    <Sparkles size={12} className="text-neutral-500 dark:text-neutral-400" />
+                  <span className="inline-flex items-center gap-1.5 rounded-full bg-elevated border border-subtle px-3 py-1 text-xs font-medium text-secondary">
+                    <Sparkles size={12} className="text-muted" />
                     TaskFlow member
                   </span>
                 </div>
@@ -402,9 +402,9 @@ export const ProfilePage = () => {
             <div className="flex items-center justify-between gap-4">
               <div>
                 <p className="section-eyebrow">Account summary</p>
-                <h3 className="mt-1 text-base font-semibold text-neutral-900 dark:text-white">Productivity at a glance</h3>
+                <h3 className="mt-1 text-base font-semibold text-primary">Productivity at a glance</h3>
               </div>
-              <div className="rounded-full bg-neutral-100 px-3 py-1 text-xs font-medium text-neutral-500 dark:bg-neutral-800 dark:text-neutral-300">
+              <div className="rounded-full bg-elevated border border-subtle px-3 py-1 text-xs font-medium text-muted">
                 {tasksLoading ? "Loading" : "Live data"}
               </div>
             </div>
