@@ -234,7 +234,7 @@ export const TasksPage = () => {
             toast.dismiss(t.id);
             handleUndoDelete(id);
           }}
-          className="text-xs font-bold text-neutral-950 dark:text-white uppercase tracking-wider hover:underline focus:outline-none"
+          className="text-xs font-bold text-primary uppercase tracking-wider hover:underline focus:outline-none"
         >
           Undo
         </button>
@@ -344,11 +344,11 @@ export const TasksPage = () => {
         {/* Title Header */}
         <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-neutral-400 dark:text-neutral-500">
+            <p className="text-xs font-semibold uppercase tracking-wider text-muted">
               {viewLabels[activeView] || "Tasks"}
             </p>
-            <h2 className="mt-1 text-2xl font-bold text-neutral-900 dark:text-white">Workspace Tasks</h2>
-            <p className="mt-1 text-xs text-neutral-400 dark:text-neutral-500">
+            <h2 className="mt-1 text-2xl font-bold text-primary">Workspace Tasks</h2>
+            <p className="mt-1 text-xs text-muted">
               {pagination?.total ?? 0} {pagination?.total === 1 ? "task" : "tasks"} visible
             </p>
           </div>
@@ -360,11 +360,11 @@ export const TasksPage = () => {
                 setIsSelectMode(!isSelectMode);
                 setSelectedIds([]);
               }}
-              className={`btn-secondary w-full sm:w-auto text-xs py-1.5 px-3 font-semibold ${isSelectMode ? "bg-neutral-100 border-neutral-300 dark:bg-neutral-800" : ""}`}
+              className={`btn-secondary w-full sm:w-auto text-xs py-1.5 px-3 ${isSelectMode ? "bg-pressed border-strong" : ""}`}
             >
               {isSelectMode ? "Cancel Select" : "Bulk Action"}
             </button>
-            <button type="button" onClick={toggleSort} className="btn-secondary w-full sm:w-auto text-xs py-1.5 px-3 font-semibold">
+            <button type="button" onClick={toggleSort} className="btn-secondary w-full sm:w-auto text-xs py-1.5 px-3">
               <ArrowDownUp size={14} />
               {filters.order === "desc" ? "Newest" : "Oldest"}
             </button>
@@ -374,7 +374,7 @@ export const TasksPage = () => {
                 setEditingTask(null);
                 setDrawerOpen(true);
               }}
-              className="btn-primary w-full sm:w-auto text-xs py-1.5 px-3 font-semibold"
+              className="btn-primary w-full sm:w-auto text-xs py-1.5 px-3"
             >
               <Plus size={15} strokeWidth={2.5} />
               New task
@@ -385,7 +385,7 @@ export const TasksPage = () => {
         {/* View Mode Switcher and Filters Row */}
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           {/* Segment View Tabs */}
-          <div className="flex gap-1 overflow-x-auto rounded-lg border border-neutral-200/80 p-0.5 bg-neutral-50/50 dark:border-neutral-800 dark:bg-neutral-900/40 w-fit">
+          <div className="flex gap-1 overflow-x-auto rounded-md border border-subtle p-0.5 bg-elevated w-fit">
             {[
               { id: "list", label: "List", icon: LayoutGrid },
               { id: "kanban", label: "Board", icon: KanbanIcon },
@@ -397,10 +397,10 @@ export const TasksPage = () => {
                 <button
                   key={option.id}
                   onClick={() => handleChangeViewMode(option.id)}
-                  className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-all duration-200 ${
+                  className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-xs font-semibold transition-colors duration-150 ${
                     viewMode === option.id
-                      ? "bg-white text-neutral-900 shadow-sm dark:bg-neutral-950 dark:text-white"
-                      : "text-neutral-500 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white"
+                      ? "bg-app text-primary shadow-sm border border-neutral"
+                      : "text-muted hover:text-primary hover:bg-hover"
                   }`}
                 >
                   <Icon size={12.5} />
@@ -417,10 +417,10 @@ export const TasksPage = () => {
                 key={view.value}
                 type="button"
                 onClick={() => handleViewChange(view.value)}
-                className={`shrink-0 rounded-full px-3 py-1 text-[11px] font-semibold transition-all duration-200 ${
+                className={`shrink-0 rounded-full px-3 py-1 text-[11px] font-semibold transition-colors duration-150 ${
                   activeView === view.value
-                    ? "bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 shadow-sm"
-                    : "bg-neutral-100 text-neutral-600 hover:bg-neutral-200 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700"
+                    ? "bg-[var(--text-primary)] text-[var(--bg-app)] shadow-sm"
+                    : "bg-elevated text-secondary hover:bg-hover hover:text-primary"
                 }`}
               >
                 {view.label}
@@ -468,7 +468,7 @@ export const TasksPage = () => {
                       type="checkbox"
                       checked={selectedIds.includes(task._id)}
                       onChange={() => handleSelectCard(task._id)}
-                      className="rounded border-neutral-300 text-neutral-950 focus:ring-neutral-950 h-4.5 w-4.5 dark:border-neutral-700 dark:text-white dark:focus:ring-white"
+                      className="rounded border-strong text-[var(--text-primary)] focus:ring-[var(--text-primary)] h-4.5 w-4.5"
                     />
                   )}
                   <div className="flex-1 min-w-0">
@@ -529,7 +529,7 @@ export const TasksPage = () => {
 
       {/* Floating Bulk Actions bar */}
       {isSelectMode && selectedIds.length > 0 && (
-        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-40 flex items-center justify-between gap-4 rounded-xl bg-neutral-900 px-4 py-3 dark:bg-white text-white dark:text-neutral-900 border border-neutral-800 dark:border-neutral-100 min-w-[280px] sm:min-w-[360px] animate-in slide-in-from-bottom duration-150" style={{ boxShadow: "var(--shadow-elevated)" }}>
+        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-40 flex items-center justify-between gap-4 rounded-xl bg-[var(--text-primary)] px-4 py-3 text-[var(--bg-app)] min-w-[280px] sm:min-w-[360px] animate-in slide-in-from-bottom duration-150" style={{ boxShadow: "var(--shadow-elevated)" }}>
           <span className="text-xs font-bold tabular-nums">
             {selectedIds.length} selected
           </span>
@@ -537,14 +537,14 @@ export const TasksPage = () => {
             <button
               onClick={handleBulkComplete}
               disabled={loadingBulk}
-              className="inline-flex items-center gap-1 rounded-lg bg-neutral-800 hover:bg-neutral-700 text-white px-2.5 py-1.5 text-xs font-semibold dark:bg-neutral-100 dark:hover:bg-neutral-200 dark:text-neutral-900 disabled:opacity-50"
+              className="inline-flex items-center gap-1 rounded-md bg-[var(--bg-app)] text-[var(--text-primary)] px-2.5 py-1.5 text-xs font-semibold disabled:opacity-50"
             >
               Complete
             </button>
             <button
               onClick={handleBulkDelete}
               disabled={loadingBulk}
-              className="inline-flex items-center gap-1 rounded-lg bg-red-700 hover:bg-red-800 text-white px-2.5 py-1.5 text-xs font-semibold disabled:opacity-50 dark:bg-red-400 dark:text-neutral-950 dark:hover:bg-red-300"
+              className="inline-flex items-center gap-1 rounded-md bg-red-600 text-white hover:bg-red-700 px-2.5 py-1.5 text-xs font-semibold disabled:opacity-50"
             >
               Delete
             </button>
