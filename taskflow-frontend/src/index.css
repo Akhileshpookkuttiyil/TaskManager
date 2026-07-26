@@ -166,14 +166,14 @@
   .btn-primary {
     background-color: var(--text-primary);
     color: var(--bg-app);
-    @apply inline-flex min-h-9 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg px-3.5 py-2 text-sm font-semibold transition-all duration-200 hover:opacity-90 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/80 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-950 disabled:cursor-not-allowed disabled:opacity-45;
+    @apply inline-flex min-h-9 items-center justify-center gap-1.5 whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-semibold transition-all duration-150 hover:opacity-90 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-45;
   }
 
   .btn-secondary {
     background-color: var(--bg-elevated);
     border: 1px solid var(--border-neutral);
     color: var(--text-primary);
-    @apply inline-flex min-h-9 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg px-3.5 py-2 text-sm font-medium transition-all duration-200 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-950 disabled:cursor-not-allowed disabled:opacity-45;
+    @apply inline-flex min-h-9 items-center justify-center gap-1.5 whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium transition-all duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-45;
   }
 
   .btn-secondary:hover {
@@ -183,7 +183,7 @@
 
   .btn-ghost {
     color: var(--text-secondary);
-    @apply inline-flex min-h-9 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg px-3.5 py-2 text-sm font-medium transition-all duration-200 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-950;
+    @apply inline-flex min-h-9 items-center justify-center gap-1.5 whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium transition-all duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2;
   }
 
   .btn-ghost:hover {
@@ -195,7 +195,7 @@
     background-color: var(--danger-bg);
     color: var(--danger);
     border: 1px solid color-mix(in srgb, var(--danger) 32%, transparent);
-    @apply inline-flex min-h-9 items-center justify-center gap-1.5 whitespace-nowrap rounded-lg px-3.5 py-2 text-sm font-medium transition-all duration-200 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-950 disabled:cursor-not-allowed disabled:opacity-45;
+    @apply inline-flex min-h-9 items-center justify-center gap-1.5 whitespace-nowrap rounded-md px-3 py-1.5 text-sm font-medium transition-all duration-150 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-45;
   }
 
   .btn-danger:hover {
@@ -207,7 +207,7 @@
     background-color: var(--bg-input);
     border: 1px solid var(--border-neutral);
     color: var(--text-primary);
-    @apply min-h-10 w-full rounded-lg px-3.5 py-2.5 text-sm placeholder:text-neutral-500 transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-white/20;
+    @apply min-h-9 w-full rounded-md px-3 py-1.5 text-sm transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-focus focus:ring-offset-2;
   }
 
   .input:hover {
@@ -352,7 +352,7 @@
   
   /* Focus indicator ring */
   .focus-ring {
-    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/70 focus-visible:ring-offset-2 focus-visible:ring-offset-neutral-950;
+    @apply focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-focus focus-visible:ring-offset-2;
   }
 
   /* ─── Floating Surface ──────────────────────────────────────────────────── */
