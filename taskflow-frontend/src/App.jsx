@@ -1,17 +1,24 @@
+import { lazy, Suspense, useEffect } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { Suspense, useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { fetchCurrentUser } from "./store/slices/authSlice";
 import { AppLayout } from "./components/layout/AppLayout";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
-import { LoginPage } from "./pages/LoginPage";
-import { RegisterPage } from "./pages/RegisterPage";
-import { DashboardPage } from "./pages/DashboardPage";
-import { TasksPage } from "./pages/TasksPage";
-import { ProfilePage } from "./pages/ProfilePage";
 import { Spinner } from "./components/ui/Spinner";
-import { NotificationsPage } from "./pages/NotificationsPage";
-import { AnalyticsPage } from "./pages/AnalyticsPage";
+
+const LoginPage = lazy(() => import("./pages/LoginPage").then((m) => ({ default: m.LoginPage })));
+const RegisterPage = lazy(() => import("./pages/RegisterPage").then((m) => ({ default: m.RegisterPage })));
+const DashboardPage = lazy(() => import("./pages/DashboardPage").then((m) => ({ default: m.DashboardPage })));
+const TasksPage = lazy(() => import("./pages/TasksPage").then((m) => ({ default: m.TasksPage })));
+const ProfilePage = lazy(() => import("./pages/ProfilePage").then((m) => ({ default: m.ProfilePage })));
+const NotificationsPage = lazy(() => import("./pages/NotificationsPage").then((m) => ({ default: m.NotificationsPage })));
+const AnalyticsPage = lazy(() => import("./pages/AnalyticsPage").then((m) => ({ default: m.AnalyticsPage })));
+
+const RouteLoading = () => (
+  <div className="flex min-h-screen items-center justify-center bg-neutral-50 dark:bg-neutral-950">
+    <Spinner size="lg" />
+  </div>
+);
 
 const App = () => {
   const dispatch = useDispatch();
@@ -34,18 +41,26 @@ const App = () => {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/register" element={<RegisterPage />} />
+        <Route
+          path="/login"
+          element={
+            <Suspense fallback={<RouteLoading />}>
+              <LoginPage />
+            </Suspense>
+          }
+        />
+        <Route
+          path="/register"
+          element={
+            <Suspense fallback={<RouteLoading />}>
+              <RegisterPage />
+            </Suspense>
+          }
+        />
         <Route
           element={
             <ProtectedRoute>
-              <Suspense
-                fallback={
-                  <div className="flex min-h-screen items-center justify-center bg-neutral-50 dark:bg-neutral-950">
-                    <Spinner size="lg" />
-                  </div>
-                }
-              >
+              <Suspense fallback={<RouteLoading />}>
                 <AppLayout />
               </Suspense>
             </ProtectedRoute>

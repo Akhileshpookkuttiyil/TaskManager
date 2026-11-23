@@ -13,7 +13,7 @@ import {
   ArrowRight,
   Zap,
 } from "lucide-react";
-import { fetchStats, fetchTasks, updateTask } from "../store/slices/tasksSlice";
+import { fetchStats, fetchDashboardTasks, updateTask } from "../store/slices/tasksSlice";
 import { fetchRecentActivities } from "../store/slices/activitySlice";
 import {
   calculateStreak,
@@ -27,16 +27,22 @@ import { StatCard } from "../components/ui/StatCard";
 import { TaskSkeletonList } from "../components/ui/shared";
 import toast from "react-hot-toast";
 
+const EMPTY_ARRAY = [];
+
 export const DashboardPage = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const { user } = useSelector((state) => state.auth);
-  const { items: tasks, loading: tasksLoading, stats } = useSelector((state) => state.tasks);
+  const dashboard = useSelector((state) => state.tasks.dashboard);
+  const tasks = dashboard?.tasks ?? EMPTY_ARRAY;
+  const tasksLoading = dashboard?.loading ?? false;
+  const tasksError = dashboard?.error ?? null;
+  const stats = useSelector((state) => state.tasks.stats);
   const { items: activities, loading: activityLoading } = useSelector((state) => state.activity);
 
   useEffect(() => {
     dispatch(fetchStats({ force: true }));
-    dispatch(fetchTasks({ limit: 50, force: true }));
+    dispatch(fetchDashboardTasks({ force: true }));
     dispatch(fetchRecentActivities({ limit: 5 }));
   }, [dispatch]);
 
@@ -50,7 +56,7 @@ export const DashboardPage = () => {
     if (updateTask.fulfilled.match(result)) {
       toast.success("Task completed!");
       dispatch(fetchStats({ force: true }));
-      dispatch(fetchTasks({ limit: 50, force: true }));
+      dispatch(fetchDashboardTasks({ force: true }));
       dispatch(fetchRecentActivities({ limit: 5 }));
     } else {
       toast.error("Failed to complete task.");
@@ -67,7 +73,7 @@ export const DashboardPage = () => {
     const completionRate = calculateCompletionRate(completed, total);
     const streaks = calculateStreak(tasks);
     const weekly = calculateWeeklyProgress(tasks, 7);
-    const overdueCount = getOverdueCount(tasks);
+    const overdueCount = stats?.overdue ?? getOverdueCount(tasks);
     const productivityScore = calculateProductivityScore(
       { total, completed, overdue: overdueCount },
       streaks
@@ -175,6 +181,25 @@ export const DashboardPage = () => {
       <div className="grid gap-6 lg:grid-cols-[1fr_320px] xl:grid-cols-[1fr_360px]">
         {/* Left Column */}
         <div className="space-y-6">
+          {/* Error alert banner */}
+          {tasksError && (
+            <div className="flex items-center justify-between rounded-xl border border-red-700/20 bg-red-950/10 p-4 dark:border-red-300/20 dark:bg-red-950/20">
+              <div className="flex items-center gap-3">
+                <AlertTriangle className="text-red-700 dark:text-red-300 shrink-0" size={18} />
+                <p className="text-xs text-red-700 dark:text-red-300">
+                  {typeof tasksError === "string" ? tasksError : "Failed to load dashboard tasks."}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => dispatch(fetchDashboardTasks({ force: true }))}
+                className="btn-secondary text-xs font-semibold py-1 px-2.5 shrink-0"
+              >
+                Retry
+              </button>
+            </div>
+          )}
+
           {/* Overdue alert banner */}
           {metrics.overdueCount > 0 && (
             <div className="flex items-center justify-between rounded-xl border border-red-700/20 bg-red-950/10 p-4 dark:border-red-300/20 dark:bg-red-950/20">
@@ -189,7 +214,7 @@ export const DashboardPage = () => {
                   </p>
                 </div>
               </div>
-              <Link to="/tasks?view=upcoming&status=pending" className="text-xs font-semibold text-red-700 dark:text-red-300 flex items-center gap-1 hover:underline">
+              <Link to="/tasks?dueDate=overdue" className="text-xs font-semibold text-red-700 dark:text-red-300 flex items-center gap-1 hover:underline">
                 View All <ArrowRight size={12} />
               </Link>
             </div>

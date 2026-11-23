@@ -1,5 +1,5 @@
 import { ArrowDownUp, Plus, LayoutGrid, Kanban as KanbanIcon, Calendar as CalendarIcon, Clock } from "lucide-react";
-import { useEffect, useMemo, useState, useRef } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import { useDispatch, useSelector } from "react-redux";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -9,9 +9,10 @@ import { TaskDetailDrawer } from "../components/tasks/TaskDetailDrawer";
 import { KanbanView } from "../components/tasks/KanbanView";
 import { TimelineView } from "../components/tasks/TimelineView";
 import { EmptyState } from "../components/ui/EmptyState";
+import { ErrorState } from "../components/ui/ErrorState";
 import { Pagination } from "../components/ui/Pagination";
 import { TaskSkeletonList } from "../components/ui/shared";
-import { deleteTask, fetchTasks, setFilters, updateTask } from "../store/slices/tasksSlice";
+import { deleteTask, fetchTasks, setFilters, updateTask, requestDeleteTask } from "../store/slices/tasksSlice";
 import { TASK_VIEWS } from "../utils/constants";
 import { parseDateTimeValue } from "../utils/dates";
 
@@ -61,11 +62,18 @@ const viewLabels = {
   archived: "Archived",
 };
 
+const EMPTY_ARRAY = [];
+
 export const TasksPage = () => {
   const dispatch = useDispatch();
   const location = useLocation();
   const navigate = useNavigate();
-  const { items, loading, pagination, filters } = useSelector((state) => state.tasks);
+  const items = useSelector((state) => state.tasks.items);
+  const loading = useSelector((state) => state.tasks.loading);
+  const pagination = useSelector((state) => state.tasks.pagination);
+  const filters = useSelector((state) => state.tasks.filters);
+  const pendingDeleteIds = useSelector((state) => state.tasks.pendingDeleteIds || EMPTY_ARRAY);
+  const error = useSelector((state) => state.tasks.error);
   
   const queryViewMode = useMemo(() => new URLSearchParams(location.search).get("viewMode"), [location.search]);
 
@@ -86,10 +94,11 @@ export const TasksPage = () => {
     }
   }, [queryViewMode]);
 
-  // Sync Redux filters with URL query parameters for view and labels
+  // Sync Redux filters with URL query parameters for view and tags
   const searchParams = useMemo(() => new URLSearchParams(location.search), [location.search]);
   const urlView = searchParams.get("view");
-  const urlLabel = searchParams.get("label");
+  const urlTag = searchParams.get("tag") || searchParams.get("label");
+  const urlDueDate = searchParams.get("dueDate");
 
   // Sync view filter with URL query parameter
   useEffect(() => {
@@ -105,12 +114,27 @@ export const TasksPage = () => {
     }
   }, [urlView, dispatch, filters.view, filters.status]);
 
-  // Sync tag search filter with URL label query parameter
+  // Sync tag filter with URL tag query parameter
   useEffect(() => {
-    if (urlLabel && filters.search !== urlLabel) {
-      dispatch(setFilters({ search: urlLabel }));
+    if (urlTag) {
+      if (filters.tag !== urlTag) {
+        dispatch(setFilters({ tag: urlTag }));
+      }
+    } else if (filters.tag) {
+      dispatch(setFilters({ tag: "" }));
     }
-  }, [urlLabel, dispatch, filters.search]);
+  }, [urlTag, dispatch, filters.tag]);
+
+  // Sync dueDate filter with URL query parameter
+  useEffect(() => {
+    if (urlDueDate) {
+      if (filters.dueDate !== urlDueDate) {
+        dispatch(setFilters({ dueDate: urlDueDate }));
+      }
+    } else if (filters.dueDate && filters.dueDate !== "all") {
+      dispatch(setFilters({ dueDate: "" }));
+    }
+  }, [urlDueDate, dispatch, filters.dueDate]);
 
   // Drawer states (creation & edit consolidated)
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -121,26 +145,16 @@ export const TasksPage = () => {
   const [selectedIds, setSelectedIds] = useState([]);
   const [loadingBulk, setLoadingBulk] = useState(false);
 
-  // Client-side deferred undo-delete state
-  const [pendingDeleteIds, setPendingDeleteIds] = useState([]);
-  const deleteTimeoutsRef = useRef({});
-
   const focusedTaskId = useMemo(() => new URLSearchParams(location.search).get("focus"), [location.search]);
   const isNewParam = useMemo(() => new URLSearchParams(location.search).get("new"), [location.search]);
 
-  // Clean up timeouts on unmount
   useEffect(() => {
-    const currentTimeouts = deleteTimeoutsRef.current;
-    return () => {
-      Object.values(currentTimeouts).forEach((item) => {
-        clearTimeout(item.timeoutId);
-      });
-    };
-  }, []);
-
-  useEffect(() => {
-    dispatch(fetchTasks(filters));
-  }, [dispatch, filters]);
+    if (viewMode === "list") {
+      dispatch(fetchTasks(filters));
+    } else {
+      dispatch(fetchTasks({ ...filters, all: true }));
+    }
+  }, [dispatch, filters, viewMode]);
 
   // Open details drawer if URL focus parameter changes
   useEffect(() => {
@@ -182,92 +196,53 @@ export const TasksPage = () => {
     return items.filter((task) => !pendingDeleteIds.includes(task._id));
   }, [items, pendingDeleteIds]);
 
-  const handleEdit = (task) => {
+  const handleEdit = useCallback((task) => {
     setEditingTask(task);
     setDrawerOpen(true);
-  };
+  }, []);
 
-  const handleCloseDrawer = () => {
+  const handleCloseDrawer = useCallback(() => {
     setDrawerOpen(false);
     setEditingTask(null);
     // Clear focus parameter
     const url = new URL(window.location);
     url.searchParams.delete("focus");
     window.history.replaceState({}, "", url);
-  };
+  }, []);
 
-  // Client-side Undo Deletion Flow
-  const handleDelete = (id) => {
-    if (pendingDeleteIds.includes(id)) return;
+  // Redux-managed Persistent Undo Deletion Flow
+  const handleDelete = useCallback((id) => {
+    dispatch(requestDeleteTask({ id }));
+  }, [dispatch]);
 
-    // Add to local hidden list
-    setPendingDeleteIds((prev) => [...prev, id]);
-
-    const handleUndoDelete = (taskId) => {
-      const item = deleteTimeoutsRef.current[taskId];
-      if (item) {
-        clearTimeout(item.timeoutId);
-        delete deleteTimeoutsRef.current[taskId];
-        setPendingDeleteIds((prev) => prev.filter((pid) => pid !== taskId));
-        toast.success("Deletion cancelled.");
-      }
-    };
-
-    const timeoutId = setTimeout(async () => {
-      const result = await dispatch(deleteTask(id));
-      if (deleteTask.fulfilled.match(result)) {
-        dispatch(fetchTasks(filters));
-      } else {
-        toast.error("Failed to delete task.");
-        // Put back in layout
-        setPendingDeleteIds((prev) => prev.filter((pid) => pid !== id));
-      }
-      delete deleteTimeoutsRef.current[id];
-    }, 4000);
-
-    const toastId = toast((t) => (
-      <div className="flex items-center justify-between gap-3 text-xs font-semibold py-1">
-        <span>Task deleted.</span>
-        <button
-          type="button"
-          onClick={() => {
-            toast.dismiss(t.id);
-            handleUndoDelete(id);
-          }}
-          className="text-xs font-bold text-primary uppercase tracking-wider hover:underline focus:outline-none"
-        >
-          Undo
-        </button>
-      </div>
-    ), { duration: 4000 });
-
-    deleteTimeoutsRef.current[id] = { timeoutId, toastId };
-  };
-
-  const handleComplete = async (task) => {
+  const handleComplete = useCallback(async (task) => {
     const nextStatus = task.status === "completed" ? "pending" : "completed";
     const result = await dispatch(updateTask({ id: task._id, data: { ...task, status: nextStatus } }));
     if (updateTask.fulfilled.match(result)) {
       toast.success(nextStatus === "completed" ? "Task completed." : "Task marked pending.");
-      dispatch(fetchTasks(filters));
+      if (viewMode === "list") {
+        dispatch(fetchTasks(filters));
+      } else {
+        dispatch(fetchTasks({ ...filters, all: true, force: true }));
+      }
     } else {
       toast.error("Failed to update task.");
     }
-  };
+  }, [dispatch, viewMode, filters]);
 
-  const toggleSort = () => {
+  const toggleSort = useCallback(() => {
     dispatch(setFilters({ order: filters.order === "desc" ? "asc" : "desc" }));
-  };
+  }, [dispatch, filters.order]);
 
-  const handleViewChange = (view) => {
+  const handleViewChange = useCallback((view) => {
     navigate(`/tasks?view=${view}`);
-  };
+  }, [navigate]);
 
-  const handleSelectCard = (taskId) => {
+  const handleSelectCard = useCallback((taskId) => {
     setSelectedIds((prev) =>
       prev.includes(taskId) ? prev.filter((id) => id !== taskId) : [...prev, taskId]
     );
-  };
+  }, []);
 
   const handleBulkComplete = async () => {
     setLoadingBulk(true);
@@ -336,7 +311,7 @@ export const TasksPage = () => {
     return filters.view || "all";
   }, [filters.status, filters.view]);
 
-  const hasFilters = Boolean(filters.search || filters.status || filters.priority || filters.dueDate);
+  const hasFilters = Boolean(filters.search || filters.tag || filters.status || filters.priority || filters.dueDate);
 
   return (
     <div className="space-y-6 relative">
@@ -434,6 +409,18 @@ export const TasksPage = () => {
 
       {loading ? (
         <TaskSkeletonList count={4} />
+      ) : error ? (
+        <ErrorState
+          title="Failed to load tasks"
+          message={typeof error === "string" ? error : "An error occurred while fetching tasks."}
+          onRetry={() => {
+            if (viewMode === "list") {
+              dispatch(fetchTasks({ ...filters, force: true }));
+            } else {
+              dispatch(fetchTasks({ ...filters, all: true, force: true }));
+            }
+          }}
+        />
       ) : visibleTasks.length === 0 ? (
         <EmptyState
           title={hasFilters ? "No matching tasks" : "You're all caught up!"}
@@ -529,7 +516,10 @@ export const TasksPage = () => {
 
       {/* Floating Bulk Actions bar */}
       {isSelectMode && selectedIds.length > 0 && (
-        <div className="fixed bottom-24 left-1/2 -translate-x-1/2 z-40 flex items-center justify-between gap-4 rounded-xl bg-[var(--text-primary)] px-4 py-3 text-[var(--bg-app)] min-w-[280px] sm:min-w-[360px] animate-in slide-in-from-bottom duration-150" style={{ boxShadow: "var(--shadow-elevated)" }}>
+        <div
+          className="fixed bottom-[calc(env(safe-area-inset-bottom)+5.5rem)] min-[1025px]:bottom-8 left-1/2 -translate-x-1/2 z-40 flex items-center justify-between gap-4 rounded-xl bg-[var(--text-primary)] px-4 py-3 text-[var(--bg-app)] min-w-[280px] sm:min-w-[360px] max-w-[calc(100vw-2rem)] animate-in slide-in-from-bottom duration-150"
+          style={{ boxShadow: "var(--shadow-elevated)" }}
+        >
           <span className="text-xs font-bold tabular-nums">
             {selectedIds.length} selected
           </span>

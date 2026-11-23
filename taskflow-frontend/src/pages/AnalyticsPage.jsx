@@ -1,11 +1,12 @@
 import { useEffect, useMemo } from "react";
 import { useDispatch, useSelector } from "react-redux";
+import { format, startOfDay, subDays } from "date-fns";
 import {
   TrendingUp,
   Flame,
   Printer,
 } from "lucide-react";
-import { fetchTasks, fetchStats } from "../store/slices/tasksSlice";
+import { fetchAnalyticsTasks, fetchStats } from "../store/slices/tasksSlice";
 import {
   calculateStreak,
   calculateWeeklyProgress,
@@ -13,14 +14,21 @@ import {
   calculateProductivityScore,
   getOverdueCount,
 } from "../utils/analytics";
+import { parseDateTimeValue } from "../utils/dates";
+import { ErrorState } from "../components/ui/ErrorState";
+
+const EMPTY_ARRAY = [];
 
 export const AnalyticsPage = () => {
   const dispatch = useDispatch();
-  const { items: tasks, stats } = useSelector((state) => state.tasks);
+  const analytics = useSelector((state) => state.tasks.analytics);
+  const tasks = analytics?.tasks ?? EMPTY_ARRAY;
+  const tasksError = analytics?.error ?? null;
+  const stats = useSelector((state) => state.tasks.stats);
 
   useEffect(() => {
     dispatch(fetchStats({ force: true }));
-    dispatch(fetchTasks({ limit: 100, force: true }));
+    dispatch(fetchAnalyticsTasks({ force: true }));
   }, [dispatch]);
 
   // Central Math engine calculations
@@ -32,7 +40,7 @@ export const AnalyticsPage = () => {
     const completionRate = calculateCompletionRate(completed, total);
     const streaks = calculateStreak(tasks);
     const weekly = calculateWeeklyProgress(tasks, 7);
-    const overdueCount = getOverdueCount(tasks);
+    const overdueCount = stats?.overdue ?? getOverdueCount(tasks);
     const productivityScore = calculateProductivityScore(
       { total, completed, overdue: overdueCount },
       streaks
@@ -72,26 +80,32 @@ export const AnalyticsPage = () => {
     const days = [];
     const now = new Date();
     
-    // Initialize last 7 days
+    // Initialize last 7 days using consistent local date formatting
     for (let i = 6; i >= 0; i--) {
-      const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
+      const d = startOfDay(subDays(now, i));
       days.push({
-        dateStr: d.toISOString().split("T")[0],
-        label: d.toLocaleDateString(undefined, { weekday: "short" }),
+        dateStr: format(d, "yyyy-MM-dd"),
+        label: format(d, "EEE"),
         completed: 0,
         created: 0,
       });
     }
 
     tasks.forEach((task) => {
-      const isCompleted = task.status === "completed";
-      if (isCompleted && task.updatedAt) {
-        const completedDay = task.updatedAt.split("T")[0];
+      const isCompleted = task.status === "completed" || task.status === "archived";
+      const completionDate = isCompleted
+        ? parseDateTimeValue(task.completedAt) || parseDateTimeValue(task.updatedAt)
+        : null;
+
+      if (completionDate) {
+        const completedDay = format(startOfDay(completionDate), "yyyy-MM-dd");
         const match = days.find((day) => day.dateStr === completedDay);
         if (match) match.completed++;
       }
-      if (task.createdAt) {
-        const createdDay = task.createdAt.split("T")[0];
+
+      const creationDate = parseDateTimeValue(task.createdAt);
+      if (creationDate) {
+        const createdDay = format(startOfDay(creationDate), "yyyy-MM-dd");
         const match = days.find((day) => day.dateStr === createdDay);
         if (match) match.created++;
       }
@@ -106,17 +120,22 @@ export const AnalyticsPage = () => {
     const now = new Date();
     
     for (let i = 29; i >= 0; i--) {
-      const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
+      const d = startOfDay(subDays(now, i));
       cells.push({
-        dateStr: d.toISOString().split("T")[0],
+        dateStr: format(d, "yyyy-MM-dd"),
         dayNum: d.getDate(),
         completed: 0,
       });
     }
 
     tasks.forEach((task) => {
-      if (task.status === "completed" && task.updatedAt) {
-        const dateStr = task.updatedAt.split("T")[0];
+      const isCompleted = task.status === "completed" || task.status === "archived";
+      const completionDate = isCompleted
+        ? parseDateTimeValue(task.completedAt) || parseDateTimeValue(task.updatedAt)
+        : null;
+
+      if (completionDate) {
+        const dateStr = format(startOfDay(completionDate), "yyyy-MM-dd");
         const match = cells.find((c) => c.dateStr === dateStr);
         if (match) match.completed++;
       }
@@ -170,8 +189,19 @@ export const AnalyticsPage = () => {
         </p>
       </div>
 
-      {/* Key Metric Indicators Grid */}
-      <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
+      {tasksError && tasks.length === 0 ? (
+        <ErrorState
+          title="Failed to load analytics"
+          message={typeof tasksError === "string" ? tasksError : "Unable to load task data for analytics."}
+          onRetry={() => {
+            dispatch(fetchStats({ force: true }));
+            dispatch(fetchAnalyticsTasks({ force: true }));
+          }}
+        />
+      ) : (
+        <>
+          {/* Key Metric Indicators Grid */}
+          <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
         <div className="card p-4 flex flex-col justify-between">
           <span className="text-[10px] font-bold uppercase tracking-wider text-muted">
             Productivity Score
@@ -421,6 +451,8 @@ export const AnalyticsPage = () => {
           <span>More</span>
         </div>
       </div>
+        </>
+      )}
 
     </div>
   );

@@ -1,29 +1,28 @@
-import { useState } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { NavLink, Link, useLocation } from "react-router-dom";
-import { useSelector } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import { CheckSquare, Tag, ChevronDown, ChevronRight } from "lucide-react";
 import { primaryNavItems } from "./navigation";
+import { fetchStats } from "../../store/slices/tasksSlice";
 
 export const Sidebar = () => {
+  const dispatch = useDispatch();
   const location = useLocation();
-  const { items: tasks } = useSelector((state) => state.tasks);
+  const { stats } = useSelector((state) => state.tasks);
   const { unreadCount: notificationsCount } = useSelector((state) => state.notifications);
+
+  useEffect(() => {
+    dispatch(fetchStats());
+  }, [dispatch]);
 
   const [labelsExpanded, setLabelsExpanded] = useState(true);
 
-  // Extract unique labels/tags from active tasks
-  const labels = [...new Set(tasks.flatMap((task) => task.tags || []))].slice(0, 8);
+  // Extract unique labels/tags from global stats (across entire database)
+  const labels = useMemo(() => (stats?.tags || []).slice(0, 8), [stats?.tags]);
 
-  // Central calculations using analytics logic
-  const pendingTasks = tasks.filter((t) => t.status === "pending" || t.status === "in_progress");
-  const inboxCount = pendingTasks.length;
-
-  const todayStr = new Date().toISOString().split("T")[0];
-  const todayCount = pendingTasks.filter((t) => {
-    if (!t.dueDate) return false;
-    const dueStr = new Date(t.dueDate).toISOString().split("T")[0];
-    return dueStr === todayStr;
-  }).length;
+  // Central calculations based on complete database statistics
+  const inboxCount = useMemo(() => (stats?.pending ?? 0) + (stats?.in_progress ?? 0), [stats?.pending, stats?.in_progress]);
+  const todayCount = useMemo(() => stats?.dueToday ?? 0, [stats?.dueToday]);
 
   const getBadgeCount = (label) => {
     if (label === "Inbox") return inboxCount;
@@ -101,7 +100,7 @@ export const Sidebar = () => {
                   {labels.map((label) => (
                     <Link
                       key={label}
-                      to={`/tasks?label=${encodeURIComponent(label)}`}
+                      to={`/tasks?tag=${encodeURIComponent(label)}`}
                       className="flex items-center gap-2 rounded-md px-3 py-1.5 text-xs font-medium text-secondary hover:bg-hover hover:text-primary transition-colors"
                     >
                       <Tag size={12} className="text-muted" />

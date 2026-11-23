@@ -1,7 +1,8 @@
+import { memo } from "react";
 import { Check, Tag, Trash2, Clock, Repeat } from "lucide-react";
 import { formatDateTimeValue, parseDateTimeValue } from "../../utils/dates";
 
-export const TaskCard = ({ task, onEdit, onDelete, onComplete, highlighted = false }) => {
+export const TaskCard = memo(({ task, onEdit, onDelete, onComplete, highlighted = false }) => {
   const status = task.status || "pending";
   const isCompleted = status === "completed";
   const isArchived = status === "archived";
@@ -132,5 +133,5 @@ export const TaskCard = ({ task, onEdit, onDelete, onComplete, highlighted = fal
       </div>
     </div>
   );
-};
+});
 export default TaskCard;
