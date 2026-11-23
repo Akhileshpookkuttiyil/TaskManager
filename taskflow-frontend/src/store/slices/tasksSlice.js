@@ -1,24 +1,28 @@
 import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
-import { tasksApi } from "../../api/tasks.api";
+import { createElement } from "react";
+import toast from "react-hot-toast";
+import { tasksApi } from "../../api/tasks.api.js";
 
 const getTaskRequestKey = (params = {}) =>
   JSON.stringify({
+    all: Boolean(params.all),
     view: params.view || "all",
     status: params.status || "",
     priority: params.priority || "",
     dueDate: params.dueDate || "",
     search: params.search || "",
+    tag: params.tag || "",
     sortBy: params.sortBy || "createdAt",
     order: params.order || "desc",
-    page: params.page || 1,
-    limit: params.limit || 10,
+    page: params.all ? 1 : params.page || 1,
+    limit: params.all ? 50 : params.limit || 10,
   });
 
 export const fetchTasks = createAsyncThunk(
   "tasks/fetchAll",
-  async (params, { rejectWithValue }) => {
+  async (params = {}, { rejectWithValue }) => {
     try {
-      const res = await tasksApi.getAll(params);
+      const res = params.all ? await tasksApi.fetchAll(params) : await tasksApi.getAll(params);
       return res.data.data;
     } catch (err) {
       return rejectWithValue(err.response?.data?.message || "Failed to fetch tasks");
@@ -33,6 +37,48 @@ export const fetchTasks = createAsyncThunk(
       if (tasks.loading && tasks.currentRequestKey === requestKey) return false;
       if (tasks.lastFetchedAt && tasks.lastRequestKey === requestKey && Date.now() - tasks.lastFetchedAt < 10000) return false;
 
+      return true;
+    },
+  }
+);
+
+export const fetchDashboardTasks = createAsyncThunk(
+  "tasks/fetchDashboardTasks",
+  async (params = {}, { rejectWithValue }) => {
+    try {
+      const res = await tasksApi.fetchAll(params);
+      return res.data.data.tasks;
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || "Failed to fetch dashboard tasks");
+    }
+  },
+  {
+    condition: (params = {}, { getState }) => {
+      const { tasks } = getState();
+      if (params.force) return true;
+      if (tasks.dashboard?.loading) return false;
+      if (tasks.dashboard?.lastFetchedAt && Date.now() - tasks.dashboard.lastFetchedAt < 10000) return false;
+      return true;
+    },
+  }
+);
+
+export const fetchAnalyticsTasks = createAsyncThunk(
+  "tasks/fetchAnalyticsTasks",
+  async (params = {}, { rejectWithValue }) => {
+    try {
+      const res = await tasksApi.fetchAll(params);
+      return res.data.data.tasks;
+    } catch (err) {
+      return rejectWithValue(err.response?.data?.message || "Failed to fetch analytics tasks");
+    }
+  },
+  {
+    condition: (params = {}, { getState }) => {
+      const { tasks } = getState();
+      if (params.force) return true;
+      if (tasks.analytics?.loading) return false;
+      if (tasks.analytics?.lastFetchedAt && Date.now() - tasks.analytics.lastFetchedAt < 10000) return false;
       return true;
     },
   }
@@ -88,10 +134,70 @@ export const deleteTask = createAsyncThunk("tasks/delete", async (id, { rejectWi
   }
 });
 
+// Module-level map to manage persistent deletion timers and toast IDs across route changes
+const activeDeletionTimers = new Map();
+
+export const cancelScheduledDelete = (taskId) => (dispatch) => {
+  const entry = activeDeletionTimers.get(taskId);
+  if (entry) {
+    clearTimeout(entry.timeoutId);
+    if (entry.toastId) {
+      toast.dismiss(entry.toastId);
+    }
+    activeDeletionTimers.delete(taskId);
+    dispatch(restorePendingTask(taskId));
+    toast.success("Deletion cancelled.");
+  }
+};
+
+export const requestDeleteTask = ({ id, delay = 4000 }) => (dispatch) => {
+  if (activeDeletionTimers.has(id)) {
+    return; // Prevent duplicate deletion requests
+  }
+
+  // Hide the task immediately in the Redux store
+  dispatch(stagePendingDelete(id));
+
+  const toastId = toast((t) => (
+    createElement(
+      "div",
+      { className: "flex items-center justify-between gap-3 text-xs font-semibold py-1" },
+      createElement("span", null, "Task deleted."),
+      createElement(
+        "button",
+        {
+          type: "button",
+          onClick: () => {
+            toast.dismiss(t.id);
+            dispatch(cancelScheduledDelete(id));
+          },
+          className: "text-xs font-bold text-primary uppercase tracking-wider hover:underline focus:outline-none",
+        },
+        "Undo"
+      )
+    )
+  ), { duration: delay });
+
+  const timeoutId = setTimeout(async () => {
+    activeDeletionTimers.delete(id);
+    const result = await dispatch(deleteTask(id));
+    if (deleteTask.fulfilled.match(result)) {
+      dispatch(finalizeDelete(id));
+    } else {
+      dispatch(restorePendingTask(id));
+      toast.error("Failed to delete task.");
+    }
+  }, delay);
+
+  activeDeletionTimers.set(id, { timeoutId, toastId });
+};
+
 const tasksSlice = createSlice({
   name: "tasks",
   initialState: {
     items: [],
+    pendingDeleteIds: [],
+    pendingDeleteTasks: {},
     pagination: null,
     stats: null,
     loading: false,
@@ -101,7 +207,29 @@ const tasksSlice = createSlice({
     lastRequestKey: null,
     lastFetchedAt: null,
     statsLastFetchedAt: null,
-    filters: { view: "all", status: "", priority: "", dueDate: "", search: "", sortBy: "createdAt", order: "desc", page: 1 },
+    dashboard: {
+      tasks: [],
+      loading: false,
+      error: null,
+      lastFetchedAt: null,
+    },
+    analytics: {
+      tasks: [],
+      loading: false,
+      error: null,
+      lastFetchedAt: null,
+    },
+    filters: {
+      view: "all",
+      status: "",
+      priority: "",
+      dueDate: "",
+      search: "",
+      tag: "",
+      sortBy: "createdAt",
+      order: "desc",
+      page: 1,
+    },
   },
   reducers: {
     setFilters(state, action) {
@@ -113,6 +241,61 @@ const tasksSlice = createSlice({
     clearError(state) {
       state.error = null;
     },
+    stagePendingDelete(state, action) {
+      const id = action.payload;
+      if (!state.pendingDeleteIds.includes(id)) {
+        state.pendingDeleteIds.push(id);
+      }
+      const existing =
+        state.items.find((t) => t._id === id) ||
+        state.dashboard?.tasks?.find((t) => t._id === id) ||
+        state.analytics?.tasks?.find((t) => t._id === id);
+      if (existing) {
+        state.pendingDeleteTasks[id] = existing;
+      }
+      state.items = state.items.filter((t) => t._id !== id);
+      if (state.dashboard?.tasks) {
+        state.dashboard.tasks = state.dashboard.tasks.filter((t) => t._id !== id);
+      }
+      if (state.analytics?.tasks) {
+        state.analytics.tasks = state.analytics.tasks.filter((t) => t._id !== id);
+      }
+      if (state.stats) {
+        state.stats.total = Math.max(0, state.stats.total - 1);
+      }
+    },
+    restorePendingTask(state, action) {
+      const id = action.payload;
+      state.pendingDeleteIds = state.pendingDeleteIds.filter((pid) => pid !== id);
+      const savedTask = state.pendingDeleteTasks[id];
+      if (savedTask) {
+        if (!state.items.some((t) => t._id === id)) {
+          state.items.unshift(savedTask);
+        }
+        if (state.dashboard?.tasks && !state.dashboard.tasks.some((t) => t._id === id)) {
+          state.dashboard.tasks.unshift(savedTask);
+        }
+        if (state.analytics?.tasks && !state.analytics.tasks.some((t) => t._id === id)) {
+          state.analytics.tasks.unshift(savedTask);
+        }
+        if (state.stats) {
+          state.stats.total += 1;
+        }
+      }
+      delete state.pendingDeleteTasks[id];
+    },
+    finalizeDelete(state, action) {
+      const id = action.payload;
+      state.pendingDeleteIds = state.pendingDeleteIds.filter((pid) => pid !== id);
+      delete state.pendingDeleteTasks[id];
+      state.items = state.items.filter((t) => t._id !== id);
+      if (state.dashboard?.tasks) {
+        state.dashboard.tasks = state.dashboard.tasks.filter((t) => t._id !== id);
+      }
+      if (state.analytics?.tasks) {
+        state.analytics.tasks = state.analytics.tasks.filter((t) => t._id !== id);
+      }
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -123,7 +306,8 @@ const tasksSlice = createSlice({
       })
       .addCase(fetchTasks.fulfilled, (state, action) => {
         state.loading = false;
-        state.items = action.payload.tasks;
+        // Keep tasks that are not awaiting server deletion
+        state.items = action.payload.tasks.filter((t) => !state.pendingDeleteIds.includes(t._id));
         state.pagination = action.payload.pagination;
         state.lastRequestKey = getTaskRequestKey(action.meta.arg);
         state.lastFetchedAt = Date.now();
@@ -131,6 +315,32 @@ const tasksSlice = createSlice({
       .addCase(fetchTasks.rejected, (state, action) => {
         state.loading = false;
         state.error = action.payload;
+      })
+      .addCase(fetchDashboardTasks.pending, (state) => {
+        state.dashboard.loading = true;
+        state.dashboard.error = null;
+      })
+      .addCase(fetchDashboardTasks.fulfilled, (state, action) => {
+        state.dashboard.loading = false;
+        state.dashboard.tasks = action.payload.filter((t) => !state.pendingDeleteIds.includes(t._id));
+        state.dashboard.lastFetchedAt = Date.now();
+      })
+      .addCase(fetchDashboardTasks.rejected, (state, action) => {
+        state.dashboard.loading = false;
+        state.dashboard.error = action.payload;
+      })
+      .addCase(fetchAnalyticsTasks.pending, (state) => {
+        state.analytics.loading = true;
+        state.analytics.error = null;
+      })
+      .addCase(fetchAnalyticsTasks.fulfilled, (state, action) => {
+        state.analytics.loading = false;
+        state.analytics.tasks = action.payload.filter((t) => !state.pendingDeleteIds.includes(t._id));
+        state.analytics.lastFetchedAt = Date.now();
+      })
+      .addCase(fetchAnalyticsTasks.rejected, (state, action) => {
+        state.analytics.loading = false;
+        state.analytics.error = action.payload;
       })
       .addCase(fetchStats.pending, (state) => {
         state.statsLoading = true;
@@ -147,18 +357,68 @@ const tasksSlice = createSlice({
       })
       .addCase(createTask.fulfilled, (state, action) => {
         state.items.unshift(action.payload);
-        if (state.stats) state.stats.total += 1;
+        if (state.dashboard?.tasks) {
+          state.dashboard.tasks.unshift(action.payload);
+        }
+        if (state.analytics?.tasks) {
+          state.analytics.tasks.unshift(action.payload);
+        }
+        if (state.stats) {
+          state.stats.total += 1;
+          state.stats.pending = (state.stats.pending || 0) + 1;
+        }
       })
       .addCase(updateTask.fulfilled, (state, action) => {
         const idx = state.items.findIndex((t) => t._id === action.payload._id);
         if (idx !== -1) state.items[idx] = action.payload;
+
+        if (state.dashboard?.tasks) {
+          const dashIdx = state.dashboard.tasks.findIndex((t) => t._id === action.payload._id);
+          if (dashIdx !== -1) state.dashboard.tasks[dashIdx] = action.payload;
+        }
+
+        if (state.analytics?.tasks) {
+          const anaIdx = state.analytics.tasks.findIndex((t) => t._id === action.payload._id);
+          if (anaIdx !== -1) state.analytics.tasks[anaIdx] = action.payload;
+        }
+
+        state.statsLastFetchedAt = null;
       })
       .addCase(deleteTask.fulfilled, (state, action) => {
+        state.pendingDeleteIds = state.pendingDeleteIds.filter((pid) => pid !== action.payload);
+        delete state.pendingDeleteTasks[action.payload];
         state.items = state.items.filter((t) => t._id !== action.payload);
+        if (state.dashboard?.tasks) {
+          state.dashboard.tasks = state.dashboard.tasks.filter((t) => t._id !== action.payload);
+        }
+        if (state.analytics?.tasks) {
+          state.analytics.tasks = state.analytics.tasks.filter((t) => t._id !== action.payload);
+        }
         if (state.stats) state.stats.total = Math.max(0, state.stats.total - 1);
+      })
+      .addCase(deleteTask.rejected, (state, action) => {
+        const id = action.meta.arg;
+        state.pendingDeleteIds = state.pendingDeleteIds.filter((pid) => pid !== id);
+        const savedTask = state.pendingDeleteTasks[id];
+        if (savedTask) {
+          if (!state.items.some((t) => t._id === id)) {
+            state.items.unshift(savedTask);
+          }
+          if (state.dashboard?.tasks && !state.dashboard.tasks.some((t) => t._id === id)) {
+            state.dashboard.tasks.unshift(savedTask);
+          }
+          if (state.analytics?.tasks && !state.analytics.tasks.some((t) => t._id === id)) {
+            state.analytics.tasks.unshift(savedTask);
+          }
+          if (state.stats) {
+            state.stats.total += 1;
+          }
+        }
+        delete state.pendingDeleteTasks[id];
       });
   },
 });
 
-export const { setFilters, setPage, clearError } = tasksSlice.actions;
+export const { setFilters, setPage, clearError, stagePendingDelete, restorePendingTask, finalizeDelete } =
+  tasksSlice.actions;
 export default tasksSlice.reducer;

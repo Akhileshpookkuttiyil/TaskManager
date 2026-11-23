@@ -5,15 +5,20 @@ import toast from "react-hot-toast";
 import { useDispatch, useSelector } from "react-redux";
 import { Spinner } from "../components/ui/Spinner";
 import { updateProfile } from "../store/slices/authSlice";
-import { fetchStats, fetchTasks } from "../store/slices/tasksSlice";
+import { fetchStats, fetchAnalyticsTasks } from "../store/slices/tasksSlice";
 import { useTheme } from "../components/theme/theme-context";
+import { parseDateTimeValue } from "../utils/dates";
 
 const getStreakMetrics = (tasks) => {
   const completionDays = [
     ...new Set(
       tasks
-        .filter((task) => task.completedAt)
-        .map((task) => format(startOfDay(new Date(task.completedAt)), "yyyy-MM-dd"))
+        .filter((task) => (task.status === "completed" || task.status === "archived") && (task.completedAt || task.updatedAt))
+        .map((task) => {
+          const d = parseDateTimeValue(task.completedAt) || parseDateTimeValue(task.updatedAt);
+          return d ? format(startOfDay(d), "yyyy-MM-dd") : null;
+        })
+        .filter(Boolean)
     ),
   ];
   const completionSet = new Set(completionDays);
@@ -335,18 +340,19 @@ const PreferencesSettingsForm = () => {
 export const ProfilePage = () => {
   const dispatch = useDispatch();
   const { user } = useSelector((state) => state.auth);
-  const { items, stats, loading: tasksLoading } = useSelector((state) => state.tasks);
+  const { stats, loading: tasksLoading } = useSelector((state) => state.tasks);
+  const { tasks: analyticsTasks = [] } = useSelector((state) => state.tasks.analytics || {});
 
   useEffect(() => {
     dispatch(fetchStats());
-    dispatch(fetchTasks({ limit: 100, sortBy: "updatedAt", order: "desc" }));
+    dispatch(fetchAnalyticsTasks());
   }, [dispatch]);
 
   const summary = useMemo(() => {
     const completed = stats?.done ?? stats?.completed ?? 0;
     const total = stats?.total ?? 0;
     const completionRate = total ? Math.round((completed / total) * 100) : 0;
-    const streaks = getStreakMetrics(items);
+    const streaks = getStreakMetrics(analyticsTasks);
 
     return {
       total,
@@ -354,7 +360,7 @@ export const ProfilePage = () => {
       completionRate,
       currentStreak: streaks.current,
     };
-  }, [items, stats]);
+  }, [analyticsTasks, stats]);
 
   return (
     <div className="space-y-6">

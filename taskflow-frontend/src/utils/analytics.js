@@ -14,7 +14,8 @@ export const calculateStreak = (tasks = []) => {
   const completionDays = [
     ...new Set(
       tasks
-        .map((task) => parseDateTimeValue(task.completedAt))
+        .filter((task) => (task.status === "completed" || task.status === "archived") && (task.completedAt || task.updatedAt))
+        .map((task) => parseDateTimeValue(task.completedAt) || parseDateTimeValue(task.updatedAt))
         .filter(Boolean)
         .map((date) => format(startOfDay(date), "yyyy-MM-dd"))
     ),
@@ -81,9 +82,11 @@ export const calculateCompletionRate = (completed = 0, total = 0) => {
  */
 export const calculateWeeklyProgress = (tasks = [], goalCount = 7) => {
   const weekStart = subDays(startOfDay(new Date()), 6);
-  const completedThisWeek = tasks.filter(
-    (task) => task.completedAt && parseDateTimeValue(task.completedAt) >= weekStart
-  ).length;
+  const completedThisWeek = tasks.filter((task) => {
+    if (task.status !== "completed" && task.status !== "archived") return false;
+    const compDate = parseDateTimeValue(task.completedAt) || parseDateTimeValue(task.updatedAt);
+    return compDate && compDate >= weekStart;
+  }).length;
 
   const progressPercent = Math.min(100, Math.round((completedThisWeek / goalCount) * 100));
 
