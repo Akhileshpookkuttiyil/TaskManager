@@ -9,28 +9,37 @@ const { errorHandler } = require("./middleware/errorHandler");
 dotenv.config();
 
 const app = express();
-const allowedOrigins = (process.env.CLIENT_URLS || process.env.CLIENT_URL || "")
+
+const defaultAllowedOrigins = [
+  "http://localhost:5173",
+  "http://127.0.0.1:5173",
+  "http://localhost:3000",
+  "http://localhost:5000",
+];
+
+const configuredOrigins = (process.env.CLIENT_URLS || process.env.CLIENT_URL || "")
   .split(",")
   .map((origin) => origin.trim().replace(/\/$/, ""))
-  .filter(Boolean);
+  .filter((origin) => origin && origin !== "*");
+
+const allowedOrigins = Array.from(new Set([...defaultAllowedOrigins, ...configuredOrigins]));
 
 const corsOptions = {
   origin: (origin, callback) => {
+    // Allow non-browser requests (e.g. server-to-server, curl, health checks)
     if (!origin) return callback(null, true);
-    if (allowedOrigins.length === 0) return callback(null, true);
 
-    const cleanOrigin = origin.replace(/\/$/, "");
-    const isAllowed = allowedOrigins.some(
-      (allowed) => allowed === "*" || allowed === cleanOrigin || cleanOrigin.endsWith(".vercel.app")
-    );
-
-    if (isAllowed) {
-      callback(null, true);
-    } else {
-      callback(null, false);
+    const cleanOrigin = origin.trim().replace(/\/$/, "");
+    if (allowedOrigins.includes(cleanOrigin)) {
+      return callback(null, true);
     }
+
+    // Disallow origins not in the explicit allowlist
+    return callback(null, false);
   },
   credentials: true,
+  methods: ["GET", "HEAD", "PUT", "PATCH", "POST", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
 };
 
 app.use(helmet());
