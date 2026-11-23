@@ -121,7 +121,12 @@ const upsertNotification = async ({ userId, taskId = null, type, dedupeKey, titl
 
 const syncTaskNotifications = async (userId) => {
   const tasks = await prisma.task.findMany({
-    where: { userId, recurrenceParentId: null },
+    where: {
+      userId,
+      recurrenceParentId: null,
+      status: { notIn: [TASK_STATUS.COMPLETED, TASK_STATUS.ARCHIVED] },
+      OR: [{ dueDate: { not: null } }, { reminderDate: { not: null } }],
+    },
     select: {
       id: true,
       title: true,
@@ -199,8 +204,8 @@ const recordTaskCompletion = async (userId, task) => {
   });
 };
 
-const deleteTaskNotifications = async (userId, taskId) =>
-  prisma.notification.deleteMany({
+const deleteTaskNotifications = async (userId, taskId, client = prisma) =>
+  client.notification.deleteMany({
     where: {
       userId,
       taskId,

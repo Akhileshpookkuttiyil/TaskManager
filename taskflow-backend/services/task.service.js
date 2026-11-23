@@ -87,7 +87,7 @@ const getNextRecurrenceDate = (date, recurrence, step = 1) => {
   return null;
 };
 
-const buildTaskWhere = (userId, { status, priority, search, view, dueDate }) => {
+const buildTaskWhere = (userId, { status, priority, search, view, dueDate, tag, label }) => {
   const where = { userId, recurrenceParentId: null };
   const filters = [];
   const now = new Date();
@@ -135,6 +135,14 @@ const buildTaskWhere = (userId, { status, priority, search, view, dueDate }) => 
         { title: { contains: search, mode: "insensitive" } },
         { description: { contains: search, mode: "insensitive" } },
       ],
+    });
+  }
+
+  // Reliable exact tag-specific filtering
+  const tagFilter = typeof tag === "string" ? tag.trim() : typeof label === "string" ? label.trim() : "";
+  if (tagFilter) {
+    filters.push({
+      tags: { has: tagFilter },
     });
   }
 
@@ -245,9 +253,18 @@ const getLifecycleData = (existingTask, taskData, now = new Date()) => {
   const nextStatus = taskData.status || existingTask?.status || TASK_STATUS.PENDING;
   const normalizedStatus = normalizeStatus(nextStatus);
 
+  let completedAt = null;
+  if (normalizedStatus === TASK_STATUS.COMPLETED) {
+    if (existingTask && existingTask.status === TASK_STATUS.COMPLETED && existingTask.completedAt) {
+      completedAt = existingTask.completedAt;
+    } else {
+      completedAt = now;
+    }
+  }
+
   return {
     status: normalizedStatus,
-    completedAt: normalizedStatus === TASK_STATUS.COMPLETED ? existingTask?.completedAt || now : null,
+    completedAt,
     archivedAt: normalizedStatus === TASK_STATUS.ARCHIVED ? existingTask?.archivedAt || now : null,
   };
 };
@@ -310,21 +327,29 @@ const getTaskById = async (taskId, userId) => {
 
 const createTask = async (userId, data) => {
   const taskData = getTaskData(data);
-  const task = await prisma.task.create({
-    data: {
-      ...taskData,
-      ...getLifecycleData(null, taskData),
+  const lifecycleData = getLifecycleData(null, taskData);
+
+  const task = await prisma.$transaction(async (tx) => {
+    const created = await tx.task.create({
+      data: {
+        ...taskData,
+        ...lifecycleData,
+        userId,
+      },
+    });
+
+    await recordActivity({
+      client: tx,
       userId,
-    },
+      taskId: created.id,
+      type: ACTIVITY_TYPE.TASK_CREATED,
+      taskTitle: created.title,
+    });
+
+    return created;
   });
 
   await syncTaskNotifications(userId);
-  await recordActivity({
-    userId,
-    taskId: task.id,
-    type: ACTIVITY_TYPE.TASK_CREATED,
-    taskTitle: task.title,
-  });
   await recordTaskCompletion(userId, task);
   return serializeTask(task);
 };
@@ -347,110 +372,120 @@ const updateTask = async (taskId, userId, data) => {
   const timeZone = data.timeZone;
   const nextLifecycleData = getLifecycleData(existingTask, taskData);
 
-  const updatedTask = await prisma.task.update({
-    where: { id: taskId },
-    data: {
-      ...taskData,
-      ...nextLifecycleData,
-    },
-  });
+  const finalTask = await prisma.$transaction(async (tx) => {
+    const updatedTask = await tx.task.update({
+      where: { id: taskId },
+      data: {
+        ...taskData,
+        ...nextLifecycleData,
+      },
+    });
 
-  let finalTask = updatedTask;
-  const shouldAdvanceRecurringTask =
-    existingTask.recurrence !== TASK_RECURRENCE.NONE &&
-    hasCompletedStatusChange(existingTask, taskData) &&
-    Boolean(existingTask.dueDate);
+    let currentTask = updatedTask;
+    const shouldAdvanceRecurringTask =
+      existingTask.recurrence !== TASK_RECURRENCE.NONE &&
+      hasCompletedStatusChange(existingTask, taskData) &&
+      Boolean(existingTask.dueDate);
 
-  if (shouldAdvanceRecurringTask) {
-    const nextDueDate = getNextRecurrenceDate(existingTask.dueDate, existingTask.recurrence);
-    if (nextDueDate) {
-      const reminderOffset =
-        existingTask.reminderDate && existingTask.dueDate
-          ? new Date(existingTask.reminderDate).getTime() - new Date(existingTask.dueDate).getTime()
-          : null;
+    if (shouldAdvanceRecurringTask) {
+      const nextDueDate = getNextRecurrenceDate(existingTask.dueDate, existingTask.recurrence);
+      if (nextDueDate) {
+        const reminderOffset =
+          existingTask.reminderDate && existingTask.dueDate
+            ? new Date(existingTask.reminderDate).getTime() - new Date(existingTask.dueDate).getTime()
+            : null;
 
-      const nextReminderDate = reminderOffset !== null ? new Date(nextDueDate.getTime() + reminderOffset) : null;
+        const nextReminderDate = reminderOffset !== null ? new Date(nextDueDate.getTime() + reminderOffset) : null;
 
-      finalTask = await prisma.task.update({
-        where: { id: taskId },
-        data: {
-          status: TASK_STATUS.PENDING,
-          completedAt: null,
-          archivedAt: null,
-          dueDate: nextDueDate,
-          reminderDate: nextReminderDate,
-        },
-      });
+        currentTask = await tx.task.update({
+          where: { id: taskId },
+          data: {
+            status: TASK_STATUS.PENDING,
+            completedAt: null,
+            archivedAt: null,
+            dueDate: nextDueDate,
+            reminderDate: nextReminderDate,
+          },
+        });
 
+        await recordActivity({
+          client: tx,
+          userId,
+          taskId: currentTask.id,
+          type: ACTIVITY_TYPE.DUE_DATE_CHANGED,
+          taskTitle: currentTask.title,
+          from: existingTask.dueDate,
+          to: currentTask.dueDate,
+          timeZone,
+        });
+      }
+    }
+
+    if (hasMeaningfulTaskUpdate(existingTask, taskData)) {
       await recordActivity({
+        client: tx,
         userId,
-        taskId: finalTask.id,
+        taskId: currentTask.id,
+        type: ACTIVITY_TYPE.TASK_UPDATED,
+        taskTitle: currentTask.title,
+      });
+    }
+    if (hasPriorityChanged(existingTask, taskData)) {
+      await recordActivity({
+        client: tx,
+        userId,
+        taskId: currentTask.id,
+        type: ACTIVITY_TYPE.PRIORITY_CHANGED,
+        taskTitle: currentTask.title,
+        from: existingTask.priority,
+        to: currentTask.priority,
+      });
+    }
+    if (hasDueDateChanged(existingTask, taskData)) {
+      await recordActivity({
+        client: tx,
+        userId,
+        taskId: currentTask.id,
         type: ACTIVITY_TYPE.DUE_DATE_CHANGED,
-        taskTitle: finalTask.title,
+        taskTitle: currentTask.title,
         from: existingTask.dueDate,
-        to: finalTask.dueDate,
+        to: currentTask.dueDate,
         timeZone,
       });
     }
-  }
+    if (hasCompletedStatusChange(existingTask, taskData)) {
+      await recordActivity({
+        client: tx,
+        userId,
+        taskId: updatedTask.id,
+        type: ACTIVITY_TYPE.TASK_COMPLETED,
+        taskTitle: updatedTask.title,
+      });
+    }
+    if (hasArchivedStatusChange(existingTask, taskData)) {
+      await recordActivity({
+        client: tx,
+        userId,
+        taskId: currentTask.id,
+        type: ACTIVITY_TYPE.TASK_ARCHIVED,
+        taskTitle: currentTask.title,
+      });
+    }
+    if (hasRestoredStatusChange(existingTask, taskData)) {
+      await recordActivity({
+        client: tx,
+        userId,
+        taskId: currentTask.id,
+        type: ACTIVITY_TYPE.TASK_RESTORED,
+        taskTitle: currentTask.title,
+      });
+    }
+
+    return currentTask;
+  });
 
   await syncTaskNotifications(userId);
-
-  if (hasMeaningfulTaskUpdate(existingTask, taskData)) {
-    await recordActivity({
-      userId,
-      taskId: finalTask.id,
-      type: ACTIVITY_TYPE.TASK_UPDATED,
-      taskTitle: finalTask.title,
-    });
-  }
-  if (hasPriorityChanged(existingTask, taskData)) {
-    await recordActivity({
-      userId,
-      taskId: finalTask.id,
-      type: ACTIVITY_TYPE.PRIORITY_CHANGED,
-      taskTitle: finalTask.title,
-      from: existingTask.priority,
-      to: finalTask.priority,
-    });
-  }
-  if (hasDueDateChanged(existingTask, taskData)) {
-    await recordActivity({
-      userId,
-      taskId: finalTask.id,
-      type: ACTIVITY_TYPE.DUE_DATE_CHANGED,
-      taskTitle: finalTask.title,
-      from: existingTask.dueDate,
-      to: finalTask.dueDate,
-      timeZone,
-    });
-  }
-  if (hasCompletedStatusChange(existingTask, taskData)) {
-    await recordActivity({
-      userId,
-      taskId: updatedTask.id,
-      type: ACTIVITY_TYPE.TASK_COMPLETED,
-      taskTitle: updatedTask.title,
-    });
-  }
-  if (hasArchivedStatusChange(existingTask, taskData)) {
-    await recordActivity({
-      userId,
-      taskId: finalTask.id,
-      type: ACTIVITY_TYPE.TASK_ARCHIVED,
-      taskTitle: finalTask.title,
-    });
-  }
-  if (hasRestoredStatusChange(existingTask, taskData)) {
-    await recordActivity({
-      userId,
-      taskId: finalTask.id,
-      type: ACTIVITY_TYPE.TASK_RESTORED,
-      taskTitle: finalTask.title,
-    });
-  }
-
-  await recordTaskCompletion(userId, updatedTask);
+  await recordTaskCompletion(userId, finalTask);
   return serializeTask(finalTask);
 };
 
@@ -468,8 +503,8 @@ const deleteTask = async (taskId, userId) => {
     throw notFound();
   }
 
-  await deleteTaskNotifications(userId, taskId);
   await prisma.$transaction(async (tx) => {
+    await deleteTaskNotifications(userId, taskId, tx);
     await tx.task.deleteMany({
       where: {
         userId,
@@ -485,16 +520,17 @@ const deleteTask = async (taskId, userId) => {
     });
     await tx.task.delete({ where: { id: taskId } });
   });
+
   return serializeTask(task);
 };
 
 const getTaskStats = async (userId) => {
-  await syncTaskNotifications(userId);
   const tasks = await prisma.task.findMany({
     where: { userId, recurrenceParentId: null },
     select: {
       status: true,
       dueDate: true,
+      tags: true,
     },
   });
 
@@ -508,9 +544,11 @@ const getTaskStats = async (userId) => {
     total: 0,
     todo: 0,
     done: 0,
+    tags: [],
   };
   const now = new Date();
   const { start: todayStart, end: todayEnd } = getDayBounds(now);
+  const tagSet = new Set();
 
   tasks.forEach((task) => {
     const status = normalizeStatus(task.status);
@@ -536,9 +574,18 @@ const getTaskStats = async (userId) => {
       result.overdue += 1;
     }
 
+    if (Array.isArray(task.tags)) {
+      task.tags.forEach((tag) => {
+        if (tag && typeof tag === "string" && tag.trim()) {
+          tagSet.add(tag.trim());
+        }
+      });
+    }
+
     result.total += 1;
   });
 
+  result.tags = Array.from(tagSet);
   return result;
 };
 
