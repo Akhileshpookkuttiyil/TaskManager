@@ -70,13 +70,13 @@ export const KanbanView = ({ tasks = [], onEdit, onDelete, onComplete }) => {
 
   return (
     <DragDropContext onDragEnd={handleDragEnd}>
-      <div className="grid h-[calc(100vh-21rem)] min-h-[420px] gap-4 overflow-x-auto pb-4 md:grid-cols-4 select-none scrollbar-none">
+      <div className="flex flex-nowrap gap-4 overflow-x-auto pb-4 h-[calc(100vh-21rem)] min-h-[440px] select-none scrollbar-none">
         {COLUMNS.map((col) => {
           const colTasks = groupedTasks[col.id] || [];
           return (
             <div
               key={col.id}
-              className={`card flex flex-col border-t-4 ${col.color} bg-elevated p-3 min-w-[250px] max-h-full`}
+              className={`card flex flex-col border-t-4 ${col.color} bg-elevated p-3 w-[280px] sm:w-[300px] md:w-auto md:flex-1 shrink-0 max-h-full`}
             >
               {/* Column Header */}
               <div className="mb-3 flex items-center justify-between px-1">

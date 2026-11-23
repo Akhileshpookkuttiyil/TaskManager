@@ -1,27 +1,28 @@
-import { Plus, LayoutGrid, Inbox, CalendarDays, Settings } from "lucide-react";
+import { Plus, LayoutGrid, Inbox, BarChart2, Settings } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 
 export const BottomNav = ({ onQuickAdd }) => {
   const location = useLocation();
 
   const checkLinkActive = (to) => {
+    if (to === "/") return location.pathname === "/";
     if (to.includes("?")) {
       const [path, query] = to.split("?");
       return location.pathname === path && location.search.includes(query);
     }
-    return location.pathname === to;
+    return location.pathname.startsWith(to);
   };
 
   const tabs = [
     { to: "/", label: "Home", icon: LayoutGrid, end: true },
-    { to: "/tasks?view=inbox", label: "Inbox", icon: Inbox },
-    { to: "/tasks?view=my_day", label: "Today", icon: CalendarDays },
+    { to: "/tasks", label: "Tasks", icon: Inbox },
+    { to: "/analytics", label: "Analytics", icon: BarChart2 },
     { to: "/profile", label: "Settings", icon: Settings },
   ];
 
   const getTabLinkClass = (to) => {
     const isActive = checkLinkActive(to);
-    return `flex flex-col items-center justify-center gap-1 rounded-md py-2 px-1.5 text-[10px] font-semibold transition-colors duration-150 ${
+    return `flex flex-col items-center justify-center gap-1 rounded-md py-2 px-1 text-[10px] font-semibold transition-colors duration-150 ${
       isActive ? "text-primary" : "text-muted hover:text-secondary"
     }`;
   };
@@ -32,8 +33,8 @@ export const BottomNav = ({ onQuickAdd }) => {
         {/* Left Tabs */}
         {tabs.slice(0, 2).map(({ to, label, icon: Icon, end }) => (
           <NavLink key={to} to={to} end={end} className={getTabLinkClass(to)}>
-            <Icon size={18} strokeWidth={2} />
-            <span>{label}</span>
+            <Icon size={18} strokeWidth={2} className="shrink-0" />
+            <span className="truncate max-w-[56px] text-center tracking-tight">{label}</span>
           </NavLink>
         ))}
 
@@ -52,8 +53,8 @@ export const BottomNav = ({ onQuickAdd }) => {
         {/* Right Tabs */}
         {tabs.slice(2).map(({ to, label, icon: Icon, end }) => (
           <NavLink key={to} to={to} end={end} className={getTabLinkClass(to)}>
-            <Icon size={18} strokeWidth={2} />
-            <span>{label}</span>
+            <Icon size={18} strokeWidth={2} className="shrink-0" />
+            <span className="truncate max-w-[56px] text-center tracking-tight">{label}</span>
           </NavLink>
         ))}
       </div>

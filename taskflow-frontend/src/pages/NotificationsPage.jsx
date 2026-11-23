@@ -18,6 +18,7 @@ import {
   markAllNotificationsRead,
 } from "../store/slices/notificationsSlice";
 import { formatDateTimeValue } from "../utils/dates";
+import { ErrorState } from "../components/ui/ErrorState";
 import toast from "react-hot-toast";
 
 // Local storage key for dismissed notifications
@@ -26,7 +27,7 @@ const DISMISSED_NOTIFS_KEY = "taskflow-dismissed-notifications";
 export const NotificationsPage = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const { items: notifications, unreadCount, loading } = useSelector((state) => state.notifications);
+  const { items: notifications, unreadCount, loading, error } = useSelector((state) => state.notifications);
 
   const [searchQuery, setSearchQuery] = useState("");
   const [filterType, setFilterType] = useState("all"); // all | unread | system | tasks
@@ -208,6 +209,12 @@ export const NotificationsPage = () => {
             <div className="h-6 w-3/4 skeleton" />
             <div className="h-6 w-2/3 skeleton" />
           </div>
+        ) : error ? (
+          <ErrorState
+            title="Failed to load notifications"
+            message={typeof error === "string" ? error : "Please check your connection and try again."}
+            onRetry={() => dispatch(fetchNotifications())}
+          />
         ) : filteredNotifications.length === 0 ? (
           <div className="py-12 text-center">
             <div className="flex h-12 w-12 items-center justify-center rounded-full bg-elevated border border-subtle mx-auto text-muted">

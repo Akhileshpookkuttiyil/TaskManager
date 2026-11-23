@@ -1,4 +1,4 @@
-import { Search, X } from "lucide-react";
+import { Search, Tag, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useDebounce } from "../../hooks/useDebounce";
@@ -36,6 +36,15 @@ export const TaskFilters = () => {
     const val = event.target.value;
     if (key === "view") {
       navigate(`/tasks?view=${val}`);
+    } else if (key === "dueDate") {
+      dispatch(setFilters({ dueDate: val }));
+      const url = new URL(window.location);
+      if (val && val !== "all") {
+        url.searchParams.set("dueDate", val);
+      } else {
+        url.searchParams.delete("dueDate");
+      }
+      navigate(url.pathname + (url.search ? url.search : ""), { replace: true });
     } else {
       dispatch(setFilters({ [key]: val }));
     }
@@ -49,11 +58,33 @@ export const TaskFilters = () => {
         priority: "",
         dueDate: "",
         search: "",
+        tag: "",
       })
     );
+    const url = new URL(window.location);
+    let changed = false;
+    for (const param of ["tag", "label", "dueDate"]) {
+      if (url.searchParams.has(param)) {
+        url.searchParams.delete(param);
+        changed = true;
+      }
+    }
+    if (changed) {
+      navigate(url.pathname + (url.search ? url.search : ""), { replace: true });
+    }
   };
 
-  const hasActiveFilters = Boolean(filters.status || filters.priority || filters.dueDate || filters.search);
+  const removeTagFilter = () => {
+    dispatch(setFilters({ tag: "" }));
+    const url = new URL(window.location);
+    url.searchParams.delete("tag");
+    url.searchParams.delete("label");
+    navigate(url.pathname + (url.search ? url.search : ""), { replace: true });
+  };
+
+  const hasActiveFilters = Boolean(
+    filters.status || filters.priority || filters.dueDate || filters.search || filters.tag
+  );
 
   return (
     <div className="card space-y-4 p-4">
@@ -104,6 +135,24 @@ export const TaskFilters = () => {
           ]}
         />
       </div>
+
+      {filters.tag && (
+        <div className="flex items-center gap-1.5 pt-1">
+          <span className="text-xs text-muted">Active tag:</span>
+          <span className="inline-flex items-center gap-1 rounded-md bg-elevated border border-subtle px-2 py-0.5 text-xs font-semibold text-primary">
+            <Tag size={11} className="text-muted" />
+            <span>#{filters.tag}</span>
+            <button
+              type="button"
+              onClick={removeTagFilter}
+              className="ml-0.5 text-muted hover:text-primary transition-colors"
+              aria-label="Remove tag filter"
+            >
+              <X size={12} />
+            </button>
+          </span>
+        </div>
+      )}
 
       {hasActiveFilters ? (
         <button

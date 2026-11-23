@@ -341,7 +341,6 @@ export const TaskDetailDrawer = ({ isOpen, onClose, task, onSaved }) => {
                 <option value="daily">Daily</option>
                 <option value="weekly">Weekly</option>
                 <option value="monthly">Monthly</option>
-                <option value="yearly">Yearly</option>
               </select>
             </div>
 
@@ -419,7 +418,10 @@ export const TaskDetailDrawer = ({ isOpen, onClose, task, onSaved }) => {
             ) : (
               <div className="relative group/desc">
                 <div
-                  onClick={() => setIsEditingDescription(true)}
+                  onClick={(e) => {
+                    if (e.target.closest("a")) return;
+                    setIsEditingDescription(true);
+                  }}
                   className="min-h-16 rounded-lg border border-transparent p-2 pr-10 text-sm text-secondary hover:bg-hover hover:border-neutral cursor-pointer prose prose-sm dark:prose-invert"
                   dangerouslySetInnerHTML={{ __html: parseMarkdown(description) || "<em>Click to add details...</em>" }}
                 />
