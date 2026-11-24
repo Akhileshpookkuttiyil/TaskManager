@@ -105,8 +105,74 @@ export const isAllowedUrl = (url = "") => {
 };
 
 /**
+ * Regex to match markdown checklist items on a single line.
+ * Matches: - [ ] item, - [x] item, - [X] item, * [ ] item, etc.
+ */
+export const CHECKLIST_ITEM_REGEX = /^[-*]\s+\[([ xX])\](?:\s+(.*))?$/;
+
+/**
+ * Extracts checklist progress metrics from raw markdown text.
+ * Returns { total, completed, percent }.
+ */
+export const extractChecklistProgress = (text = "") => {
+  if (!text || typeof text !== "string") {
+    return { total: 0, completed: 0, percent: 0 };
+  }
+
+  const lines = text.split("\n");
+  let total = 0;
+  let completed = 0;
+
+  for (let i = 0; i < lines.length; i += 1) {
+    const trimmed = lines[i].trim();
+    const match = trimmed.match(CHECKLIST_ITEM_REGEX);
+    if (match) {
+      total += 1;
+      if (match[1].toLowerCase() === "x") {
+        completed += 1;
+      }
+    }
+  }
+
+  const percent = total > 0 ? Math.round((completed / total) * 100) : 0;
+  return { total, completed, percent };
+};
+
+/**
+ * Toggles a checklist item at the specified zero-based itemIndex.
+ * Preserves surrounding indentation, bullet character (- or *), and label content.
+ * Returns the modified markdown text.
+ */
+export const toggleChecklistItem = (text = "", itemIndex = 0) => {
+  if (!text || typeof text !== "string" || itemIndex < 0) {
+    return text;
+  }
+
+  const lines = text.split("\n");
+  let currentIndex = 0;
+
+  for (let i = 0; i < lines.length; i += 1) {
+    const line = lines[i];
+    const trimmed = line.trim();
+    const match = trimmed.match(CHECKLIST_ITEM_REGEX);
+
+    if (match) {
+      if (currentIndex === itemIndex) {
+        const isChecked = match[1].toLowerCase() === "x";
+        const newBox = isChecked ? "[ ]" : "[x]";
+        lines[i] = line.replace(/(\s*[-*]\s+)\[([ xX])\]/, `$1${newBox}`);
+        return lines.join("\n");
+      }
+      currentIndex += 1;
+    }
+  }
+
+  return text;
+};
+
+/**
  * Extremely lightweight and safe markdown parser.
- * Converts basic markdown (bold, italics, code, lists, links) into HTML.
+ * Converts basic markdown (bold, italics, code, lists, checklists, links) into HTML.
  */
 export const parseMarkdown = (text = "") => {
   if (!text) return "";
@@ -139,29 +205,64 @@ export const parseMarkdown = (text = "") => {
     return label;
   });
 
-  // Split lines to detect block elements like lists
+  // Split lines to detect block elements like lists, checklists, headers
   const lines = html.split("\n");
-  let inList = false;
+  let inList = null; // null | "bullet" | "checklist"
+  let checklistIndex = 0;
   const processedLines = [];
+
+  const closeListIfNeeded = () => {
+    if (inList) {
+      processedLines.push("</ul>");
+      inList = null;
+    }
+  };
 
   lines.forEach((line) => {
     const trimmed = line.trim();
-    
-    // Bullet list (- item or * item)
-    if (trimmed.startsWith("- ") || trimmed.startsWith("* ")) {
-      if (!inList) {
+
+    // Checklist item (- [ ] item, - [x] item, * [ ] item, * [x] item)
+    const checklistMatch = trimmed.match(CHECKLIST_ITEM_REGEX);
+
+    if (checklistMatch) {
+      if (inList !== "checklist") {
+        closeListIfNeeded();
+        processedLines.push("<ul class='checklist-group space-y-1.5 my-2 list-none pl-0'>");
+        inList = "checklist";
+      }
+      const isChecked = checklistMatch[1].toLowerCase() === "x";
+      const itemContent = checklistMatch[2] ? checklistMatch[2].trim() : "";
+      const currentIndex = checklistIndex;
+      checklistIndex += 1;
+
+      processedLines.push(
+        `<li class='checklist-item flex items-start gap-2 text-sm leading-normal' data-checklist-item='${currentIndex}'>` +
+        `<input type='checkbox' data-checklist-index='${currentIndex}' ${isChecked ? "checked " : ""}aria-label='${escapeHtmlAttribute(itemContent || `Checklist item ${currentIndex + 1}`)}' class='checklist-checkbox mt-0.5 h-4 w-4 rounded border-strong text-[var(--text-primary)] focus:ring-0 cursor-pointer accent-[var(--text-primary)]' />` +
+        `<span class='${isChecked ? "line-through text-muted" : "text-primary"} flex-1'>${itemContent}</span>` +
+        `</li>`
+      );
+    } else if (trimmed.startsWith("- ") || trimmed.startsWith("* ")) {
+      // Bullet list (- item or * item)
+      if (inList !== "bullet") {
+        closeListIfNeeded();
         processedLines.push("<ul class='list-disc pl-5 space-y-1 my-2'>");
-        inList = true;
+        inList = "bullet";
       }
       processedLines.push(`<li>${trimmed.substring(2)}</li>`);
     } else {
-      if (inList) {
-        processedLines.push("</ul>");
-        inList = false;
-      }
-      
-      // Paragraph or empty line
-      if (trimmed === "") {
+      closeListIfNeeded();
+
+      // Headers support: ### Header 3, ## Header 2, # Header 1
+      if (/^###\s+(.+)$/.test(trimmed)) {
+        const headerText = trimmed.replace(/^###\s+/, "");
+        processedLines.push(`<h5 class='text-xs font-bold uppercase tracking-wider text-muted mt-3 mb-1'>${headerText}</h5>`);
+      } else if (/^##\s+(.+)$/.test(trimmed)) {
+        const headerText = trimmed.replace(/^##\s+/, "");
+        processedLines.push(`<h4 class='text-sm font-bold text-primary mt-3 mb-1'>${headerText}</h4>`);
+      } else if (/^#\s+(.+)$/.test(trimmed)) {
+        const headerText = trimmed.replace(/^#\s+/, "");
+        processedLines.push(`<h3 class='text-base font-bold text-primary mt-3.5 mb-1.5'>${headerText}</h3>`);
+      } else if (trimmed === "") {
         processedLines.push("<div class='h-2'></div>");
       } else {
         processedLines.push(`<p class='my-1.5 leading-relaxed'>${line}</p>`);
@@ -169,9 +270,7 @@ export const parseMarkdown = (text = "") => {
     }
   });
 
-  if (inList) {
-    processedLines.push("</ul>");
-  }
+  closeListIfNeeded();
 
   return processedLines.join("\n");
 };
