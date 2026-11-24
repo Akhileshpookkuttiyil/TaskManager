@@ -12,7 +12,7 @@ const COLUMNS = [
   { id: "archived", title: "Archived", color: "border-t-neutral-400" },
 ];
 
-export const KanbanView = ({ tasks = [], onEdit, onDelete, onComplete }) => {
+export const KanbanView = ({ tasks = [], onEdit, onDelete, onComplete, onDuplicate }) => {
   const dispatch = useDispatch();
 
   // Group tasks by status
@@ -116,6 +116,7 @@ export const KanbanView = ({ tasks = [], onEdit, onDelete, onComplete }) => {
                               onEdit={onEdit}
                               onDelete={onDelete}
                               onComplete={onComplete}
+                              onDuplicate={onDuplicate}
                             />
                           </div>
                         )}

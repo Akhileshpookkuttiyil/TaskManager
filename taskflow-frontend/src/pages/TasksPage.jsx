@@ -12,7 +12,7 @@ import { EmptyState } from "../components/ui/EmptyState";
 import { ErrorState } from "../components/ui/ErrorState";
 import { Pagination } from "../components/ui/Pagination";
 import { TaskSkeletonList } from "../components/ui/shared";
-import { deleteTask, fetchTasks, setFilters, updateTask, requestDeleteTask } from "../store/slices/tasksSlice";
+import { deleteTask, fetchTasks, setFilters, updateTask, requestDeleteTask, createTask } from "../store/slices/tasksSlice";
 import { TASK_VIEWS } from "../utils/constants";
 import { parseDateTimeValue } from "../utils/dates";
 
@@ -229,6 +229,46 @@ export const TasksPage = () => {
       toast.error("Failed to update task.");
     }
   }, [dispatch, viewMode, filters]);
+
+  const handleDuplicate = useCallback(async (task) => {
+    if (!task) return;
+    const isPast = (dateStr) => {
+      if (!dateStr) return false;
+      const d = new Date(dateStr);
+      return !isNaN(d.getTime()) && d.getTime() < Date.now();
+    };
+
+    const rawTitle = `Copy of ${task.title || "Task"}`;
+    const safeTitle = rawTitle.length > 200 ? rawTitle.slice(0, 200).trim() : rawTitle;
+
+    const payload = {
+      title: safeTitle,
+      description: task.description || "",
+      status: "pending",
+      priority: task.priority || "medium",
+      tags: Array.isArray(task.tags) ? [...task.tags] : [],
+      recurrence: "none",
+      dueDate: task.dueDate || null,
+      reminderDate: task.reminderDate && !isPast(task.reminderDate) ? task.reminderDate : null,
+      timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    };
+
+    const result = await dispatch(createTask(payload));
+    if (createTask.fulfilled.match(result)) {
+      toast.success("Task duplicated successfully.");
+      if (viewMode === "list") {
+        dispatch(fetchTasks(filters));
+      } else {
+        dispatch(fetchTasks({ ...filters, all: true, force: true }));
+      }
+      if (drawerOpen) {
+        setDrawerOpen(false);
+        setEditingTask(null);
+      }
+    } else {
+      toast.error(result.payload || "Failed to duplicate task.");
+    }
+  }, [dispatch, filters, viewMode, drawerOpen]);
 
   const toggleSort = useCallback(() => {
     dispatch(setFilters({ order: filters.order === "desc" ? "asc" : "desc" }));
@@ -465,6 +505,7 @@ export const TasksPage = () => {
                       onEdit={handleEdit}
                       onDelete={handleDelete}
                       onComplete={handleComplete}
+                      onDuplicate={handleDuplicate}
                     />
                   </div>
                 </div>
@@ -478,6 +519,7 @@ export const TasksPage = () => {
               onEdit={handleEdit}
               onDelete={handleDelete}
               onComplete={handleComplete}
+              onDuplicate={handleDuplicate}
             />
           )}
 
@@ -507,6 +549,7 @@ export const TasksPage = () => {
               onEdit={handleEdit}
               onDelete={handleDelete}
               onComplete={handleComplete}
+              onDuplicate={handleDuplicate}
             />
           )}
         </div>
@@ -548,6 +591,7 @@ export const TasksPage = () => {
         onClose={handleCloseDrawer}
         task={editingTask}
         onSaved={() => dispatch(fetchTasks(filters))}
+        onDuplicate={handleDuplicate}
       />
     </div>
   );

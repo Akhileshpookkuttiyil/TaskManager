@@ -3,7 +3,7 @@ import { Clock, Calendar, AlertCircle, CalendarDays, Inbox } from "lucide-react"
 import { parseDateTimeValue } from "../../utils/dates";
 import { TaskCard } from "./TaskCard";
 
-export const TimelineView = ({ tasks = [], onEdit, onDelete, onComplete }) => {
+export const TimelineView = ({ tasks = [], onEdit, onDelete, onComplete, onDuplicate }) => {
   
   // Group tasks chronologically
   const timelineGroups = useMemo(() => {
@@ -104,6 +104,7 @@ export const TimelineView = ({ tasks = [], onEdit, onDelete, onComplete }) => {
                   onEdit={onEdit}
                   onDelete={onDelete}
                   onComplete={onComplete}
+                  onDuplicate={onDuplicate}
                 />
               ))}
             </div>

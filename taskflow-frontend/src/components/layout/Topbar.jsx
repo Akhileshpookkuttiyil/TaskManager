@@ -4,6 +4,7 @@ import { useSelector } from "react-redux";
 import { useLocation } from "react-router-dom";
 import { NotificationBell } from "../notifications/NotificationBell";
 import { UserMenu } from "./UserMenu";
+import { PomodoroPill } from "../pomodoro/PomodoroPill";
 
 const pageMeta = {
   "/": { title: "Dashboard", subtitle: "Productivity snapshot" },
@@ -84,6 +85,9 @@ export const Topbar = ({ onQuickAdd, onOpenCommandPalette, onOpenShortcuts }) =>
 
         {/* Action Widgets */}
         <div className="flex items-center gap-1.5">
+          {/* Focus Timer Pill */}
+          <PomodoroPill />
+
           {/* Command Palette Trigger */}
           <button
             type="button"

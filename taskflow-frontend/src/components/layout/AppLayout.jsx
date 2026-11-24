@@ -6,6 +6,8 @@ import { Sidebar } from "./Sidebar";
 import { Topbar } from "./Topbar";
 import { CommandPalette } from "../ui/CommandPalette";
 import { ShortcutsModal } from "../ui/ShortcutsModal";
+import { PomodoroProvider } from "../../context/PomodoroContext";
+import { PomodoroModal } from "../pomodoro/PomodoroModal";
 
 export const AppLayout = () => {
   const navigate = useNavigate();
@@ -48,34 +50,38 @@ export const AppLayout = () => {
   }, [navigate]);
 
   return (
-    <div className="app-shell min-h-screen min-[1025px]:flex">
-      <NotificationEngine />
-      <Sidebar />
+    <PomodoroProvider>
+      <div className="app-shell min-h-screen min-[1025px]:flex">
+        <NotificationEngine />
+        <Sidebar />
 
-      <div className="min-w-0 flex-1">
-        <Topbar 
-          onQuickAdd={() => navigate("/tasks?new=true")} 
-          onOpenCommandPalette={() => setCommandPaletteOpen(true)}
-          onOpenShortcuts={() => setShortcutsOpen(true)}
+        <div className="min-w-0 flex-1">
+          <Topbar
+            onQuickAdd={() => navigate("/tasks?new=true")}
+            onOpenCommandPalette={() => setCommandPaletteOpen(true)}
+            onOpenShortcuts={() => setShortcutsOpen(true)}
+          />
+          <main className="mx-auto max-w-6xl px-4 py-6 max-[1024px]:pb-[calc(6.75rem+env(safe-area-inset-bottom))] sm:px-6 lg:px-8 min-[1025px]:pb-8">
+            <Outlet />
+          </main>
+        </div>
+
+        <BottomNav onQuickAdd={() => navigate("/tasks?new=true")} />
+
+        <CommandPalette
+          isOpen={commandPaletteOpen}
+          onClose={() => setCommandPaletteOpen(false)}
+          onQuickAdd={() => navigate("/tasks?new=true")}
         />
-        <main className="mx-auto max-w-6xl px-4 py-6 max-[1024px]:pb-[calc(6.75rem+env(safe-area-inset-bottom))] sm:px-6 lg:px-8 min-[1025px]:pb-8">
-          <Outlet />
-        </main>
+
+        <ShortcutsModal
+          isOpen={shortcutsOpen}
+          onClose={() => setShortcutsOpen(false)}
+        />
+
+        <PomodoroModal />
       </div>
-
-      <BottomNav onQuickAdd={() => navigate("/tasks?new=true")} />
-      
-      <CommandPalette 
-        isOpen={commandPaletteOpen} 
-        onClose={() => setCommandPaletteOpen(false)} 
-        onQuickAdd={() => navigate("/tasks?new=true")}
-      />
-
-      <ShortcutsModal 
-        isOpen={shortcutsOpen}
-        onClose={() => setShortcutsOpen(false)}
-      />
-    </div>
+    </PomodoroProvider>
   );
 };
 export default AppLayout;
