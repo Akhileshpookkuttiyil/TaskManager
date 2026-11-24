@@ -30,17 +30,47 @@ const serializeTask = (task) => {
       task.status !== "archived"
   );
 
+  let subtasksCount = 0;
+  let completedSubtasksCount = 0;
+  let subtasksProgress = null;
+  let serializedSubtasks = undefined;
+
+  if (Array.isArray(task.subtasks)) {
+    const activeSubtasks = task.subtasks.filter((s) => s && s.status !== "archived");
+    subtasksCount = activeSubtasks.length;
+    completedSubtasksCount = activeSubtasks.filter((s) => s.status === "completed").length;
+    subtasksProgress = subtasksCount > 0 ? {
+      total: subtasksCount,
+      completed: completedSubtasksCount,
+      percent: Math.round((completedSubtasksCount / subtasksCount) * 100),
+    } : null;
+
+    if (task.subtasks.length > 0 && task.subtasks[0].title !== undefined) {
+      serializedSubtasks = task.subtasks.map((s) => serializeTask(s));
+    } else if (task.subtasks.length === 0) {
+      serializedSubtasks = [];
+    }
+  }
+
   const serialized = toMongoId({
     ...task,
     description: task.description || "",
     status: LEGACY_TASK_STATUS[task.status] || task.status,
+    parentId: task.parentId || null,
     dueDate,
     reminderDate: task.reminderDate || null,
     completedAt,
     archivedAt,
     tags: task.tags || [],
     isOverdue,
+    subtasksCount,
+    completedSubtasksCount,
+    subtasksProgress,
   });
+
+  if (serializedSubtasks !== undefined) {
+    serialized.subtasks = serializedSubtasks;
+  }
 
   if (task.userId) {
     serialized.user = task.userId;

@@ -296,6 +296,19 @@ const tasksSlice = createSlice({
         state.analytics.tasks = state.analytics.tasks.filter((t) => t._id !== id);
       }
     },
+    updateParentProgress(state, action) {
+      const { parentId, progress } = action.payload;
+      const updateTaskItem = (t) => {
+        if (t && t._id === parentId) {
+          t.subtasksProgress = progress;
+          t.subtasksCount = progress ? progress.total : 0;
+          t.completedSubtasksCount = progress ? progress.completed : 0;
+        }
+      };
+      state.items.forEach(updateTaskItem);
+      if (state.dashboard?.tasks) state.dashboard.tasks.forEach(updateTaskItem);
+      if (state.analytics?.tasks) state.analytics.tasks.forEach(updateTaskItem);
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -419,6 +432,6 @@ const tasksSlice = createSlice({
   },
 });
 
-export const { setFilters, setPage, clearError, stagePendingDelete, restorePendingTask, finalizeDelete } =
+export const { setFilters, setPage, clearError, stagePendingDelete, restorePendingTask, finalizeDelete, updateParentProgress } =
   tasksSlice.actions;
 export default tasksSlice.reducer;

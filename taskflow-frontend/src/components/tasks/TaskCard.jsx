@@ -1,8 +1,9 @@
-import { memo } from "react";
-import { Check, Tag, Trash2, Clock, Repeat } from "lucide-react";
+import { memo, useMemo } from "react";
+import { Check, Tag, Trash2, Clock, Repeat, CheckSquare, Copy } from "lucide-react";
 import { formatDateTimeValue, parseDateTimeValue } from "../../utils/dates";
+import { extractChecklistProgress } from "../../utils/markdown";
 
-export const TaskCard = memo(({ task, onEdit, onDelete, onComplete, highlighted = false }) => {
+export const TaskCard = memo(({ task, onEdit, onDelete, onComplete, onDuplicate, highlighted = false }) => {
   const status = task.status || "pending";
   const isCompleted = status === "completed";
   const isArchived = status === "archived";
@@ -11,6 +12,8 @@ export const TaskCard = memo(({ task, onEdit, onDelete, onComplete, highlighted 
 
   const showTime = Boolean(dueDate && (dueDate.getHours() || dueDate.getMinutes()));
   const dueDateLabel = dueDate ? formatDateTimeValue(dueDate, showTime ? "MMM d, yyyy h:mm a" : "MMM d, yyyy") : null;
+
+  const checklist = useMemo(() => extractChecklistProgress(task.description), [task.description]);
 
   const priorityColors = {
     high: "bg-red-400",
@@ -103,6 +106,32 @@ export const TaskCard = memo(({ task, onEdit, onDelete, onComplete, highlighted 
               </span>
             )}
 
+            {task.subtasksCount > 0 ? (
+              <span
+                className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-semibold border ${
+                  task.completedSubtasksCount === task.subtasksCount
+                    ? "bg-green-500/10 border-green-500/20 text-green-700 dark:text-green-300"
+                    : "bg-elevated border-subtle text-secondary"
+                }`}
+                title={`${task.completedSubtasksCount} of ${task.subtasksCount} subtasks completed`}
+              >
+                <CheckSquare size={10} />
+                <span>{task.completedSubtasksCount}/{task.subtasksCount}</span>
+              </span>
+            ) : checklist.total > 0 ? (
+              <span
+                className={`inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-semibold border ${
+                  checklist.completed === checklist.total
+                    ? "bg-green-500/10 border-green-500/20 text-green-700 dark:text-green-300"
+                    : "bg-elevated border-subtle text-secondary"
+                }`}
+                title={`${checklist.completed} of ${checklist.total} subtasks completed`}
+              >
+                <CheckSquare size={10} />
+                <span>{checklist.completed}/{checklist.total}</span>
+              </span>
+            ) : null}
+
             {task.tags?.map((tag) => (
               <span
                 key={tag}
@@ -115,7 +144,21 @@ export const TaskCard = memo(({ task, onEdit, onDelete, onComplete, highlighted 
           </div>
         </div>
 
-        <div className="flex items-center shrink-0 opacity-0 group-hover:opacity-100 transition-opacity ml-1.5 self-center">
+        <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity ml-1.5 self-center">
+          {onDuplicate && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDuplicate(task);
+              }}
+              className="btn-ghost h-9 w-9 p-0 text-muted hover:text-primary flex items-center justify-center rounded-full"
+              aria-label={`Duplicate task ${task.title}`}
+              title="Duplicate task"
+            >
+              <Copy size={13} />
+            </button>
+          )}
           <button
             type="button"
             onClick={(e) => {
@@ -124,10 +167,11 @@ export const TaskCard = memo(({ task, onEdit, onDelete, onComplete, highlighted 
                 onDelete(task._id);
               }
             }}
-            className="btn-ghost h-11 w-11 -m-1.5 p-0 text-muted hover:text-red-600 dark:hover:text-red-300 flex items-center justify-center rounded-full"
+            className="btn-ghost h-9 w-9 p-0 text-muted hover:text-red-600 dark:hover:text-red-300 flex items-center justify-center rounded-full"
             aria-label={`Delete task ${task.title}`}
+            title="Delete task"
           >
-            <Trash2 size={14} />
+            <Trash2 size={13} />
           </button>
         </div>
       </div>

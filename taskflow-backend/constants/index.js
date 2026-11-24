@@ -35,12 +35,21 @@ const NOTIFICATION_TYPE = {
 const ACTIVITY_TYPE = {
   TASK_CREATED: "task_created",
   TASK_UPDATED: "task_updated",
+  TITLE_CHANGED: "title_changed",
+  DESCRIPTION_CHANGED: "description_changed",
+  STATUS_CHANGED: "status_changed",
   PRIORITY_CHANGED: "priority_changed",
   DUE_DATE_CHANGED: "due_date_changed",
+  TAGS_CHANGED: "tags_changed",
   TASK_COMPLETED: "task_completed",
   TASK_ARCHIVED: "task_archived",
   TASK_RESTORED: "task_restored",
   TASK_DELETED: "task_deleted",
+  SUBTASK_CREATED: "subtask_created",
+  SUBTASK_COMPLETED: "subtask_completed",
+  SUBTASK_REOPENED: "subtask_reopened",
+  SUBTASK_UPDATED: "subtask_updated",
+  SUBTASK_DELETED: "subtask_deleted",
 };
 
 const JWT_EXPIRY = "7d";

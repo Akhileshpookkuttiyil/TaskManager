@@ -65,4 +65,8 @@ export const tasksApi = {
   update: (id, data) => api.put(`/tasks/${id}`, data),
   remove: (id) => api.delete(`/tasks/${id}`),
   getStats: () => api.get("/tasks/stats"),
+  getSubtasks: (taskId) => api.get(`/tasks/${taskId}/subtasks`),
+  createSubtask: (taskId, data) => api.post(`/tasks/${taskId}/subtasks`, data),
+  updateSubtask: (taskId, subtaskId, data) => api.put(`/tasks/${taskId}/subtasks/${subtaskId}`, data),
+  deleteSubtask: (taskId, subtaskId) => api.delete(`/tasks/${taskId}/subtasks/${subtaskId}`),
 };

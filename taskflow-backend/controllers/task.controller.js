@@ -1,4 +1,5 @@
 const taskService = require("../services/task.service");
+const activityService = require("../services/activity.service");
 const { sendSuccess } = require("../utils/response");
 
 const getTasks = async (req, res, next) => {
@@ -55,4 +56,61 @@ const getStats = async (req, res, next) => {
   }
 };
 
-module.exports = { getTasks, getTask, createTask, updateTask, deleteTask, getStats };
+const getTaskActivities = async (req, res, next) => {
+  try {
+    const result = await activityService.getTaskActivities(req.params.id, req.user._id, req.query);
+    sendSuccess(res, result);
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getSubtasks = async (req, res, next) => {
+  try {
+    const result = await taskService.getSubtasks(req.params.id, req.user._id);
+    sendSuccess(res, result);
+  } catch (error) {
+    next(error);
+  }
+};
+
+const createSubtask = async (req, res, next) => {
+  try {
+    const result = await taskService.createSubtask(req.params.id, req.user._id, req.body);
+    sendSuccess(res, result, "Subtask created", 201);
+  } catch (error) {
+    next(error);
+  }
+};
+
+const updateSubtask = async (req, res, next) => {
+  try {
+    const result = await taskService.updateSubtask(req.params.id, req.params.subtaskId, req.user._id, req.body);
+    sendSuccess(res, result, "Subtask updated");
+  } catch (error) {
+    next(error);
+  }
+};
+
+const deleteSubtask = async (req, res, next) => {
+  try {
+    const result = await taskService.deleteSubtask(req.params.id, req.params.subtaskId, req.user._id);
+    sendSuccess(res, result, "Subtask deleted");
+  } catch (error) {
+    next(error);
+  }
+};
+
+module.exports = {
+  getTasks,
+  getTask,
+  createTask,
+  updateTask,
+  deleteTask,
+  getStats,
+  getTaskActivities,
+  getSubtasks,
+  createSubtask,
+  updateSubtask,
+  deleteSubtask,
+};

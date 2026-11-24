@@ -88,7 +88,7 @@ const getNextRecurrenceDate = (date, recurrence, step = 1) => {
 };
 
 const buildTaskWhere = (userId, { status, priority, search, view, dueDate, tag, label }) => {
-  const where = { userId, recurrenceParentId: null };
+  const where = { userId, recurrenceParentId: null, parentId: null };
   const filters = [];
   const now = new Date();
   const { start: todayStart, end: todayEnd } = getDayBounds(now);
@@ -130,12 +130,16 @@ const buildTaskWhere = (userId, { status, priority, search, view, dueDate, tag, 
   }
 
   if (search) {
-    filters.push({
-      OR: [
-        { title: { contains: search, mode: "insensitive" } },
-        { description: { contains: search, mode: "insensitive" } },
-      ],
-    });
+    const trimmedSearch = typeof search === "string" ? search.trim() : "";
+    if (trimmedSearch) {
+      filters.push({
+        OR: [
+          { title: { contains: trimmedSearch, mode: "insensitive" } },
+          { description: { contains: trimmedSearch, mode: "insensitive" } },
+          { tags: { has: trimmedSearch } },
+        ],
+      });
+    }
   }
 
   // Reliable exact tag-specific filtering
@@ -195,6 +199,7 @@ const getTaskData = (data) => {
   if (data.dueDate !== undefined) taskData.dueDate = toValidDate(data.dueDate);
   if (data.reminderDate !== undefined) taskData.reminderDate = toValidDate(data.reminderDate);
   if (data.tags !== undefined) taskData.tags = data.tags;
+  if (data.parentId !== undefined) taskData.parentId = data.parentId || null;
 
   return taskData;
 };
@@ -218,6 +223,33 @@ const hasMeaningfulTaskUpdate = (existingTask, taskData) => {
 
     return nextValue !== currentValue;
   });
+};
+
+const hasTitleChanged = (existingTask, taskData) =>
+  taskData.title !== undefined && taskData.title.trim() !== existingTask.title;
+
+const hasDescriptionChanged = (existingTask, taskData) =>
+  taskData.description !== undefined && (taskData.description || "") !== (existingTask.description || "");
+
+const hasTagsChanged = (existingTask, taskData) => {
+  if (taskData.tags === undefined) return false;
+  const currentTags = Array.isArray(existingTask.tags) ? existingTask.tags : [];
+  const nextTags = Array.isArray(taskData.tags) ? taskData.tags : [];
+  return JSON.stringify([...currentTags].sort()) !== JSON.stringify([...nextTags].sort());
+};
+
+const hasRecurrenceChanged = (existingTask, taskData) =>
+  taskData.recurrence !== undefined && taskData.recurrence !== existingTask.recurrence;
+
+const hasGenericStatusChange = (existingTask, taskData) => {
+  if (taskData.status === undefined) return false;
+  const nextStatus = normalizeStatus(taskData.status);
+  const currentStatus = normalizeStatus(existingTask.status);
+  if (nextStatus === currentStatus) return false;
+  if (hasCompletedStatusChange(existingTask, taskData)) return false;
+  if (hasArchivedStatusChange(existingTask, taskData)) return false;
+  if (hasRestoredStatusChange(existingTask, taskData)) return false;
+  return true;
 };
 
 const hasDateChanged = (existingValue, nextValue) =>
@@ -293,6 +325,12 @@ const getTasks = async (userId, queryParams) => {
       orderBy,
       skip,
       take: limit,
+      include: {
+        subtasks: {
+          select: { id: true, status: true, title: true },
+          orderBy: { createdAt: "asc" },
+        },
+      },
     }),
     prisma.task.count({ where }),
   ]);
@@ -316,6 +354,11 @@ const getTaskById = async (taskId, userId) => {
       id: taskId,
       userId,
     },
+    include: {
+      subtasks: {
+        orderBy: { createdAt: "asc" },
+      },
+    },
   });
 
   if (!task) {
@@ -329,6 +372,24 @@ const createTask = async (userId, data) => {
   const taskData = getTaskData(data);
   const lifecycleData = getLifecycleData(null, taskData);
 
+  let parentTask = null;
+  if (taskData.parentId) {
+    ensureTaskId(taskData.parentId);
+    parentTask = await prisma.task.findFirst({
+      where: { id: taskData.parentId, userId },
+    });
+    if (!parentTask) {
+      const error = new Error("Parent task not found");
+      error.statusCode = 404;
+      throw error;
+    }
+    if (parentTask.parentId) {
+      const error = new Error("Nested subtasks are not supported: a subtask cannot be a parent");
+      error.statusCode = 400;
+      throw error;
+    }
+  }
+
   const task = await prisma.$transaction(async (tx) => {
     const created = await tx.task.create({
       data: {
@@ -337,6 +398,17 @@ const createTask = async (userId, data) => {
         userId,
       },
     });
+
+    if (parentTask) {
+      await recordActivity({
+        client: tx,
+        userId,
+        taskId: parentTask.id,
+        type: ACTIVITY_TYPE.SUBTASK_CREATED,
+        taskTitle: parentTask.title,
+        to: created.title,
+      });
+    }
 
     await recordActivity({
       client: tx,
@@ -371,6 +443,38 @@ const updateTask = async (taskId, userId, data) => {
   const taskData = getTaskData(data);
   const timeZone = data.timeZone;
   const nextLifecycleData = getLifecycleData(existingTask, taskData);
+
+  if (taskData.parentId !== undefined) {
+    if (taskData.parentId === taskId) {
+      const error = new Error("A task cannot be its own parent");
+      error.statusCode = 400;
+      throw error;
+    }
+    if (taskData.parentId !== null) {
+      ensureTaskId(taskData.parentId);
+      const childCount = await prisma.task.count({
+        where: { parentId: taskId, userId },
+      });
+      if (childCount > 0) {
+        const error = new Error("Cannot convert a parent task with subtasks into a subtask");
+        error.statusCode = 400;
+        throw error;
+      }
+      const parent = await prisma.task.findFirst({
+        where: { id: taskData.parentId, userId },
+      });
+      if (!parent) {
+        const error = new Error("Parent task not found");
+        error.statusCode = 404;
+        throw error;
+      }
+      if (parent.parentId) {
+        const error = new Error("Nested subtasks are not supported: a subtask cannot be a parent");
+        error.statusCode = 400;
+        throw error;
+      }
+    }
+  }
 
   const finalTask = await prisma.$transaction(async (tx) => {
     const updatedTask = await tx.task.update({
@@ -421,15 +525,32 @@ const updateTask = async (taskId, userId, data) => {
       }
     }
 
-    if (hasMeaningfulTaskUpdate(existingTask, taskData)) {
+    let specificActivityLogged = false;
+
+    if (hasTitleChanged(existingTask, taskData)) {
       await recordActivity({
         client: tx,
         userId,
         taskId: currentTask.id,
-        type: ACTIVITY_TYPE.TASK_UPDATED,
+        type: ACTIVITY_TYPE.TITLE_CHANGED,
+        taskTitle: currentTask.title,
+        from: existingTask.title,
+        to: currentTask.title,
+      });
+      specificActivityLogged = true;
+    }
+
+    if (hasDescriptionChanged(existingTask, taskData)) {
+      await recordActivity({
+        client: tx,
+        userId,
+        taskId: currentTask.id,
+        type: ACTIVITY_TYPE.DESCRIPTION_CHANGED,
         taskTitle: currentTask.title,
       });
+      specificActivityLogged = true;
     }
+
     if (hasPriorityChanged(existingTask, taskData)) {
       await recordActivity({
         client: tx,
@@ -440,7 +561,9 @@ const updateTask = async (taskId, userId, data) => {
         from: existingTask.priority,
         to: currentTask.priority,
       });
+      specificActivityLogged = true;
     }
+
     if (hasDueDateChanged(existingTask, taskData)) {
       await recordActivity({
         client: tx,
@@ -452,7 +575,22 @@ const updateTask = async (taskId, userId, data) => {
         to: currentTask.dueDate,
         timeZone,
       });
+      specificActivityLogged = true;
     }
+
+    if (hasTagsChanged(existingTask, taskData)) {
+      await recordActivity({
+        client: tx,
+        userId,
+        taskId: currentTask.id,
+        type: ACTIVITY_TYPE.TAGS_CHANGED,
+        taskTitle: currentTask.title,
+        from: existingTask.tags,
+        to: currentTask.tags,
+      });
+      specificActivityLogged = true;
+    }
+
     if (hasCompletedStatusChange(existingTask, taskData)) {
       await recordActivity({
         client: tx,
@@ -461,7 +599,9 @@ const updateTask = async (taskId, userId, data) => {
         type: ACTIVITY_TYPE.TASK_COMPLETED,
         taskTitle: updatedTask.title,
       });
+      specificActivityLogged = true;
     }
+
     if (hasArchivedStatusChange(existingTask, taskData)) {
       await recordActivity({
         client: tx,
@@ -470,7 +610,9 @@ const updateTask = async (taskId, userId, data) => {
         type: ACTIVITY_TYPE.TASK_ARCHIVED,
         taskTitle: currentTask.title,
       });
+      specificActivityLogged = true;
     }
+
     if (hasRestoredStatusChange(existingTask, taskData)) {
       await recordActivity({
         client: tx,
@@ -479,6 +621,74 @@ const updateTask = async (taskId, userId, data) => {
         type: ACTIVITY_TYPE.TASK_RESTORED,
         taskTitle: currentTask.title,
       });
+      specificActivityLogged = true;
+    }
+
+    if (hasGenericStatusChange(existingTask, taskData)) {
+      await recordActivity({
+        client: tx,
+        userId,
+        taskId: currentTask.id,
+        type: ACTIVITY_TYPE.STATUS_CHANGED,
+        taskTitle: currentTask.title,
+        from: existingTask.status,
+        to: currentTask.status,
+      });
+      specificActivityLogged = true;
+    }
+
+    if (hasRecurrenceChanged(existingTask, taskData)) {
+      await recordActivity({
+        client: tx,
+        userId,
+        taskId: currentTask.id,
+        type: ACTIVITY_TYPE.TASK_UPDATED,
+        taskTitle: currentTask.title,
+        customMessage: `Changed recurrence for task '${currentTask.title}' from ${existingTask.recurrence} to ${currentTask.recurrence}`,
+      });
+      specificActivityLogged = true;
+    }
+
+    // Only log generic TASK_UPDATED if no specific activity was logged
+    if (!specificActivityLogged && hasMeaningfulTaskUpdate(existingTask, taskData)) {
+      await recordActivity({
+        client: tx,
+        userId,
+        taskId: currentTask.id,
+        type: ACTIVITY_TYPE.TASK_UPDATED,
+        taskTitle: currentTask.title,
+      });
+    }
+
+    if (existingTask.parentId) {
+      if (hasCompletedStatusChange(existingTask, taskData)) {
+        await recordActivity({
+          client: tx,
+          userId,
+          taskId: existingTask.parentId,
+          type: ACTIVITY_TYPE.SUBTASK_COMPLETED,
+          to: currentTask.title,
+        });
+      } else if (hasRestoredStatusChange(existingTask, taskData)) {
+        await recordActivity({
+          client: tx,
+          userId,
+          taskId: existingTask.parentId,
+          type: ACTIVITY_TYPE.SUBTASK_REOPENED,
+          to: currentTask.title,
+        });
+      }
+
+      if (hasTitleChanged(existingTask, taskData)) {
+        await recordActivity({
+          client: tx,
+          userId,
+          taskId: existingTask.parentId,
+          type: ACTIVITY_TYPE.SUBTASK_UPDATED,
+          from: existingTask.title,
+          to: currentTask.title,
+        });
+      }
     }
 
     return currentTask;
@@ -503,6 +713,20 @@ const deleteTask = async (taskId, userId) => {
     throw notFound();
   }
 
+  const activeSubtasks = await prisma.task.count({
+    where: {
+      parentId: taskId,
+      userId,
+      status: { notIn: [TASK_STATUS.COMPLETED, TASK_STATUS.ARCHIVED] },
+    },
+  });
+
+  if (activeSubtasks > 0) {
+    const error = new Error("Cannot delete task with active subtasks. Please complete, delete, or reassign subtasks first.");
+    error.statusCode = 400;
+    throw error;
+  }
+
   await prisma.$transaction(async (tx) => {
     await deleteTaskNotifications(userId, taskId, tx);
     await tx.task.deleteMany({
@@ -511,6 +735,25 @@ const deleteTask = async (taskId, userId) => {
         recurrenceParentId: taskId,
       },
     });
+
+    if (task.parentId) {
+      await recordActivity({
+        client: tx,
+        userId,
+        taskId: task.parentId,
+        type: ACTIVITY_TYPE.SUBTASK_DELETED,
+        to: task.title,
+      });
+    }
+
+    // Delete any completed/archived subtasks under this parent
+    await tx.task.deleteMany({
+      where: {
+        userId,
+        parentId: taskId,
+      },
+    });
+
     await recordActivity({
       client: tx,
       userId,
@@ -526,7 +769,7 @@ const deleteTask = async (taskId, userId) => {
 
 const getTaskStats = async (userId) => {
   const tasks = await prisma.task.findMany({
-    where: { userId, recurrenceParentId: null },
+    where: { userId, recurrenceParentId: null, parentId: null },
     select: {
       status: true,
       dueDate: true,
@@ -589,4 +832,102 @@ const getTaskStats = async (userId) => {
   return result;
 };
 
-module.exports = { getTasks, getTaskById, createTask, updateTask, deleteTask, getTaskStats };
+const calculateProgress = (subtasks = []) => {
+  const active = subtasks.filter((s) => s.status !== TASK_STATUS.ARCHIVED);
+  const total = active.length;
+  const completed = active.filter((s) => s.status === TASK_STATUS.COMPLETED).length;
+  return total > 0 ? {
+    total,
+    completed,
+    percent: Math.round((completed / total) * 100),
+  } : null;
+};
+
+const getSubtasks = async (parentId, userId) => {
+  ensureTaskId(parentId);
+
+  const parent = await prisma.task.findFirst({
+    where: { id: parentId, userId },
+  });
+
+  if (!parent) {
+    throw notFound();
+  }
+
+  const subtasks = await prisma.task.findMany({
+    where: { parentId, userId },
+    orderBy: { createdAt: "asc" },
+  });
+
+  return {
+    subtasks: subtasks.map(serializeTask),
+    progress: calculateProgress(subtasks),
+  };
+};
+
+const createSubtask = async (parentId, userId, data) => {
+  ensureTaskId(parentId);
+  const subtask = await createTask(userId, { ...data, parentId });
+  const { progress } = await getSubtasks(parentId, userId);
+
+  return {
+    subtask,
+    progress,
+  };
+};
+
+const updateSubtask = async (parentId, subtaskId, userId, data) => {
+  ensureTaskId(parentId);
+  ensureTaskId(subtaskId);
+
+  const existingSubtask = await prisma.task.findFirst({
+    where: { id: subtaskId, parentId, userId },
+  });
+
+  if (!existingSubtask) {
+    throw notFound();
+  }
+
+  const updatedSubtask = await updateTask(subtaskId, userId, data);
+  const { progress } = await getSubtasks(parentId, userId);
+
+  return {
+    subtask: updatedSubtask,
+    progress,
+  };
+};
+
+const deleteSubtask = async (parentId, subtaskId, userId) => {
+  ensureTaskId(parentId);
+  ensureTaskId(subtaskId);
+
+  const existingSubtask = await prisma.task.findFirst({
+    where: { id: subtaskId, parentId, userId },
+  });
+
+  if (!existingSubtask) {
+    throw notFound();
+  }
+
+  await deleteTask(subtaskId, userId);
+  const { progress } = await getSubtasks(parentId, userId);
+
+  return {
+    success: true,
+    deletedSubtaskId: subtaskId,
+    progress,
+  };
+};
+
+module.exports = {
+  getTasks,
+  getTaskById,
+  createTask,
+  updateTask,
+  deleteTask,
+  getTaskStats,
+  getSubtasks,
+  createSubtask,
+  updateSubtask,
+  deleteSubtask,
+};

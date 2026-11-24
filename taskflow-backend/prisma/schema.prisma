@@ -39,12 +39,21 @@ enum NotificationType {
 enum ActivityType {
   task_created
   task_updated
+  title_changed
+  description_changed
+  status_changed
   priority_changed
   due_date_changed
+  tags_changed
   task_completed
   task_archived
   task_restored
   task_deleted
+  subtask_created
+  subtask_completed
+  subtask_reopened
+  subtask_updated
+  subtask_deleted
 }
 
 model User {
@@ -71,6 +80,9 @@ model Task {
   recurrenceParentId String? @db.Uuid
   recurrenceParent   Task?    @relation("TaskRecurrence", fields: [recurrenceParentId], references: [id], onDelete: SetNull)
   recurrenceChildren  Task[]   @relation("TaskRecurrence")
+  parentId     String?      @db.Uuid
+  parent       Task?        @relation("TaskSubtasks", fields: [parentId], references: [id], onDelete: Cascade)
+  subtasks     Task[]       @relation("TaskSubtasks")
   dueDate      DateTime?
   reminderDate DateTime?
   completedAt  DateTime?
@@ -86,6 +98,8 @@ model Task {
   @@index([userId, createdAt])
   @@index([userId, status])
   @@index([userId, dueDate])
+  @@index([userId, parentId])
+  @@index([parentId])
 }
 
 model Notification {
@@ -119,4 +133,5 @@ model Activity {
   updatedAt DateTime     @updatedAt
 
   @@index([userId, createdAt])
+  @@index([userId, taskId, createdAt])
 }

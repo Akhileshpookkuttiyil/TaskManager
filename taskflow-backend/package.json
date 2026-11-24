@@ -5,7 +5,9 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "test": "echo \"Error: no test specified\" && exit 1",
+    "test": "node test_phase5_sprint3_task3_1.js && node test_phase5_sprint3_task3_2.js",
+    "test:task3.1": "node test_phase5_sprint3_task3_1.js",
+    "test:task3.2": "node test_phase5_sprint3_task3_2.js",
     "dev": "nodemon server.js",
     "prisma:generate": "prisma generate",
     "postinstall": "prisma generate"
