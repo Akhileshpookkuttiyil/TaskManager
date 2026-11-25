@@ -100,6 +100,7 @@ model Task {
   @@index([userId, dueDate])
   @@index([userId, parentId])
   @@index([parentId])
+  @@index([recurrenceParentId])
 }
 
 model Notification {
