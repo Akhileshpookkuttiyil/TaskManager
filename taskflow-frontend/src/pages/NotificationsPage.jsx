@@ -213,7 +213,7 @@ export const NotificationsPage = () => {
           <ErrorState
             title="Failed to load notifications"
             message={typeof error === "string" ? error : "Please check your connection and try again."}
-            onRetry={() => dispatch(fetchNotifications())}
+            onRetry={() => dispatch(fetchNotifications({ force: true }))}
           />
         ) : filteredNotifications.length === 0 ? (
           <div className="py-12 text-center">

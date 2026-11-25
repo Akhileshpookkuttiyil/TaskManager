@@ -23,6 +23,7 @@ export const AnalyticsPage = () => {
   const dispatch = useDispatch();
   const analytics = useSelector((state) => state.tasks.analytics);
   const tasks = analytics?.tasks ?? EMPTY_ARRAY;
+  const tasksLoading = analytics?.loading ?? false;
   const tasksError = analytics?.error ?? null;
   const stats = useSelector((state) => state.tasks.stats);
 
@@ -189,7 +190,19 @@ export const AnalyticsPage = () => {
         </p>
       </div>
 
-      {tasksError && tasks.length === 0 ? (
+      {tasksLoading && tasks.length === 0 ? (
+        <div className="space-y-6 py-4">
+          <div className="grid gap-4 grid-cols-2 md:grid-cols-4">
+            {[1, 2, 3, 4].map((i) => (
+              <div key={i} className="card p-4 h-24 skeleton" />
+            ))}
+          </div>
+          <div className="grid gap-6 md:grid-cols-2">
+            <div className="card p-6 h-72 skeleton" />
+            <div className="card p-6 h-72 skeleton" />
+          </div>
+        </div>
+      ) : tasksError && tasks.length === 0 ? (
         <ErrorState
           title="Failed to load analytics"
           message={typeof tasksError === "string" ? tasksError : "Unable to load task data for analytics."}

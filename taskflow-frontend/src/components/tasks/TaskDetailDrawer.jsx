@@ -673,7 +673,7 @@ export const TaskDetailDrawer = ({ isOpen, onClose, task, onSaved, onDuplicate }
           </div>
 
           {/* Parameters Grid */}
-          <div className="grid grid-cols-2 gap-4 rounded-xl border border-neutral p-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 rounded-xl border border-neutral p-4">
             <div>
               <label htmlFor="drawer-status" className="label">Status</label>
               <select
@@ -1100,7 +1100,7 @@ export const TaskDetailDrawer = ({ isOpen, onClose, task, onSaved, onDuplicate }
 
         {/* Create Mode Footer Buttons */}
         {isCreateMode && (
-          <div className="flex items-center justify-end gap-2.5 border-t border-neutral px-5 py-4 shrink-0 bg-elevated">
+          <div className="flex items-center justify-end gap-2.5 border-t border-neutral px-5 py-4 pb-[calc(1rem+env(safe-area-inset-bottom))] shrink-0 bg-elevated">
             <button
               type="button"
               onClick={onClose}

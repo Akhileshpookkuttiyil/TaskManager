@@ -38,7 +38,7 @@ export const DashboardPage = () => {
   const tasksLoading = dashboard?.loading ?? false;
   const tasksError = dashboard?.error ?? null;
   const stats = useSelector((state) => state.tasks.stats);
-  const { items: activities, loading: activityLoading } = useSelector((state) => state.activity);
+  const { items: activities, loading: activityLoading, error: activityError } = useSelector((state) => state.activity);
 
   useEffect(() => {
     dispatch(fetchStats({ force: true }));
@@ -426,6 +426,17 @@ export const DashboardPage = () => {
                 <div className="space-y-2 py-4">
                   <div className="h-4 w-4/5 skeleton" />
                   <div className="h-4 w-3/5 skeleton" />
+                </div>
+              ) : activityError ? (
+                <div className="py-4 text-center">
+                  <p className="text-xs text-red-600 dark:text-red-400">Failed to load activity.</p>
+                  <button
+                    type="button"
+                    onClick={() => dispatch(fetchRecentActivities({ limit: 5 }))}
+                    className="btn-ghost mt-1.5 text-[11px] font-semibold text-primary underline"
+                  >
+                    Retry
+                  </button>
                 </div>
               ) : activities.length === 0 ? (
                 <div className="py-4 text-center text-xs text-muted">
