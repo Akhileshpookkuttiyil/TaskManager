@@ -57,43 +57,45 @@ enum ActivityType {
 }
 
 model User {
-  id        String   @id @default(uuid()) @db.Uuid
-  name      String
-  email     String   @unique
-  password  String
-  avatar    String?
-  tasks     Task[]
+  id            String         @id @default(uuid()) @db.Uuid
+  name          String
+  email         String         @unique
+  password      String
+  avatar        String?
+  tasks         Task[]
   notifications Notification[]
-  activities Activity[]
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  activities    Activity[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
 }
 
 model Task {
-  id           String       @id @default(uuid()) @db.Uuid
-  title        String
-  description  String?
-  status       TaskStatus   @default(pending)
-  priority     TaskPriority @default(medium)
-  recurrence   TaskRecurrence @default(none)
-  recurrenceKey String?      @unique
-  recurrenceParentId String? @db.Uuid
-  recurrenceParent   Task?    @relation("TaskRecurrence", fields: [recurrenceParentId], references: [id], onDelete: SetNull)
-  recurrenceChildren  Task[]   @relation("TaskRecurrence")
-  parentId     String?      @db.Uuid
-  parent       Task?        @relation("TaskSubtasks", fields: [parentId], references: [id], onDelete: Cascade)
-  subtasks     Task[]       @relation("TaskSubtasks")
-  dueDate      DateTime?
-  reminderDate DateTime?
-  completedAt  DateTime?
-  archivedAt   DateTime?
-  tags         String[]     @default([])
-  userId       String       @db.Uuid
-  user         User         @relation(fields: [userId], references: [id], onDelete: Cascade)
-  notifications Notification[]
-  activities   Activity[]
-  createdAt    DateTime     @default(now())
-  updatedAt    DateTime     @updatedAt
+  id                 String           @id @default(uuid()) @db.Uuid
+  title              String
+  description        String?
+  status             TaskStatus       @default(pending)
+  priority           TaskPriority     @default(medium)
+  recurrence         TaskRecurrence   @default(none)
+  recurrenceKey      String?          @unique
+  recurrenceParentId String?          @db.Uuid
+  recurrenceParent   Task?            @relation("TaskRecurrence", fields: [recurrenceParentId], references: [id], onDelete: SetNull)
+  recurrenceChildren Task[]           @relation("TaskRecurrence")
+  parentId           String?          @db.Uuid
+  parent             Task?            @relation("TaskSubtasks", fields: [parentId], references: [id], onDelete: Cascade)
+  subtasks           Task[]           @relation("TaskSubtasks")
+  dependencies       TaskDependency[] @relation("TaskDependencies")
+  prerequisites      TaskDependency[] @relation("TaskPrerequisites")
+  dueDate            DateTime?
+  reminderDate       DateTime?
+  completedAt        DateTime?
+  archivedAt         DateTime?
+  tags               String[]         @default([])
+  userId             String           @db.Uuid
+  user               User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  notifications      Notification[]
+  activities         Activity[]
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
 
   @@index([userId, createdAt])
   @@index([userId, status])
@@ -104,19 +106,19 @@ model Task {
 }
 
 model Notification {
-  id         String            @id @default(uuid()) @db.Uuid
-  type       NotificationType
-  title      String
-  message    String
-  dedupeKey  String            @unique
-  isRead     Boolean           @default(false)
-  readAt     DateTime?
-  taskId     String?           @db.Uuid
-  task       Task?             @relation(fields: [taskId], references: [id], onDelete: SetNull)
-  userId     String            @db.Uuid
-  user       User              @relation(fields: [userId], references: [id], onDelete: Cascade)
-  createdAt  DateTime          @default(now())
-  updatedAt  DateTime          @updatedAt
+  id        String           @id @default(uuid()) @db.Uuid
+  type      NotificationType
+  title     String
+  message   String
+  dedupeKey String           @unique
+  isRead    Boolean          @default(false)
+  readAt    DateTime?
+  taskId    String?          @db.Uuid
+  task      Task?            @relation(fields: [taskId], references: [id], onDelete: SetNull)
+  userId    String           @db.Uuid
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
 
   @@index([userId, isRead])
   @@index([userId, createdAt])
@@ -135,4 +137,17 @@ model Activity {
 
   @@index([userId, createdAt])
   @@index([userId, taskId, createdAt])
+}
+
+model TaskDependency {
+  id             String   @id @default(uuid()) @db.Uuid
+  taskId         String   @db.Uuid
+  task           Task     @relation("TaskDependencies", fields: [taskId], references: [id], onDelete: Cascade)
+  prerequisiteId String   @db.Uuid
+  prerequisite   Task     @relation("TaskPrerequisites", fields: [prerequisiteId], references: [id], onDelete: Cascade)
+  createdAt      DateTime @default(now())
+
+  @@unique([taskId, prerequisiteId])
+  @@index([taskId])
+  @@index([prerequisiteId])
 }

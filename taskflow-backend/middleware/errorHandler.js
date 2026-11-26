@@ -35,6 +35,8 @@ const errorHandler = (err, req, res, next) => {
   return res.status(statusCode).json({
     success: false,
     message: err.message || "Internal server error",
+    ...(err.details ? { details: err.details } : {}),
+    ...(err.incompletePrerequisites ? { incompletePrerequisites: err.incompletePrerequisites } : {}),
   });
 };
 

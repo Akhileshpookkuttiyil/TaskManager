@@ -101,6 +101,43 @@ const deleteSubtask = async (req, res, next) => {
   }
 };
 
+const getTaskDependencies = async (req, res, next) => {
+  try {
+    const result = await taskService.getTaskDependencies(req.params.id, req.user._id);
+    sendSuccess(res, result);
+  } catch (error) {
+    next(error);
+  }
+};
+
+const getTaskDependents = async (req, res, next) => {
+  try {
+    const result = await taskService.getTaskDependents(req.params.id, req.user._id);
+    sendSuccess(res, result);
+  } catch (error) {
+    next(error);
+  }
+};
+
+const addTaskDependency = async (req, res, next) => {
+  try {
+    const result = await taskService.addTaskDependency(req.params.id, req.user._id, req.body);
+    sendSuccess(res, result, "Dependency added", 201);
+  } catch (error) {
+    next(error);
+  }
+};
+
+const removeTaskDependency = async (req, res, next) => {
+  try {
+    const targetId = req.params.dependencyId || req.params.targetId;
+    const result = await taskService.removeTaskDependency(req.params.id, targetId, req.user._id);
+    sendSuccess(res, result, "Dependency removed");
+  } catch (error) {
+    next(error);
+  }
+};
+
 module.exports = {
   getTasks,
   getTask,
@@ -113,4 +150,8 @@ module.exports = {
   createSubtask,
   updateSubtask,
   deleteSubtask,
+  getTaskDependencies,
+  getTaskDependents,
+  addTaskDependency,
+  removeTaskDependency,
 };

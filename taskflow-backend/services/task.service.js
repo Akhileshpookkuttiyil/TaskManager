@@ -358,6 +358,22 @@ const getTaskById = async (taskId, userId) => {
       subtasks: {
         orderBy: { createdAt: "asc" },
       },
+      dependencies: {
+        include: {
+          prerequisite: {
+            select: { id: true, title: true, status: true, priority: true, dueDate: true },
+          },
+        },
+        orderBy: { createdAt: "asc" },
+      },
+      prerequisites: {
+        include: {
+          task: {
+            select: { id: true, title: true, status: true, priority: true, dueDate: true },
+          },
+        },
+        orderBy: { createdAt: "asc" },
+      },
     },
   });
 
@@ -473,6 +489,43 @@ const updateTask = async (taskId, userId, data) => {
         error.statusCode = 400;
         throw error;
       }
+    }
+  }
+
+  // Blocked-task completion enforcement:
+  // A task cannot be marked completed if any of its prerequisites remain incomplete.
+  if (hasCompletedStatusChange(existingTask, taskData)) {
+    const incompletePrerequisites = await prisma.taskDependency.findMany({
+      where: {
+        taskId,
+        prerequisite: {
+          status: { not: TASK_STATUS.COMPLETED },
+        },
+      },
+      include: {
+        prerequisite: {
+          select: { id: true, title: true, status: true },
+        },
+      },
+    });
+
+    if (incompletePrerequisites.length > 0) {
+      const titles = incompletePrerequisites
+        .map((p) => `'${p.prerequisite.title}' (${p.prerequisite.status})`)
+        .join(", ");
+      const error = new Error(
+        `Cannot complete task: ${incompletePrerequisites.length} prerequisite(s) remain incomplete: ${titles}`
+      );
+      error.statusCode = 400;
+      error.incompletePrerequisites = incompletePrerequisites.map((p) => ({
+        id: p.prerequisite.id,
+        title: p.prerequisite.title,
+        status: p.prerequisite.status,
+      }));
+      error.details = {
+        incompletePrerequisites: error.incompletePrerequisites,
+      };
+      throw error;
     }
   }
 
@@ -761,6 +814,11 @@ const deleteTask = async (taskId, userId) => {
       type: ACTIVITY_TYPE.TASK_DELETED,
       taskTitle: task.title,
     });
+    await tx.taskDependency.deleteMany({
+      where: {
+        OR: [{ taskId }, { prerequisiteId: taskId }],
+      },
+    });
     await tx.task.delete({ where: { id: taskId } });
   });
 
@@ -919,6 +977,252 @@ const deleteSubtask = async (parentId, subtaskId, userId) => {
   };
 };
 
+const getTaskDependencies = async (taskId, userId) => {
+  ensureTaskId(taskId);
+
+  const task = await prisma.task.findFirst({
+    where: { id: taskId, userId },
+  });
+
+  if (!task) {
+    throw notFound();
+  }
+
+  const dependencies = await prisma.taskDependency.findMany({
+    where: { taskId },
+    include: {
+      prerequisite: {
+        select: {
+          id: true,
+          title: true,
+          status: true,
+          priority: true,
+          dueDate: true,
+          completedAt: true,
+        },
+      },
+    },
+    orderBy: { createdAt: "asc" },
+  });
+
+  const serializedDependencies = dependencies.map((d) => ({
+    id: d.id,
+    _id: d.id,
+    taskId: d.taskId,
+    prerequisiteId: d.prerequisiteId,
+    createdAt: d.createdAt,
+    prerequisite: d.prerequisite ? serializeTask(d.prerequisite) : null,
+  }));
+
+  const incompletePrerequisites = serializedDependencies.filter(
+    (d) => d.prerequisite && d.prerequisite.status !== TASK_STATUS.COMPLETED
+  );
+
+  return {
+    taskId,
+    dependencies: serializedDependencies,
+    prerequisites: serializedDependencies.map((d) => d.prerequisite).filter(Boolean),
+    isBlocked: incompletePrerequisites.length > 0,
+    incompleteCount: incompletePrerequisites.length,
+  };
+};
+
+const getTaskDependents = async (taskId, userId) => {
+  ensureTaskId(taskId);
+
+  const task = await prisma.task.findFirst({
+    where: { id: taskId, userId },
+  });
+
+  if (!task) {
+    throw notFound();
+  }
+
+  const dependents = await prisma.taskDependency.findMany({
+    where: { prerequisiteId: taskId },
+    include: {
+      task: {
+        select: {
+          id: true,
+          title: true,
+          status: true,
+          priority: true,
+          dueDate: true,
+          completedAt: true,
+        },
+      },
+    },
+    orderBy: { createdAt: "asc" },
+  });
+
+  const serializedDependents = dependents.map((d) => ({
+    id: d.id,
+    _id: d.id,
+    taskId: d.taskId,
+    prerequisiteId: d.prerequisiteId,
+    createdAt: d.createdAt,
+    task: d.task ? serializeTask(d.task) : null,
+  }));
+
+  return {
+    taskId,
+    dependents: serializedDependents,
+    dependentTasks: serializedDependents.map((d) => d.task).filter(Boolean),
+    total: serializedDependents.length,
+  };
+};
+
+const addTaskDependency = async (taskId, userId, data = {}) => {
+  ensureTaskId(taskId);
+
+  const prerequisiteId = data.prerequisiteId || data.dependencyId;
+  if (!prerequisiteId) {
+    const error = new Error("prerequisiteId is required");
+    error.statusCode = 400;
+    throw error;
+  }
+  ensureTaskId(prerequisiteId);
+
+  // Self-dependency check
+  if (taskId === prerequisiteId) {
+    const error = new Error("A task cannot depend on itself");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  // Verify task exists and belongs to user
+  const task = await prisma.task.findFirst({
+    where: { id: taskId, userId },
+  });
+  if (!task) {
+    throw notFound();
+  }
+
+  // Verify prerequisite exists and belongs to user (strict user isolation)
+  const prerequisite = await prisma.task.findFirst({
+    where: { id: prerequisiteId, userId },
+  });
+  if (!prerequisite) {
+    const error = new Error("Prerequisite task not found");
+    error.statusCode = 404;
+    throw error;
+  }
+
+  // Check duplicate dependency
+  const existingDependency = await prisma.taskDependency.findUnique({
+    where: {
+      taskId_prerequisiteId: {
+        taskId,
+        prerequisiteId,
+      },
+    },
+  });
+  if (existingDependency) {
+    const error = new Error("Task already depends on this prerequisite");
+    error.statusCode = 400;
+    throw error;
+  }
+
+  // Circular dependency check (direct and indirect cycle detection)
+  // Adding "taskId depends on prerequisiteId" creates a cycle IF AND ONLY IF
+  // prerequisiteId already depends on taskId (directly or transitively).
+  const queue = [prerequisiteId];
+  const visited = new Set([prerequisiteId]);
+
+  while (queue.length > 0) {
+    const currentId = queue.shift();
+
+    const currentDependencies = await prisma.taskDependency.findMany({
+      where: { taskId: currentId },
+      select: { prerequisiteId: true },
+    });
+
+    for (const dep of currentDependencies) {
+      if (dep.prerequisiteId === taskId) {
+        const error = new Error(
+          "Circular dependency detected: adding this prerequisite would create a dependency cycle"
+        );
+        error.statusCode = 400;
+        throw error;
+      }
+
+      if (!visited.has(dep.prerequisiteId)) {
+        visited.add(dep.prerequisiteId);
+        queue.push(dep.prerequisiteId);
+      }
+    }
+  }
+
+  // Create dependency
+  const dependency = await prisma.taskDependency.create({
+    data: {
+      taskId,
+      prerequisiteId,
+    },
+    include: {
+      task: {
+        select: { id: true, title: true, status: true },
+      },
+      prerequisite: {
+        select: { id: true, title: true, status: true },
+      },
+    },
+  });
+
+  return {
+    dependency: {
+      id: dependency.id,
+      _id: dependency.id,
+      taskId: dependency.taskId,
+      prerequisiteId: dependency.prerequisiteId,
+      createdAt: dependency.createdAt,
+      task: dependency.task ? serializeTask(dependency.task) : null,
+      prerequisite: dependency.prerequisite ? serializeTask(dependency.prerequisite) : null,
+    },
+  };
+};
+
+const removeTaskDependency = async (taskId, targetId, userId) => {
+  ensureTaskId(taskId);
+  ensureTaskId(targetId);
+
+  // Verify task exists and belongs to user
+  const task = await prisma.task.findFirst({
+    where: { id: taskId, userId },
+  });
+  if (!task) {
+    throw notFound();
+  }
+
+  // Target ID could be dependency id OR prerequisiteId
+  const dependency = await prisma.taskDependency.findFirst({
+    where: {
+      taskId,
+      OR: [
+        { id: targetId },
+        { prerequisiteId: targetId },
+      ],
+    },
+  });
+
+  if (!dependency) {
+    const error = new Error("Dependency not found");
+    error.statusCode = 404;
+    throw error;
+  }
+
+  await prisma.taskDependency.delete({
+    where: { id: dependency.id },
+  });
+
+  return {
+    success: true,
+    deletedDependencyId: dependency.id,
+    taskId,
+    prerequisiteId: dependency.prerequisiteId,
+  };
+};
+
 module.exports = {
   getTasks,
   getTaskById,
@@ -930,4 +1234,8 @@ module.exports = {
   createSubtask,
   updateSubtask,
   deleteSubtask,
+  getTaskDependencies,
+  getTaskDependents,
+  addTaskDependency,
+  removeTaskDependency,
 };

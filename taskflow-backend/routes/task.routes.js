@@ -12,6 +12,10 @@ const {
   createSubtask,
   updateSubtask,
   deleteSubtask,
+  getTaskDependencies,
+  getTaskDependents,
+  addTaskDependency,
+  removeTaskDependency,
 } = require("../controllers/task.controller");
 const { protect } = require("../middleware/auth");
 const {
@@ -19,6 +23,7 @@ const {
   updateTaskValidator,
   createSubtaskValidator,
   updateSubtaskValidator,
+  addDependencyValidator,
 } = require("../validators/task.validator");
 const { validate } = require("../middleware/validate");
 
@@ -33,6 +38,16 @@ router.get("/:id/subtasks", getSubtasks);
 router.post("/:id/subtasks", ...createSubtaskValidator, validate, createSubtask);
 router.put("/:id/subtasks/:subtaskId", ...updateSubtaskValidator, validate, updateSubtask);
 router.delete("/:id/subtasks/:subtaskId", deleteSubtask);
+
+// Dependencies & Prerequisites
+router.get("/:id/dependencies", getTaskDependencies);
+router.get("/:id/prerequisites", getTaskDependencies);
+router.post("/:id/dependencies", ...addDependencyValidator, validate, addTaskDependency);
+router.post("/:id/prerequisites", ...addDependencyValidator, validate, addTaskDependency);
+router.get("/:id/dependents", getTaskDependents);
+router.delete("/:id/dependencies/:targetId", removeTaskDependency);
+router.delete("/:id/prerequisites/:targetId", removeTaskDependency);
+
 router.post("/", ...createTaskValidator, validate, createTask);
 router.put("/:id", ...updateTaskValidator, validate, updateTask);
 router.delete("/:id", deleteTask);

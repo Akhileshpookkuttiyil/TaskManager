@@ -66,6 +66,27 @@ const updateSubtaskValidator = [
   body("description").optional().isLength({ max: 2000 }).withMessage("Description too long"),
 ];
 
+const addDependencyValidator = [
+  body().custom((value, { req }) => {
+    const prereqId = req.body?.prerequisiteId || req.body?.dependencyId;
+    if (!prereqId) {
+      throw new Error("prerequisiteId is required");
+    }
+    const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    if (!UUID_PATTERN.test(prereqId)) {
+      throw new Error("Prerequisite ID must be a valid UUID");
+    }
+    return true;
+  }),
+];
+
 const taskValidator = createTaskValidator;
 
-module.exports = { taskValidator, createTaskValidator, updateTaskValidator, createSubtaskValidator, updateSubtaskValidator };
+module.exports = {
+  taskValidator,
+  createTaskValidator,
+  updateTaskValidator,
+  createSubtaskValidator,
+  updateSubtaskValidator,
+  addDependencyValidator,
+};

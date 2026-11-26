@@ -72,6 +72,31 @@ const serializeTask = (task) => {
     serialized.subtasks = serializedSubtasks;
   }
 
+  if (Array.isArray(task.dependencies)) {
+    serialized.dependencies = task.dependencies.map((d) => ({
+      id: d.id,
+      _id: d.id,
+      taskId: d.taskId,
+      prerequisiteId: d.prerequisiteId,
+      createdAt: d.createdAt,
+      prerequisite: d.prerequisite ? serializeTask(d.prerequisite) : undefined,
+    }));
+    serialized.isBlocked = task.dependencies.some(
+      (d) => d.prerequisite && d.prerequisite.status !== "completed"
+    );
+  }
+
+  if (Array.isArray(task.prerequisites)) {
+    serialized.prerequisites = task.prerequisites.map((d) => ({
+      id: d.id,
+      _id: d.id,
+      taskId: d.taskId,
+      prerequisiteId: d.prerequisiteId,
+      createdAt: d.createdAt,
+      task: d.task ? serializeTask(d.task) : undefined,
+    }));
+  }
+
   if (task.userId) {
     serialized.user = task.userId;
   }
