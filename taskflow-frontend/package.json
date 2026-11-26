@@ -8,7 +8,8 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test": "node test_phase5_sprint2.mjs && node test_phase5_sprint3_verification.mjs"
+    "test:task3.3": "node test_phase5_sprint3_task3_3_frontend.mjs",
+    "test": "node test_phase5_sprint2.mjs && node test_phase5_sprint3_verification.mjs && node test_phase5_sprint3_task3_3_frontend.mjs"
   },
   "dependencies": {
     "@hello-pangea/dnd": "^18.0.1",
