@@ -53,6 +53,11 @@ export const KanbanView = ({ tasks = [], onEdit, onDelete, onComplete, onDuplica
     const task = tasks.find((t) => t._id === taskId);
     if (!task) return;
 
+    if (newStatus === "completed" && task.isBlocked) {
+      toast.error("Cannot complete task: blocked by incomplete prerequisites.");
+      return;
+    }
+
     // Optimistically update status
     const updateResult = await dispatch(
       updateTask({
@@ -64,7 +69,7 @@ export const KanbanView = ({ tasks = [], onEdit, onDelete, onComplete, onDuplica
     if (updateTask.fulfilled.match(updateResult)) {
       toast.success(`Moved to ${newStatus.replace("_", " ")}`);
     } else {
-      toast.error("Failed to move task.");
+      toast.error(updateResult.payload || "Failed to move task.");
     }
   };
 

@@ -217,6 +217,10 @@ export const TasksPage = () => {
 
   const handleComplete = useCallback(async (task) => {
     const nextStatus = task.status === "completed" ? "pending" : "completed";
+    if (nextStatus === "completed" && task.isBlocked) {
+      toast.error("Cannot complete task: blocked by incomplete prerequisites.");
+      return;
+    }
     const result = await dispatch(updateTask({ id: task._id, data: { ...task, status: nextStatus } }));
     if (updateTask.fulfilled.match(result)) {
       toast.success(nextStatus === "completed" ? "Task completed." : "Task marked pending.");
@@ -226,7 +230,7 @@ export const TasksPage = () => {
         dispatch(fetchTasks({ ...filters, all: true, force: true }));
       }
     } else {
-      toast.error("Failed to update task.");
+      toast.error(result.payload || "Failed to update task.");
     }
   }, [dispatch, viewMode, filters]);
 
@@ -285,15 +289,28 @@ export const TasksPage = () => {
   }, []);
 
   const handleBulkComplete = async () => {
+    const blockedSelected = selectedIds.filter((id) => {
+      const task = items.find((t) => t._id === id);
+      return task?.isBlocked;
+    });
+    if (blockedSelected.length > 0) {
+      toast.error(`Cannot complete ${blockedSelected.length} blocked task(s). Complete their prerequisites first.`);
+      return;
+    }
     setLoadingBulk(true);
     try {
-      await Promise.all(
+      const results = await Promise.all(
         selectedIds.map((id) => {
           const task = items.find((t) => t._id === id);
           return dispatch(updateTask({ id, data: { ...task, status: "completed" } }));
         })
       );
-      toast.success(`Completed ${selectedIds.length} tasks.`);
+      const failed = results.find((r) => !updateTask.fulfilled.match(r));
+      if (failed) {
+        toast.error(failed.payload || "Failed to complete some tasks.");
+      } else {
+        toast.success(`Completed ${selectedIds.length} tasks.`);
+      }
       setSelectedIds([]);
       setIsSelectMode(false);
       dispatch(fetchTasks({ ...filters, force: true }));

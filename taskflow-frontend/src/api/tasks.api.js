@@ -69,4 +69,8 @@ export const tasksApi = {
   createSubtask: (taskId, data) => api.post(`/tasks/${taskId}/subtasks`, data),
   updateSubtask: (taskId, subtaskId, data) => api.put(`/tasks/${taskId}/subtasks/${subtaskId}`, data),
   deleteSubtask: (taskId, subtaskId) => api.delete(`/tasks/${taskId}/subtasks/${subtaskId}`),
+  getDependencies: (taskId) => api.get(`/tasks/${taskId}/dependencies`),
+  getDependents: (taskId) => api.get(`/tasks/${taskId}/dependents`),
+  addDependency: (taskId, prerequisiteId) => api.post(`/tasks/${taskId}/dependencies`, { prerequisiteId }),
+  removeDependency: (taskId, targetId) => api.delete(`/tasks/${taskId}/dependencies/${targetId}`),
 };

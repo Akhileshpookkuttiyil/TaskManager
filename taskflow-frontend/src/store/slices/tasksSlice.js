@@ -309,6 +309,17 @@ const tasksSlice = createSlice({
       if (state.dashboard?.tasks) state.dashboard.tasks.forEach(updateTaskItem);
       if (state.analytics?.tasks) state.analytics.tasks.forEach(updateTaskItem);
     },
+    updateTaskBlockedStatus(state, action) {
+      const { taskId, isBlocked } = action.payload;
+      const updateItem = (t) => {
+        if (t && (t._id === taskId || t.id === taskId)) {
+          t.isBlocked = isBlocked;
+        }
+      };
+      state.items.forEach(updateItem);
+      if (state.dashboard?.tasks) state.dashboard.tasks.forEach(updateItem);
+      if (state.analytics?.tasks) state.analytics.tasks.forEach(updateItem);
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -432,6 +443,14 @@ const tasksSlice = createSlice({
   },
 });
 
-export const { setFilters, setPage, clearError, stagePendingDelete, restorePendingTask, finalizeDelete, updateParentProgress } =
-  tasksSlice.actions;
+export const {
+  setFilters,
+  setPage,
+  clearError,
+  stagePendingDelete,
+  restorePendingTask,
+  finalizeDelete,
+  updateParentProgress,
+  updateTaskBlockedStatus,
+} = tasksSlice.actions;
 export default tasksSlice.reducer;

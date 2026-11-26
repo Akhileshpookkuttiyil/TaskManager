@@ -1,5 +1,5 @@
 import { memo, useMemo } from "react";
-import { Check, Tag, Trash2, Clock, Repeat, CheckSquare, Copy } from "lucide-react";
+import { Check, Tag, Trash2, Clock, Repeat, CheckSquare, Copy, Lock } from "lucide-react";
 import { formatDateTimeValue, parseDateTimeValue } from "../../utils/dates";
 import { extractChecklistProgress } from "../../utils/markdown";
 
@@ -45,7 +45,14 @@ export const TaskCard = memo(({ task, onEdit, onDelete, onComplete, onDuplicate,
                 }
               }}
               className="flex h-11 w-11 shrink-0 items-center justify-center -m-3.5 focus-ring rounded-full"
-              aria-label={isCompleted ? "Mark task incomplete" : "Mark task complete"}
+              aria-label={
+                isCompleted
+                  ? "Mark task incomplete"
+                  : task.isBlocked
+                  ? "Cannot complete: blocked by incomplete prerequisites"
+                  : "Mark task complete"
+              }
+              title={task.isBlocked && !isCompleted ? "Blocked by incomplete prerequisites" : undefined}
             >
               <span className={`flex h-4.5 w-4.5 items-center justify-center rounded transition-colors ${
                 isCompleted
@@ -103,6 +110,17 @@ export const TaskCard = memo(({ task, onEdit, onDelete, onComplete, onDuplicate,
               <span className="inline-flex items-center gap-1 rounded-md bg-elevated border border-subtle text-secondary px-2 py-0.5 text-[10px] font-semibold">
                 <Clock size={11} />
                 Alert
+              </span>
+            )}
+
+            {task.isBlocked && !isCompleted && !isArchived && (
+              <span
+                data-testid="blocked-badge"
+                className="inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-semibold border bg-amber-500/10 border-amber-500/20 text-amber-700 dark:text-amber-300"
+                title="Blocked by incomplete prerequisites"
+              >
+                <Lock size={10} />
+                <span>Blocked</span>
               </span>
             )}
 

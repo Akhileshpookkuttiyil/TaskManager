@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef, useCallback } from "react";
-import { useDispatch } from "react-redux";
+import { useDispatch, useSelector } from "react-redux";
 import {
   X,
   CheckSquare,
@@ -17,18 +17,21 @@ import {
   Trash2,
   ListTree,
   Check,
+  Lock,
 } from "lucide-react";
-import { createTask, updateTask, updateParentProgress } from "../../store/slices/tasksSlice";
+import { createTask, updateTask, updateParentProgress, updateTaskBlockedStatus } from "../../store/slices/tasksSlice";
 import { tasksApi } from "../../api/tasks.api";
 import { activitiesApi } from "../../api/activities.api";
 import { formatDateTimeValue, toDateTimeLocalValue, toIsoDateTimeString } from "../../utils/dates";
 import { parseMarkdown, toggleChecklistItem } from "../../utils/markdown";
 import { TASK_TEMPLATES } from "../../utils/templates";
 import { usePomodoro } from "../../context/pomodoro-context";
+import { TaskDependencies } from "./TaskDependencies";
 import toast from "react-hot-toast";
 
 export const TaskDetailDrawer = ({ isOpen, onClose, task, onSaved, onDuplicate }) => {
   const dispatch = useDispatch();
+  const allTasks = useSelector((state) => state.tasks.items || []);
   const { startFocusOnTask } = usePomodoro();
 
   const isCreateMode = !task;
@@ -37,6 +40,7 @@ export const TaskDetailDrawer = ({ isOpen, onClose, task, onSaved, onDuplicate }
   const [description, setDescription] = useState("");
   const [title, setTitle] = useState("");
   const [status, setStatus] = useState("pending");
+  const [isBlocked, setIsBlocked] = useState(Boolean(task?.isBlocked));
   const [priority, setPriority] = useState("medium");
   const [recurrence, setRecurrence] = useState("none");
   const [dueDate, setDueDate] = useState("");
@@ -87,6 +91,7 @@ export const TaskDetailDrawer = ({ isOpen, onClose, task, onSaved, onDuplicate }
             setDescription(task.description || "");
             descriptionRef.current = task.description || "";
             setStatus(task.status || "pending");
+            setIsBlocked(Boolean(task.isBlocked));
             setPriority(task.priority || "medium");
             setRecurrence(task.recurrence || "none");
             setDueDate(toDateTimeLocalValue(task.dueDate));
@@ -112,6 +117,7 @@ export const TaskDetailDrawer = ({ isOpen, onClose, task, onSaved, onDuplicate }
             setDescription("");
             descriptionRef.current = "";
             setStatus("pending");
+            setIsBlocked(false);
             setPriority(defaultPriority);
             setRecurrence("none");
             setDueDate(initialDueDate);
@@ -373,11 +379,25 @@ export const TaskDetailDrawer = ({ isOpen, onClose, task, onSaved, onDuplicate }
     };
   }, [isOpen, task?._id, fetchTaskActivities, fetchSubtasks]);
 
+  const handleDependenciesChanged = useCallback(
+    ({ isBlocked: blocked }) => {
+      setIsBlocked(blocked);
+      if (task?._id) {
+        dispatch(updateTaskBlockedStatus({ taskId: task._id, isBlocked: blocked }));
+      }
+    },
+    [dispatch, task?._id]
+  );
+
   // Handle direct updates in Edit Mode, or update local states in Create Mode
   const handleFieldChange = async (name, value) => {
     if (name === "title") {
       setTitle(value);
     } else if (name === "status") {
+      if (value === "completed" && isBlocked) {
+        toast.error("Cannot complete task: blocked by incomplete prerequisites.");
+        return;
+      }
       setStatus(value);
     } else if (name === "priority") {
       setPriority(value);
@@ -410,6 +430,11 @@ export const TaskDetailDrawer = ({ isOpen, onClose, task, onSaved, onDuplicate }
       if (updateTask.fulfilled.match(result)) {
         if (onSaved) onSaved();
         fetchTaskActivities(task._id);
+      } else {
+        toast.error(result.payload || "Failed to update task.");
+        if (name === "status") {
+          setStatus(task.status || "pending");
+        }
       }
     }
   };
@@ -675,7 +700,19 @@ export const TaskDetailDrawer = ({ isOpen, onClose, task, onSaved, onDuplicate }
           {/* Parameters Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 rounded-xl border border-neutral p-4">
             <div>
-              <label htmlFor="drawer-status" className="label">Status</label>
+              <div className="flex items-center justify-between mb-1">
+                <label htmlFor="drawer-status" className="label mb-0">Status</label>
+                {isBlocked && (
+                  <span
+                    data-testid="drawer-blocked-badge"
+                    className="flex items-center gap-1 text-[11px] font-semibold text-amber-600 dark:text-amber-400"
+                    title="This task cannot be completed until its prerequisites are completed."
+                  >
+                    <Lock size={11} />
+                    Blocked
+                  </span>
+                )}
+              </div>
               <select
                 id="drawer-status"
                 value={status}
@@ -684,9 +721,20 @@ export const TaskDetailDrawer = ({ isOpen, onClose, task, onSaved, onDuplicate }
               >
                 <option value="pending">Pending</option>
                 <option value="in_progress">In Progress</option>
-                <option value="completed">Completed</option>
+                <option value="completed" disabled={isBlocked}>
+                  Completed {isBlocked ? "(Blocked)" : ""}
+                </option>
                 <option value="archived">Archived</option>
               </select>
+              {isBlocked && (
+                <p
+                  data-testid="drawer-blocked-notice"
+                  className="mt-1 text-[11px] text-amber-600 dark:text-amber-400 flex items-center gap-1"
+                >
+                  <AlertCircle size={11} className="shrink-0" />
+                  Prerequisites must be completed first
+                </p>
+              )}
             </div>
 
             <div>
@@ -1023,6 +1071,16 @@ export const TaskDetailDrawer = ({ isOpen, onClose, task, onSaved, onDuplicate }
                 </div>
               )}
             </div>
+          )}
+
+          {/* Task Dependencies Section */}
+          {!isCreateMode && task && (
+            <TaskDependencies
+              taskId={task._id}
+              currentTask={task}
+              allTasks={allTasks}
+              onDependenciesChanged={handleDependenciesChanged}
+            />
           )}
 
           {/* Audit History Timeline section */}

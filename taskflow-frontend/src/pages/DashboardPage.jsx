@@ -47,6 +47,10 @@ export const DashboardPage = () => {
   }, [dispatch]);
 
   const handleCompleteTask = async (task) => {
+    if (task.isBlocked) {
+      toast.error("Cannot complete task: blocked by incomplete prerequisites.");
+      return;
+    }
     const result = await dispatch(
       updateTask({
         id: task._id,
@@ -59,7 +63,7 @@ export const DashboardPage = () => {
       dispatch(fetchDashboardTasks({ force: true }));
       dispatch(fetchRecentActivities({ limit: 5 }));
     } else {
-      toast.error("Failed to complete task.");
+      toast.error(result.payload || "Failed to complete task.");
     }
   };
 
