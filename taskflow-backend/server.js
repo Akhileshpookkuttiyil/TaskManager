@@ -8,6 +8,22 @@ const { errorHandler } = require("./middleware/errorHandler");
 
 dotenv.config();
 
+const validateEnv = () => {
+  const required = ["DATABASE_URL", "JWT_SECRET"];
+  const missing = required.filter((key) => !process.env[key]);
+  if (missing.length > 0) {
+    const errorMsg = `[FATAL] Missing required environment variable(s): ${missing.join(", ")}`;
+    if (process.env.NODE_ENV === "production") {
+      console.error(errorMsg);
+      process.exit(1);
+    } else {
+      console.warn(`[WARN] ${errorMsg}`);
+    }
+  }
+};
+
+validateEnv();
+
 const app = express();
 
 const defaultAllowedOrigins = [
@@ -55,7 +71,7 @@ if (process.env.NODE_ENV !== "production") {
 
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 500,
+  max: process.env.NODE_ENV === "production" ? 500 : 50000,
   message: { success: false, message: "Too many requests, please try again later" },
 });
 app.use("/api", limiter);

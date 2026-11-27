@@ -9,7 +9,7 @@ const { validate } = require("../middleware/validate");
 // Tighter than the global API limiter — slows down credential stuffing / brute force
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 10,
+  max: process.env.NODE_ENV === "production" ? 10 : 500,
   message: { success: false, message: "Too many attempts, please try again later" },
 });
 

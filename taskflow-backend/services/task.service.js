@@ -330,6 +330,13 @@ const getTasks = async (userId, queryParams) => {
           select: { id: true, status: true, title: true },
           orderBy: { createdAt: "asc" },
         },
+        dependencies: {
+          include: {
+            prerequisite: {
+              select: { id: true, title: true, status: true, priority: true, dueDate: true },
+            },
+          },
+        },
       },
     }),
     prisma.task.count({ where }),
