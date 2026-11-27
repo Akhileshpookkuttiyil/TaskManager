@@ -4,3 +4,5 @@ dist/
 generated/
 .DS_Store
 *.log
+coverage/
+.vitest/
