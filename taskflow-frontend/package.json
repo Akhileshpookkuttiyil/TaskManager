@@ -14,6 +14,10 @@
     "test:custom": "node test_phase5_sprint2.mjs && node test_phase5_sprint3_verification.mjs && node test_phase5_sprint3_task3_3_frontend.mjs",
     "test:legacy": "node test_phase5_sprint2.mjs && node test_phase5_sprint3_verification.mjs && node test_phase5_sprint3_task3_3_frontend.mjs",
     "test:task3.3": "node test_phase5_sprint3_task3_3_frontend.mjs",
+    "test:e2e": "playwright test",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:debug": "playwright test --debug",
     "test:all": "vitest run && npm run test:custom"
   },
   "dependencies": {
@@ -31,6 +35,7 @@
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "@playwright/test": "^1.65.1",
     "@testing-library/jest-dom": "^8.0.0",
     "@testing-library/react": "^16.3.3",
     "@types/react": "^19.2.14",
