@@ -1,23 +1,18 @@
 import { X } from "lucide-react";
 import { useEffect } from "react";
 import { createPortal } from "react-dom";
+import { useFocusTrap } from "../../hooks/useFocusTrap";
 
 export const Modal = ({ isOpen, onClose, title, children, description }) => {
+  const containerRef = useFocusTrap(isOpen, onClose);
+
   useEffect(() => {
     if (!isOpen) return undefined;
-
-    const handleKeyDown = (event) => {
-      if (event.key === "Escape") onClose();
-    };
-
     document.body.style.overflow = "hidden";
-    window.addEventListener("keydown", handleKeyDown);
-
     return () => {
       document.body.style.overflow = "";
-      window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [isOpen, onClose]);
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -26,15 +21,18 @@ export const Modal = ({ isOpen, onClose, title, children, description }) => {
       <button
         type="button"
         className="absolute inset-0 bg-neutral-950/55"
-        aria-label="Close dialog"
+        aria-label="Close dialog backdrop"
         onClick={onClose}
       />
 
       <div
+        ref={containerRef}
         role="dialog"
         aria-modal="true"
         aria-labelledby="modal-title"
-        className="card relative z-10 w-full max-w-lg overflow-hidden"
+        aria-describedby={description ? "modal-description" : undefined}
+        tabIndex="-1"
+        className="card relative z-10 w-full max-w-lg overflow-hidden focus:outline-none"
         style={{ boxShadow: "var(--shadow-elevated)" }}
       >
         <div className="flex items-start justify-between gap-4 border-b border-neutral-200 px-5 py-4 dark:border-neutral-800">
@@ -43,17 +41,19 @@ export const Modal = ({ isOpen, onClose, title, children, description }) => {
               {title}
             </h2>
             {description ? (
-              <p className="mt-0.5 text-sm text-neutral-500 dark:text-neutral-400">{description}</p>
+              <p id="modal-description" className="mt-0.5 text-sm text-neutral-500 dark:text-neutral-400">
+                {description}
+              </p>
             ) : null}
           </div>
 
           <button
             type="button"
             onClick={onClose}
-            className="btn-ghost h-8 w-8 shrink-0 px-0 text-neutral-400"
-            aria-label="Close"
+            className="btn-ghost h-8 w-8 shrink-0 px-0 text-neutral-400 focus-ring"
+            aria-label="Close dialog"
           >
-            <X size={16} />
+            <X size={16} aria-hidden="true" />
           </button>
         </div>
 

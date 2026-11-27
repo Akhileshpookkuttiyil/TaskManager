@@ -10,6 +10,8 @@ export const Spinner = ({ size = "md" }) => {
       role="status"
       aria-label="Loading"
       className={`${sizes[size]} animate-spin rounded-full border-neutral-300 border-t-neutral-950 dark:border-neutral-800 dark:border-t-white`}
-    />
+    >
+      <span className="sr-only">Loading...</span>
+    </div>
   );
 };

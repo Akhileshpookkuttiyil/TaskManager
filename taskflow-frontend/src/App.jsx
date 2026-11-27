@@ -5,6 +5,7 @@ import { fetchCurrentUser } from "./store/slices/authSlice";
 import { AppLayout } from "./components/layout/AppLayout";
 import { ProtectedRoute } from "./components/auth/ProtectedRoute";
 import { Spinner } from "./components/ui/Spinner";
+import { ErrorBoundary } from "./components/ui/ErrorBoundary";
 
 const LoginPage = lazy(() => import("./pages/LoginPage").then((m) => ({ default: m.LoginPage })));
 const RegisterPage = lazy(() => import("./pages/RegisterPage").then((m) => ({ default: m.RegisterPage })));
@@ -39,42 +40,48 @@ const App = () => {
   }
 
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route
-          path="/login"
-          element={
-            <Suspense fallback={<RouteLoading />}>
-              <LoginPage />
-            </Suspense>
-          }
-        />
-        <Route
-          path="/register"
-          element={
-            <Suspense fallback={<RouteLoading />}>
-              <RegisterPage />
-            </Suspense>
-          }
-        />
-        <Route
-          element={
-            <ProtectedRoute>
-              <Suspense fallback={<RouteLoading />}>
-                <AppLayout />
-              </Suspense>
-            </ProtectedRoute>
-          }
-        >
-          <Route path="/" element={<DashboardPage />} />
-          <Route path="/tasks" element={<TasksPage />} />
-          <Route path="/notifications" element={<NotificationsPage />} />
-          <Route path="/analytics" element={<AnalyticsPage />} />
-          <Route path="/profile" element={<ProfilePage />} />
-        </Route>
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </BrowserRouter>
+    <ErrorBoundary name="RootApp" variant="page">
+      <BrowserRouter>
+        <Routes>
+          <Route
+            path="/login"
+            element={
+              <ErrorBoundary name="LoginPage" variant="page">
+                <Suspense fallback={<RouteLoading />}>
+                  <LoginPage />
+                </Suspense>
+              </ErrorBoundary>
+            }
+          />
+          <Route
+            path="/register"
+            element={
+              <ErrorBoundary name="RegisterPage" variant="page">
+                <Suspense fallback={<RouteLoading />}>
+                  <RegisterPage />
+                </Suspense>
+              </ErrorBoundary>
+            }
+          />
+          <Route
+            element={
+              <ProtectedRoute>
+                <Suspense fallback={<RouteLoading />}>
+                  <AppLayout />
+                </Suspense>
+              </ProtectedRoute>
+            }
+          >
+            <Route path="/" element={<DashboardPage />} />
+            <Route path="/tasks" element={<TasksPage />} />
+            <Route path="/notifications" element={<NotificationsPage />} />
+            <Route path="/analytics" element={<AnalyticsPage />} />
+            <Route path="/profile" element={<ProfilePage />} />
+          </Route>
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+      </BrowserRouter>
+    </ErrorBoundary>
   );
 };
 

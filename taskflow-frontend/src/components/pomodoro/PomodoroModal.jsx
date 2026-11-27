@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { usePomodoro } from "../../context/pomodoro-context";
 import { formatTimerDisplay } from "../../utils/pomodoro";
+import { useFocusTrap } from "../../hooks/useFocusTrap";
 
 export const PomodoroModal = () => {
   const {
@@ -46,6 +47,8 @@ export const PomodoroModal = () => {
   const [showSettings, setShowSettings] = useState(false);
   const [showTaskPicker, setShowTaskPicker] = useState(false);
 
+  const containerRef = useFocusTrap(isModalOpen, closeModal);
+
   // Available tasks to associate (incomplete tasks)
   const availableTasks = useMemo(() => {
     return tasks.filter((t) => t.status !== "completed" && t.status !== "archived");
@@ -73,10 +76,12 @@ export const PomodoroModal = () => {
 
       {/* Modal Dialog */}
       <div
+        ref={containerRef}
         role="dialog"
         aria-modal="true"
         aria-label="Pomodoro Focus Timer"
-        className="relative z-10 flex w-full max-w-md flex-col overflow-hidden rounded-2xl border border-neutral bg-surface shadow-elevated animate-in fade-in zoom-in-95 duration-150"
+        tabIndex="-1"
+        className="relative z-10 flex w-full max-w-md flex-col overflow-hidden rounded-2xl border border-neutral bg-surface shadow-elevated animate-in fade-in zoom-in-95 duration-150 focus:outline-none"
       >
         {/* Header */}
         <div className="flex h-14 items-center justify-between border-b border-subtle px-5">

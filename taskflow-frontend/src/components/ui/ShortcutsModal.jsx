@@ -1,6 +1,9 @@
 import { X, Keyboard } from "lucide-react";
+import { useFocusTrap } from "../../hooks/useFocusTrap";
 
 export const ShortcutsModal = ({ isOpen, onClose }) => {
+  const containerRef = useFocusTrap(isOpen, onClose);
+
   if (!isOpen) return null;
 
   const shortcutsList = [
@@ -13,22 +16,37 @@ export const ShortcutsModal = ({ isOpen, onClose }) => {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       {/* Overlay Backdrop */}
-      <div className="fixed inset-0 bg-neutral-950/40 backdrop-blur-[1px] transition-opacity" onClick={onClose} />
+      <div
+        className="fixed inset-0 bg-neutral-950/40 backdrop-blur-[1px] transition-opacity"
+        onClick={onClose}
+        aria-hidden="true"
+      />
 
       {/* Shortcuts content */}
-      <div className="relative w-full max-w-sm rounded-2xl bg-white p-5 dark:bg-neutral-950 border border-neutral-100 dark:border-neutral-900 animate-in zoom-in-95 duration-150" style={{ boxShadow: "var(--shadow-elevated)" }}>
-        
+      <div
+        ref={containerRef}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="shortcuts-modal-title"
+        tabIndex="-1"
+        className="relative w-full max-w-sm rounded-2xl bg-white p-5 dark:bg-neutral-950 border border-neutral-100 dark:border-neutral-900 animate-in zoom-in-95 duration-150 focus:outline-none"
+        style={{ boxShadow: "var(--shadow-elevated)" }}
+      >
         {/* Header */}
         <div className="flex items-center justify-between border-b border-neutral-100 pb-3 dark:border-neutral-900">
           <div className="flex items-center gap-2 text-neutral-800 dark:text-white">
-            <Keyboard size={16} className="text-neutral-500 dark:text-neutral-400" />
-            <h3 className="text-sm font-bold">Keyboard Shortcuts</h3>
+            <Keyboard size={16} className="text-neutral-500 dark:text-neutral-400" aria-hidden="true" />
+            <h3 id="shortcuts-modal-title" className="text-sm font-bold">
+              Keyboard Shortcuts
+            </h3>
           </div>
           <button
+            type="button"
             onClick={onClose}
-            className="btn-ghost h-7 w-7 p-0 text-neutral-400 hover:text-neutral-900 dark:hover:text-white"
+            className="btn-ghost h-7 w-7 p-0 text-neutral-400 hover:text-neutral-900 dark:hover:text-white focus-ring"
+            aria-label="Close shortcuts dialog"
           >
-            <X size={15} />
+            <X size={15} aria-hidden="true" />
           </button>
         </div>
 

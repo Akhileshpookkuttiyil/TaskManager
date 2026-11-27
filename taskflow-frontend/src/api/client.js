@@ -28,9 +28,18 @@ api.interceptors.response.use(
     if (error.response?.status === 401 && !isAuthMe) {
       localStorage.removeItem("token");
 
-      if (window.location.pathname !== "/login") {
+      if (typeof window !== "undefined" && window.location?.pathname !== "/login") {
         window.location.assign("/login");
       }
+    }
+
+    // Attach safe userMessage for user-facing feedback without sensitive details
+    if (!error.response) {
+      error.userMessage = "Network error: unable to connect to the server. Please check your internet connection.";
+    } else if (error.response.status >= 500) {
+      error.userMessage = "A server error occurred. Please try again later.";
+    } else if (error.response.data?.message) {
+      error.userMessage = error.response.data.message;
     }
 
     return Promise.reject(error);

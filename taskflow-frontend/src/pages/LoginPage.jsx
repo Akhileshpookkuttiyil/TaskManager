@@ -117,8 +117,10 @@ export const LoginPage = () => {
             placeholder="you@example.com"
             className={`input ${errors.email ? "input-error" : ""}`}
             autoComplete="email"
+            aria-invalid={Boolean(errors.email)}
+            aria-describedby={errors.email ? "login-email-error" : undefined}
           />
-          <FieldError message={errors.email} />
+          <FieldError id="login-email-error" message={errors.email} />
         </div>
 
         <div>
@@ -135,17 +137,19 @@ export const LoginPage = () => {
               placeholder="Enter your password"
               className={`input pr-11 ${errors.password ? "input-error" : ""}`}
               autoComplete="current-password"
+              aria-invalid={Boolean(errors.password)}
+              aria-describedby={errors.password ? "login-password-error" : undefined}
             />
             <button
               type="button"
               onClick={() => setShowPassword((value) => !value)}
-              className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-md p-1.5 text-muted transition-colors hover:bg-hover hover:text-primary"
+              className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-md p-1.5 text-muted transition-colors hover:bg-hover hover:text-primary focus-ring"
               aria-label={showPassword ? "Hide password" : "Show password"}
             >
-              {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+              {showPassword ? <EyeOff size={16} aria-hidden="true" /> : <Eye size={16} aria-hidden="true" />}
             </button>
           </div>
-          <FieldError message={errors.password} />
+          <FieldError id="login-password-error" message={errors.password} />
         </div>
 
         <button type="submit" disabled={loading} className="btn-primary w-full">

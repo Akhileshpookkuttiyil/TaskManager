@@ -27,6 +27,7 @@ import { parseMarkdown, toggleChecklistItem } from "../../utils/markdown";
 import { TASK_TEMPLATES } from "../../utils/templates";
 import { usePomodoro } from "../../context/pomodoro-context";
 import { TaskDependencies } from "./TaskDependencies";
+import { ErrorBoundary } from "../ui/ErrorBoundary";
 import toast from "react-hot-toast";
 
 export const TaskDetailDrawer = ({ isOpen, onClose, task, onSaved, onDuplicate }) => {
@@ -562,10 +563,22 @@ export const TaskDetailDrawer = ({ isOpen, onClose, task, onSaved, onDuplicate }
   return (
     <div className="fixed inset-0 z-50 flex justify-end">
       {/* Drawer overlay */}
-      <div className="fixed inset-0 bg-neutral-950/40 backdrop-blur-[1px] transition-opacity" onClick={handleClose} />
+      <div
+        className="fixed inset-0 bg-neutral-950/40 backdrop-blur-[1px] transition-opacity"
+        onClick={handleClose}
+        aria-hidden="true"
+      />
 
       {/* Drawer Container */}
-      <div id="task-detail-drawer" className="relative z-10 flex h-full w-full flex-col bg-app sm:w-[500px] animate-in slide-in-from-right duration-250" style={{ boxShadow: "var(--shadow-elevated)" }}>
+      <div
+        id="task-detail-drawer"
+        role="dialog"
+        aria-modal="true"
+        aria-label={isCreateMode ? "New Task" : "Task Details"}
+        tabIndex="-1"
+        className="relative z-10 flex h-full w-full flex-col bg-app sm:w-[500px] animate-in slide-in-from-right duration-250 focus:outline-none"
+        style={{ boxShadow: "var(--shadow-elevated)" }}
+      >
 
         {/* Drawer Header */}
         <div className="flex h-16 items-center justify-between border-b border-neutral px-5 shrink-0">
@@ -910,6 +923,7 @@ export const TaskDetailDrawer = ({ isOpen, onClose, task, onSaved, onDuplicate }
                 <input
                   type="text"
                   placeholder="Add a subtask..."
+                  aria-label="New subtask title"
                   value={newSubtaskTitle}
                   onChange={(e) => setNewSubtaskTitle(e.target.value)}
                   disabled={addingSubtask}
@@ -1077,11 +1091,13 @@ export const TaskDetailDrawer = ({ isOpen, onClose, task, onSaved, onDuplicate }
 
           {/* Task Dependencies Section */}
           {!isCreateMode && task && (
-            <TaskDependencies
-              taskId={task._id}
-              allTasks={allTasks}
-              onDependenciesChanged={handleDependenciesChanged}
-            />
+            <ErrorBoundary name="TaskDependencies" variant="section">
+              <TaskDependencies
+                taskId={task._id}
+                allTasks={allTasks}
+                onDependenciesChanged={handleDependenciesChanged}
+              />
+            </ErrorBoundary>
           )}
 
           {/* Audit History Timeline section */}

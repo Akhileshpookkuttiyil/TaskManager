@@ -8,6 +8,7 @@ import { CommandPalette } from "../ui/CommandPalette";
 import { ShortcutsModal } from "../ui/ShortcutsModal";
 import { PomodoroProvider } from "../../context/PomodoroContext";
 import { PomodoroModal } from "../pomodoro/PomodoroModal";
+import { ErrorBoundary } from "../ui/ErrorBoundary";
 
 export const AppLayout = () => {
   const navigate = useNavigate();
@@ -52,6 +53,14 @@ export const AppLayout = () => {
   return (
     <PomodoroProvider>
       <div className="app-shell min-h-screen min-[1025px]:flex">
+        {/* WCAG 2.2 Accessible Skip to Content Link */}
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-3 focus:left-3 focus:z-[100] focus:rounded-md focus:bg-[var(--text-primary)] focus:text-[var(--bg-app)] focus:px-4 focus:py-2 focus:text-xs focus:font-bold focus:shadow-lg focus:outline-none focus:ring-2 focus:ring-focus focus:ring-offset-2"
+        >
+          Skip to main content
+        </a>
+
         <NotificationEngine />
         <Sidebar />
 
@@ -61,8 +70,14 @@ export const AppLayout = () => {
             onOpenCommandPalette={() => setCommandPaletteOpen(true)}
             onOpenShortcuts={() => setShortcutsOpen(true)}
           />
-          <main className="mx-auto max-w-6xl px-4 py-6 max-[1024px]:pb-[calc(6.75rem+env(safe-area-inset-bottom))] sm:px-6 lg:px-8 min-[1025px]:pb-8">
-            <Outlet />
+          <main
+            id="main-content"
+            tabIndex="-1"
+            className="mx-auto max-w-6xl px-4 py-6 max-[1024px]:pb-[calc(6.75rem+env(safe-area-inset-bottom))] sm:px-6 lg:px-8 min-[1025px]:pb-8 focus:outline-none"
+          >
+            <ErrorBoundary name="MainContent" variant="page">
+              <Outlet />
+            </ErrorBoundary>
           </main>
         </div>
 

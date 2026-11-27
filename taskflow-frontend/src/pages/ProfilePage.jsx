@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import toast from "react-hot-toast";
 import { useDispatch, useSelector } from "react-redux";
 import { Spinner } from "../components/ui/Spinner";
+import { FieldError } from "../components/ui/shared";
 import { updateProfile } from "../store/slices/authSlice";
 import { fetchStats, fetchAnalyticsTasks } from "../store/slices/tasksSlice";
 import { useTheme } from "../components/theme/theme-context";
@@ -84,26 +85,34 @@ const ProfileSettingsForm = ({ user }) => {
     currentPassword: "",
     newPassword: "",
   });
+  const [errors, setErrors] = useState({});
 
   const handleChange = (event) => {
     const { name, value } = event.target;
     setForm((current) => ({ ...current, [name]: value }));
+    setErrors((prev) => ({ ...prev, [name]: "" }));
   };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+    const nextErrors = {};
 
     const nextName = form.name.trim();
     const nextEmail = form.email.trim();
 
-    if (!nextName || !nextEmail) {
-      toast.error("Name and email are required.");
-      return;
-    }
+    if (!nextName) nextErrors.name = "Name is required.";
+    if (!nextEmail) nextErrors.email = "Email is required.";
 
     const hasPasswordFields = Boolean(form.currentPassword || form.newPassword);
-    if ((form.currentPassword && !form.newPassword) || (!form.currentPassword && form.newPassword)) {
-      toast.error("Enter both current and new password to change your password.");
+    if (form.currentPassword && !form.newPassword) {
+      nextErrors.newPassword = "Enter new password.";
+    } else if (!form.currentPassword && form.newPassword) {
+      nextErrors.currentPassword = "Enter current password.";
+    }
+
+    if (Object.keys(nextErrors).length > 0) {
+      setErrors(nextErrors);
+      toast.error("Please resolve the required fields.");
       return;
     }
 
@@ -126,6 +135,7 @@ const ProfileSettingsForm = ({ user }) => {
         currentPassword: "",
         newPassword: "",
       }));
+      setErrors({});
       return;
     }
 
@@ -148,14 +158,33 @@ const ProfileSettingsForm = ({ user }) => {
             <label htmlFor="profile-name" className="label">
               Name
             </label>
-            <input id="profile-name" name="name" value={form.name} onChange={handleChange} className="input" />
+            <input
+              id="profile-name"
+              name="name"
+              value={form.name}
+              onChange={handleChange}
+              className={`input ${errors.name ? "input-error" : ""}`}
+              aria-invalid={Boolean(errors.name)}
+              aria-describedby={errors.name ? "profile-name-error" : undefined}
+            />
+            <FieldError id="profile-name-error" message={errors.name} />
           </div>
 
           <div>
             <label htmlFor="profile-email" className="label">
               Email
             </label>
-            <input id="profile-email" type="email" name="email" value={form.email} onChange={handleChange} className="input" />
+            <input
+              id="profile-email"
+              type="email"
+              name="email"
+              value={form.email}
+              onChange={handleChange}
+              className={`input ${errors.email ? "input-error" : ""}`}
+              aria-invalid={Boolean(errors.email)}
+              aria-describedby={errors.email ? "profile-email-error" : undefined}
+            />
+            <FieldError id="profile-email-error" message={errors.email} />
           </div>
         </div>
 
@@ -181,9 +210,12 @@ const ProfileSettingsForm = ({ user }) => {
                 name="currentPassword"
                 value={form.currentPassword}
                 onChange={handleChange}
-                className="input"
+                className={`input ${errors.currentPassword ? "input-error" : ""}`}
                 autoComplete="current-password"
+                aria-invalid={Boolean(errors.currentPassword)}
+                aria-describedby={errors.currentPassword ? "profile-current-password-error" : undefined}
               />
+              <FieldError id="profile-current-password-error" message={errors.currentPassword} />
             </div>
 
             <div>
@@ -196,9 +228,12 @@ const ProfileSettingsForm = ({ user }) => {
                 name="newPassword"
                 value={form.newPassword}
                 onChange={handleChange}
-                className="input"
+                className={`input ${errors.newPassword ? "input-error" : ""}`}
                 autoComplete="new-password"
+                aria-invalid={Boolean(errors.newPassword)}
+                aria-describedby={errors.newPassword ? "profile-new-password-error" : undefined}
               />
+              <FieldError id="profile-new-password-error" message={errors.newPassword} />
             </div>
           </div>
         </div>
