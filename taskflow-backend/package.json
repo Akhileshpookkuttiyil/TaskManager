@@ -5,11 +5,17 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "test": "node test_phase5_sprint3_task3_1.js && node test_phase5_sprint3_task3_2.js && node test_phase5_sprint3_task3_3.js && node test_phase5_sprint3_phase4_integration.js",
-    "test:task3.1": "node test_phase5_sprint3_task3_1.js",
-    "test:task3.2": "node test_phase5_sprint3_task3_2.js",
-    "test:task3.3": "node test_phase5_sprint3_task3_3.js",
-    "test:phase4": "node test_phase5_sprint3_phase4_integration.js",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:regression": "node --dns-result-order=ipv4first test_phase5_sprint3_task3_1.js && node --dns-result-order=ipv4first test_phase5_sprint3_task3_2.js && node --dns-result-order=ipv4first test_phase5_sprint3_task3_3.js && node --dns-result-order=ipv4first test_phase5_sprint3_phase4_integration.js",
+    "test:integration": "node --dns-result-order=ipv4first test_phase5_sprint3_task3_1.js && node --dns-result-order=ipv4first test_phase5_sprint3_task3_2.js && node --dns-result-order=ipv4first test_phase5_sprint3_task3_3.js && node --dns-result-order=ipv4first test_phase5_sprint3_phase4_integration.js",
+    "test:custom": "node --dns-result-order=ipv4first test_phase5_sprint3_task3_1.js && node --dns-result-order=ipv4first test_phase5_sprint3_task3_2.js && node --dns-result-order=ipv4first test_phase5_sprint3_task3_3.js && node --dns-result-order=ipv4first test_phase5_sprint3_phase4_integration.js",
+    "test:task3.1": "node --dns-result-order=ipv4first test_phase5_sprint3_task3_1.js",
+    "test:task3.2": "node --dns-result-order=ipv4first test_phase5_sprint3_task3_2.js",
+    "test:task3.3": "node --dns-result-order=ipv4first test_phase5_sprint3_task3_3.js",
+    "test:phase4": "node --dns-result-order=ipv4first test_phase5_sprint3_phase4_integration.js",
+    "test:all": "vitest run && npm run test:regression",
     "dev": "nodemon server.js",
     "prisma:generate": "prisma generate",
     "postinstall": "prisma generate"
@@ -33,6 +39,9 @@
     "prisma": "^7.8.0"
   },
   "devDependencies": {
-    "nodemon": "^3.1.14"
+    "@vitest/coverage-v8": "^5.1.2",
+    "nodemon": "^3.1.14",
+    "supertest": "^7.3.2",
+    "vitest": "^5.1.2"
   }
 }
