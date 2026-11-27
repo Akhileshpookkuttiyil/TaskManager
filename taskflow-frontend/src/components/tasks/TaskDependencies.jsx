@@ -19,14 +19,23 @@ import toast from "react-hot-toast";
 
 export const TaskDependencies = ({
   taskId,
-  currentTask,
   allTasks = [],
   onDependenciesChanged,
 }) => {
   const [dependencies, setDependencies] = useState([]);
   const [dependents, setDependents] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(Boolean(taskId));
   const [error, setError] = useState(null);
+
+  // Synchronize state during render when taskId prop changes
+  const [prevTaskId, setPrevTaskId] = useState(taskId);
+  if (taskId !== prevTaskId) {
+    setPrevTaskId(taskId);
+    setDependencies([]);
+    setDependents([]);
+    setLoading(Boolean(taskId));
+    setError(null);
+  }
 
   // Add prerequisite search/select state
   const [isSelectOpen, setIsSelectOpen] = useState(false);
@@ -52,8 +61,8 @@ export const TaskDependencies = ({
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isSelectOpen]);
 
-  // Fetch dependencies and dependents
-  const fetchDependencyData = useCallback(async (id) => {
+  // Fetch dependencies and dependents on user action (refresh, retry, post-mutation)
+  const fetchDependencyData = useCallback(async (id = taskId) => {
     if (!id) {
       setDependencies([]);
       setDependents([]);
@@ -100,13 +109,61 @@ export const TaskDependencies = ({
         setLoading(false);
       }
     }
-  }, [onDependenciesChanged]);
+  }, [taskId, onDependenciesChanged]);
 
+  // Asynchronous dependency synchronization effect complying with React hooks purity rules
   useEffect(() => {
-    if (taskId) {
-      fetchDependencyData(taskId);
+    let ignore = false;
+
+    if (!taskId) {
+      return;
     }
-  }, [taskId, fetchDependencyData]);
+
+    const currentReqId = ++activeRequestIdRef.current;
+
+    const loadData = async () => {
+      try {
+        const [depsRes, dependentsRes] = await Promise.all([
+          tasksApi.getDependencies(taskId),
+          tasksApi.getDependents(taskId),
+        ]);
+
+        if (!ignore && currentReqId === activeRequestIdRef.current) {
+          const fetchedDeps = depsRes.data?.data?.dependencies || [];
+          const fetchedDependents = dependentsRes.data?.data?.dependents || [];
+          setDependencies(fetchedDeps);
+          setDependents(fetchedDependents);
+          setLoading(false);
+
+          const incompletePrereqs = fetchedDeps.filter(
+            (d) => d.prerequisite && d.prerequisite.status !== "completed"
+          );
+          const isBlocked = incompletePrereqs.length > 0;
+
+          if (onDependenciesChanged) {
+            onDependenciesChanged({
+              taskId,
+              dependencies: fetchedDeps,
+              dependents: fetchedDependents,
+              isBlocked,
+              incompletePrerequisites: incompletePrereqs,
+            });
+          }
+        }
+      } catch (err) {
+        if (!ignore && currentReqId === activeRequestIdRef.current) {
+          setError(err.response?.data?.message || "Failed to load task dependencies.");
+          setLoading(false);
+        }
+      }
+    };
+
+    loadData();
+
+    return () => {
+      ignore = true;
+    };
+  }, [taskId, onDependenciesChanged]);
 
   // Candidate tasks for prerequisite selection:
   // Must NOT be the current task

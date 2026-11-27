@@ -379,14 +379,16 @@ export const TaskDetailDrawer = ({ isOpen, onClose, task, onSaved, onDuplicate }
     };
   }, [isOpen, task?._id, fetchTaskActivities, fetchSubtasks]);
 
+  const currentTaskId = task?._id;
+
   const handleDependenciesChanged = useCallback(
     ({ isBlocked: blocked }) => {
       setIsBlocked(blocked);
-      if (task?._id) {
-        dispatch(updateTaskBlockedStatus({ taskId: task._id, isBlocked: blocked }));
+      if (currentTaskId) {
+        dispatch(updateTaskBlockedStatus({ taskId: currentTaskId, isBlocked: blocked }));
       }
     },
-    [dispatch, task?._id]
+    [dispatch, currentTaskId]
   );
 
   // Handle direct updates in Edit Mode, or update local states in Create Mode
@@ -1077,7 +1079,6 @@ export const TaskDetailDrawer = ({ isOpen, onClose, task, onSaved, onDuplicate }
           {!isCreateMode && task && (
             <TaskDependencies
               taskId={task._id}
-              currentTask={task}
               allTasks={allTasks}
               onDependenciesChanged={handleDependenciesChanged}
             />
